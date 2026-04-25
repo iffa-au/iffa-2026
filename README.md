@@ -88,6 +88,29 @@ AI can assist, but ownership is always human.
 
 Do all work in topic branches. Never commit directly to main.
 
+Default recommendation for this team: Option A.
+
+Use:
+
+1. `main` = stable/default branch
+2. `dev` = integration branch
+3. Ignore/delete `prod`
+
+Workflow:
+
+1. Create feature branch from `dev`.
+2. Merge feature branch into `dev`.
+3. When stable, merge `dev` into `main`.
+
+
+### Stable Branch Rule
+
+Should you push day-to-day changes to `main`? No.
+
+1. Keep current work in `dev` and feature branches created from `dev`.
+2. Move code to `main` only after review and stability checks.
+3. Stable branches (`main`, and `prod` if used) are not scratch branches.
+
 Branch naming rules:
 
 1. New page work: `page/<route-or-page-name>`
