@@ -1,9 +1,10 @@
 import React from 'react'
+import Header from '../components/header'
 
 const RootLayout = ({children} : {children: React.ReactNode}) => {
   return (
     <div>
-        <div>SOME NAVBAR</div>
+        <Header />
         {children}
     </div>
   )
