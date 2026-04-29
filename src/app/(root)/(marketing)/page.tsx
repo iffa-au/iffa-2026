@@ -26,13 +26,13 @@ export default function Home() {
         learnMoreUrl="/oman"
       />
 
-      <TextDivider />
-
       <TrailerSection
         videoslug="Hero_2v"
         title="Cassandra"
         youtubeUrl="https://www.youtube.com/watch?v=7Pp5FiS0Lck"
       />
+
+      <TextDivider />
 
       <div className="relative">
         <FeaturedMovies />
