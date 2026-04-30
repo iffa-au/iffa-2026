@@ -3,15 +3,7 @@ import FeaturedMovies from "@/modules/home/ui/FeaturedMovies";
 import FeaturedSelection from "@/modules/home/ui/FeaturedSelection";
 import TextDivider from "@/modules/home/ui/sections/text-divider";
 import Carousel from "@/modules/home/ui/views/carousel/Carousel";
-
-const HomeNews = () => (
-  <section className="px-6 py-16 bg-black text-white">
-    <div className="mx-auto max-w-[1400px]">
-      <h2 className="text-2xl font-semibold">Home News</h2>
-      <p className="mt-3 text-zinc-300">This placeholder section is ready for home news content.</p>
-    </div>
-  </section>
-);
+import HomeNews from "@/modules/home/News";
 
 export default function Home() {
   return (
@@ -41,15 +33,19 @@ export default function Home() {
 
       <FeaturedSelection />
 
-      <TrailerSection
-        videoslug="Hero_3v"
-        title="The Stolen Girl"
-        youtubeUrl="https://www.youtube.com/watch?v=huMtYtMoN24"
-      />
+      <div className="-mt-8 md:-mt-10 lg:-mt-12">
+        <TrailerSection
+          videoslug="Hero_3v"
+          title="The Stolen Girl"
+          youtubeUrl="https://www.youtube.com/watch?v=huMtYtMoN24"
+        />
+      </div>
 
       <div className="pt-20 md:pt-24 lg:pt-32">
         <Carousel />
       </div>
+
+      <div className="h-32 md:h-40 lg:h-44" />
 
       <HomeNews />
     </main>
