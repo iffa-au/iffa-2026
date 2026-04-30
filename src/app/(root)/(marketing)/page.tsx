@@ -46,12 +46,7 @@ export default function Home() {
         youtubeUrl="https://www.youtube.com/watch?v=huMtYtMoN24"
       />
 
-      <section className="px-6 py-16 bg-zinc-900 text-white">
-        <div className="mx-auto max-w-[1400px]">
-          <h2 className="text-2xl font-semibold">Carousel</h2>
-          <p className="mt-3 text-zinc-300">Coming soon.</p>
-        </div>
-      </section>
+      
 
       <HomeNews />
     </main>
