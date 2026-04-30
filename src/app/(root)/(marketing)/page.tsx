@@ -2,6 +2,7 @@ import TrailerSection from "@/modules/home/ui/TrailerVideo";
 import FeaturedMovies from "@/modules/home/ui/FeaturedMovies";
 import FeaturedSelection from "@/modules/home/ui/FeaturedSelection";
 import TextDivider from "@/modules/home/ui/sections/text-divider";
+import Carousel from "@/modules/home/ui/views/carousel/Carousel";
 
 const HomeNews = () => (
   <section className="px-6 py-16 bg-black text-white">
@@ -46,7 +47,9 @@ export default function Home() {
         youtubeUrl="https://www.youtube.com/watch?v=huMtYtMoN24"
       />
 
-      
+      <div className="pt-20 md:pt-24 lg:pt-32">
+        <Carousel />
+      </div>
 
       <HomeNews />
     </main>
