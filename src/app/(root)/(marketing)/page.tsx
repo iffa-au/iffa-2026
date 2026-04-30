@@ -2,6 +2,7 @@ import TrailerSection from "@/modules/home/ui/TrailerVideo";
 import FeaturedMovies from "@/modules/home/ui/FeaturedMovies";
 import FeaturedSelection from "@/modules/home/ui/FeaturedSelection";
 import TextDivider from "@/modules/home/ui/sections/text-divider";
+import Carousel from "@/modules/home/ui/views/carousel/Carousel";
 
 const HomeNews = () => (
   <section className="px-6 py-16 bg-black text-white">
@@ -26,13 +27,13 @@ export default function Home() {
         learnMoreUrl="/oman"
       />
 
-      <TextDivider />
-
       <TrailerSection
         videoslug="Hero_2v"
         title="Cassandra"
         youtubeUrl="https://www.youtube.com/watch?v=7Pp5FiS0Lck"
       />
+
+      <TextDivider />
 
       <div className="relative">
         <FeaturedMovies />
@@ -46,12 +47,9 @@ export default function Home() {
         youtubeUrl="https://www.youtube.com/watch?v=huMtYtMoN24"
       />
 
-      <section className="px-6 py-16 bg-zinc-900 text-white">
-        <div className="mx-auto max-w-[1400px]">
-          <h2 className="text-2xl font-semibold">Carousel</h2>
-          <p className="mt-3 text-zinc-300">Coming soon.</p>
-        </div>
-      </section>
+      <div className="pt-20 md:pt-24 lg:pt-32">
+        <Carousel />
+      </div>
 
       <HomeNews />
     </main>
