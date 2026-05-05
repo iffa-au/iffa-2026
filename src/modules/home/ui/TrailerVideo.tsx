@@ -115,6 +115,7 @@ const TrailerSection = ({
 
     // For direct files and natively supported HLS (e.g., Safari), assign URL directly.
     video.src = src;
+    video.load();
 
     const onLoaded = () => {
       setIsReady(true);

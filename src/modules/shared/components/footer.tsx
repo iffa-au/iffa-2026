@@ -16,7 +16,7 @@ export function Footer() {
     { name: "Contact", path: "/contact" },
     { name: "IFFA Global", path: "/iffa-global" },
     { name: "Partner with us", path: "/partnerwithus" },
-    { name: "Education & Training", path: "/education&training" },
+    { name: "Education & Training", path: "/education-training" },
     { name: "Become A Member", path: "/membership" },
   ];
 
