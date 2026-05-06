@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <main className="w-full min-h-screen bg-black">
       <section className="px-6 py-10 text-white">
-        <h1 className="text-3xl font-semibold">WELCOME TO IFFA 2026</h1>
+        
       </section>
 
       <TrailerSection
