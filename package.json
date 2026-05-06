@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@hugeicons/core-free-icons": "^4.1.1",
     "@hugeicons/react": "^1.1.6",
     "class-variance-authority": "^0.7.1",
