@@ -31,7 +31,15 @@ export default function Home() {
         <FeaturedMovies />
       </div>
 
-      <FeaturedSelection />
+      <TrailerSection
+        videoslug="Hero_2v"
+        title="Cassandra"
+        youtubeUrl="https://www.youtube.com/watch?v=7Pp5FiS0Lck"
+      />
+
+      <div className="-mt-12 md:-mt-16 lg:-mt-20">
+        <FeaturedSelection />
+      </div>
 
       <div className="-mt-8 md:-mt-10 lg:-mt-12">
         <TrailerSection
@@ -45,7 +53,7 @@ export default function Home() {
         <Carousel />
       </div>
 
-      <div className="h-32 md:h-40 lg:h-44" />
+      <div className="h-0" />
 
       <HomeNews />
     </main>
