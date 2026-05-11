@@ -8,10 +8,6 @@ import HomeNews from "@/modules/home/News";
 export default function Home() {
   return (
     <main className="w-full min-h-screen bg-black">
-      <section className="px-6 py-10 text-white">
-        <h1 className="text-3xl font-semibold">WELCOME TO IFFA 2026</h1>
-      </section>
-
       <TrailerSection
         videoslug="Hero_1v"
         title="Oman: A Global Filming Destination"
@@ -40,9 +36,11 @@ export default function Home() {
           youtubeUrl="https://www.youtube.com/watch?v=huMtYtMoN24"
         />
       </div>
-
+            <div className="pt-20 md:pt-24 lg:pt-32">
+        <Carousel year={2026} />
+      </div>
       <div className="pt-20 md:pt-24 lg:pt-32">
-        <Carousel />
+        <Carousel year={2025} />
       </div>
 
       <div className="h-32 md:h-40 lg:h-44" />

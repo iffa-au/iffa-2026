@@ -12,7 +12,7 @@ export function Footer() {
     "We acknowledge the Traditional Owners of the land where we work and live. We pay our respects to Elders past, present and emerging. We celebrate the stories, culture and traditions of Aboriginal and Torres Strait Islander Elders of all communities who also work and live on this land.";
 
   const navLinks = [
-    { name: "About", path: "/about" },
+    { name: "About", path: "/AboutUs" },
     { name: "Contact", path: "/contact" },
     { name: "IFFA Global", path: "/iffa-global" },
     { name: "Partner with us", path: "/partnerwithus" },
@@ -42,7 +42,7 @@ export function Footer() {
                   <div className="relative w-12 sm:w-16 md:w-18 aspect-video">
                     {/* Placeholder for flags - adjust src path based on where flags.png is migrated in iffa-2026 public folder */}
                     <img
-                      src="/images/Home/Footer/flags.png"
+                      src="/footer/flags.png"
                       alt="Flags"
                       className="w-12 sm:w-16 md:w-18 h-auto opacity-100 filter drop-shadow-xl group-hover:scale-110 transition-transform duration-500"
                     />
@@ -64,7 +64,7 @@ export function Footer() {
               <Link href="/" className="group block relative mb-3">
                 <div className="absolute -inset-3 bg-gradient-to-br from-yellow-400/20 to-transparent rounded-2xl blur-lg opacity-20 group-hover:opacity-100 transition-opacity duration-700"></div>
                 <img
-                  src="/assets/IFFA_logo.png"
+                  src="/IFFA_logo.png"
                   alt="IFFA Logo"
                   className="w-24 sm:w-28 group-hover:scale-110 transition-all duration-700 filter drop-shadow-2xl relative z-10"
                 />
@@ -124,7 +124,7 @@ export function Footer() {
         {/* Logo Strip Section */}
         <div className="py-10 border-t border-neutral-700/50 border-gradient-to-r from-transparent via-neutral-700/50 to-transparent">
           <img
-            src="/images/Home/Footer/strip-no-bg.png"
+            src="/footer/strip-no-bg.png"
             alt="Logos strip"
             className="w-full h-auto"
           />

@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import MoviesCard from "./MoviesCard";
 
+type CarouselProps = {
+  year: number | string;
+};
+
 type FilmItem = {
   movieId: string;
   title: string;
@@ -12,14 +16,19 @@ type FilmItem = {
 };
 
 type ApiFilmResponse = {
-  contentId?: string;
+  _id?: string;
+  id?: string;
   title?: string;
   portraitImageUrl?: string;
   landscapeImageUrl?: string;
   directors?: string[];
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+// Hardcoded for now. Will be moved to env variable later.
+const API_BASE_URL = "http://localhost:8000/api/v1";
+
+// Cache to prevent repeated requests across component mounts
+const fetchCache: Record<string, FilmItem[]> = {};
 
 const getCardWidth = (): number => {
   if (window.innerWidth < 640) return 280;
@@ -34,7 +43,7 @@ const getGap = (): number => {
   return 24;
 };
 
-const Carousel = () => {
+const Carousel = ({ year }: CarouselProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const [films, setFilms] = useState<FilmItem[]>([]);
@@ -49,12 +58,20 @@ const Carousel = () => {
         setLoading(true);
         setError(null);
 
+        // Serve from cache if already fetched for this year
+        const cacheKey = `featured_${year}`;
+        if (fetchCache[cacheKey]) {
+          setFilms(fetchCache[cacheKey]);
+          setLoading(false);
+          return;
+        }
+
         if (!API_BASE_URL) {
           setFilms([]);
           return;
         }
 
-        const url = `${API_BASE_URL}/home/featured?year=2025`;
+        const url = `${API_BASE_URL}/submissions?year=${year}&featured=true`;
         const res = await fetch(url, { signal: controller.signal });
 
         if (!res.ok) {
@@ -71,7 +88,7 @@ const Carousel = () => {
         const items = Array.isArray(data) ? (data as ApiFilmResponse[]) : [];
 
         const mapped: FilmItem[] = items.map((item) => ({
-          movieId: item.contentId ?? "",
+          movieId: item.id ?? item._id ?? "",
           title: item.title ?? "",
           posterUrl:
             item.portraitImageUrl ??
@@ -80,7 +97,9 @@ const Carousel = () => {
           directors: Array.isArray(item.directors) ? item.directors : [],
         }));
 
-        setFilms([...mapped, ...mapped, ...mapped]);
+        const duplicatedForScroll = [...mapped, ...mapped, ...mapped];
+        fetchCache[cacheKey] = duplicatedForScroll; // Cache the processed result
+        setFilms(duplicatedForScroll);
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
           console.warn("Failed to load featured films:", err);
@@ -93,7 +112,7 @@ const Carousel = () => {
 
     void fetchFeatured();
     return () => controller.abort();
-  }, []);
+  }, [year]);
 
   useEffect(() => {
     if (films.length === 0) return;

@@ -128,7 +128,7 @@ const FeaturedMovies = () => {
 	const currentItem = mediaItems[currentIndex];
 
 	return (
-		<div className="featured-movies relative -ml-[50vw] -mr-[50vw] left-1/2 right-1/2 w-screen bg-black">
+		<div className="featured-movies relative -ml-[50vw] -mr-[50vw] left-1/2 right-1/2 w-full bg-black">
 			<div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
 				<div className="relative w-full overflow-hidden rounded-sm border border-white/5 bg-zinc-900 shadow-2xl">
 					<img
