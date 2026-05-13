@@ -22,7 +22,7 @@ export default function Home() {
       <TrailerSection
         videoUrl="https://dhbdzeb2cbayq.cloudfront.net/iffa/videos/The_Arab/index.m3u8"
         title="The Arab"
-        youtubeUrl="https://vimeo.com/1176566092"
+        youtubeUrl="https://youtu.be/kk3jGmIcFi0"
       />
 
       <TextDivider />

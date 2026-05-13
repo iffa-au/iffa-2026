@@ -27,7 +27,7 @@ export const featuredFilms: FeaturedFilm[] = [
     runtime: "106 minutes",
     country: "Algeria",
     posterUrl: `${CF}/iffa/images/THE-ARAB.jpg`,
-    trailerUrl: "https://vimeo.com/1176566092",
+    trailerUrl: "https://youtu.be/kk3jGmIcFi0",
   },
   {
     id: 2,
