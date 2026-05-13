@@ -48,9 +48,11 @@ export default function Home() {
           youtubeUrl="https://www.youtube.com/watch?v=huMtYtMoN24"
         />
       </div>
-
+            <div className="pt-20 md:pt-24 lg:pt-32">
+        <Carousel year={2026} />
+      </div>
       <div className="pt-20 md:pt-24 lg:pt-32">
-        <Carousel />
+        <Carousel year={2025} />
       </div>
 
       <div className="h-0" />

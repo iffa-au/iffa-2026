@@ -25,7 +25,7 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", raleway.variable, geistMono.variable, "font-sans", "dark")}
     >
-      <body className="min-h-full flex flex-col bg-[#0d0d0d]">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#0d0d0d] overflow-x-hidden">{children}</body>
     </html>
   );
 }
