@@ -20,9 +20,9 @@ export default function Home() {
       />
 
       <TrailerSection
-        videoslug="Hero_2v"
-        title="Cassandra"
-        youtubeUrl="https://www.youtube.com/watch?v=7Pp5FiS0Lck"
+        videoUrl="https://dhbdzeb2cbayq.cloudfront.net/iffa/videos/The_Arab/index.m3u8"
+        title="The Arab"
+        youtubeUrl="https://vimeo.com/1176566092"
       />
 
       <TextDivider />
