@@ -2,10 +2,12 @@
 
 // External libraries and React hooks
 import Link from "next/link";
+import Hls from "hls.js";
 import { memo, useEffect, useRef, useState } from "react";
 
 type TrailerSectionProps = {
-  videoslug: string;
+  videoslug?: string;
+  videoUrl?: string;
   title?: string;
   youtubeUrl?: string;
   learnMoreUrl?: string;
@@ -35,6 +37,7 @@ const buildCloudFrontUrl = (key: string) => {
 
 const TrailerSection = ({
   videoslug,
+  videoUrl,
   title,
   youtubeUrl,
   learnMoreUrl,
@@ -72,6 +75,11 @@ const TrailerSection = ({
 
   // Loads video and poster keys, then converts them to CloudFront URLs.
   useEffect(() => {
+    if (videoUrl) {
+      setSrc(videoUrl);
+      setLoading(false);
+      return;
+    }
     if (!videoslug) return;
 
     const loadMedia = async () => {
@@ -90,7 +98,7 @@ const TrailerSection = ({
     };
 
     loadMedia();
-  }, [videoslug]);
+  }, [videoslug, videoUrl]);
 
   // Detects when section is on screen to lazy-start playback logic.
   useEffect(() => {
@@ -113,17 +121,27 @@ const TrailerSection = ({
 
     setIsReady(false);
 
-    // For direct files and natively supported HLS (e.g., Safari), assign URL directly.
-    video.src = src;
-    video.load();
-
     const onLoaded = () => {
       setIsReady(true);
       video.play().catch(() => {});
     };
 
-    video.addEventListener("loadedmetadata", onLoaded);
-    return () => video.removeEventListener("loadedmetadata", onLoaded);
+    const isHls = src.endsWith(".m3u8");
+
+    if (isHls && Hls.isSupported()) {
+      // Chrome / Firefox: use hls.js
+      const hls = new Hls({ autoStartLoad: true });
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      hls.once(Hls.Events.MANIFEST_PARSED, onLoaded);
+      return () => hls.destroy();
+    } else {
+      // Safari (native HLS) or plain mp4/etc.
+      video.src = src;
+      video.load();
+      video.addEventListener("loadedmetadata", onLoaded);
+      return () => video.removeEventListener("loadedmetadata", onLoaded);
+    }
   }, [isVisible, src]);
 
   // Keeps playback in sync with viewport visibility.
