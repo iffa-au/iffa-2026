@@ -1,10 +1,9 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { FaInstagram, FaFacebook, FaLinkedin, FaYoutube, FaImdb } from "react-icons/fa";
 
 export function Footer() {
   const pathname = usePathname();
@@ -12,20 +11,20 @@ export function Footer() {
     "We acknowledge the Traditional Owners of the land where we work and live. We pay our respects to Elders past, present and emerging. We celebrate the stories, culture and traditions of Aboriginal and Torres Strait Islander Elders of all communities who also work and live on this land.";
 
   const navLinks = [
-    { name: "About", path: "/AboutUs" },
+    { name: "About Us", path: "/AboutUs" },
     { name: "Contact", path: "/contact" },
     { name: "IFFA Global", path: "/iffa-global" },
     { name: "Partner with us", path: "/partnerwithus" },
     { name: "Education & Training", path: "/education-training" },
-    { name: "Become A Member", path: "/membership" },
+    { name: "Filming in Australia", path: "/australia" },
   ];
 
   const socialLinks = [
-    { label: "IG", href: "https://www.instagram.com/iffaawards/" },
-    { label: "FB", href: "https://www.facebook.com/iffaawardss" },
-    { label: "IN", href: "https://www.linkedin.com/company/iffaawards/?viewAsMember=true" },
-    { label: "YT", href: "https://www.youtube.com/channel/UCO2xJ6Cw1-5o1iolIJtO4yQ" },
-    { label: "IMDb", href: "https://m.imdb.com/event/ev0074610/2025/1/?ref_=ev_tl_yr_1" },
+    { icon: FaInstagram, href: "https://www.instagram.com/iffaawards/", label: "Instagram" },
+    { icon: FaFacebook, href: "https://www.facebook.com/iffaawardss", label: "Facebook" },
+    { icon: FaLinkedin, href: "https://www.linkedin.com/company/iffaawards/?viewAsMember=true", label: "LinkedIn" },
+    { icon: FaYoutube, href: "https://www.youtube.com/channel/UCO2xJ6Cw1-5o1iolIJtO4yQ", label: "YouTube" },
+    { icon: FaImdb, href: "https://m.imdb.com/event/ev0074610/2025/1/?ref_=ev_tl_yr_1", label: "IMDb" },
   ];
 
   return (
@@ -102,19 +101,18 @@ export function Footer() {
                   Stay updated with our latest news and announcements
                 </p>
               </div>
-              <div className="flex gap-4 flex-wrap justify-center lg:justify-end">
+              <div className="flex gap-5">
                 {socialLinks.map((social, idx) => (
-                  <Button
+                  <a
                     key={idx}
-                    asChild
-                    variant="ghost"
-                    size="icon"
-                    className="group relative w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-neutral-800/40 text-white to-neutral-800/30 backdrop-blur-md border border-neutral-700/40 rounded-2xl hover:border-yellow-400/60 hover:bg-gradient-to-br hover:text-yellow-400 hover:from-yellow-400/30 hover:to-yellow-400/20 hover:shadow-2xl hover:shadow-yellow-400/30 transition-all duration-700 transform hover:scale-110 hover:-translate-y-2 shadow-xl shadow-black/35"
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.label}
+                    className="group relative w-14 h-14 flex items-center justify-center bg-gradient-to-br from-neutral-800/40 to-neutral-800/30 backdrop-blur-md border border-neutral-700/40 rounded-2xl hover:border-yellow-400/60 hover:from-yellow-400/35 hover:to-yellow-400/25 hover:shadow-2xl hover:shadow-yellow-400/35 transition-all duration-700 transform hover:scale-110 hover:-translate-y-2 shadow-xl shadow-black/35"
                   >
-                    <a href={social.href} target="_blank" rel="noopener noreferrer" className="z-10 font-bold">
-                      {social.label}
-                    </a>
-                  </Button>
+                    <social.icon className="w-6 h-6 text-white group-hover:text-yellow-400 transition-colors duration-500" />
+                  </a>
                 ))}
               </div>
             </div>
