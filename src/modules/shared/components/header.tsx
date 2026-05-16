@@ -3,20 +3,25 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
+import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import PastEventsDropdown from "./dropdown"
 import { Button } from "@/components/ui/button"
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const pathname = usePathname()
+  const isHome = pathname === "/"
+
+  const closeMenu = () => setIsMobileMenuOpen(false)
 
   return (
-    <div className="fixed top-0 left-0 w-full z-50 border-b border-[#252134] bg-[#0E0C15]/90 backdrop-blur-sm">
+    <div className={`fixed top-0 left-0 w-full z-50 border-b border-[#252134] backdrop-blur-sm transition-colors ${isHome && !isMobileMenuOpen ? "bg-transparent" : "bg-[#0E0C15]/90"}`}>
       
       <div className="relative flex items-center justify-between p-5">
         
         {/* Logo (Left) */}
-        <Link href="/" className="block w-[8rem]">
+        <Link href="/" className="block w-[8rem]" onClick={closeMenu}>
           <Image
             src="/IFFA_logo.png"
             alt="IFFA Logo"
@@ -37,36 +42,33 @@ export default function Header() {
         </Link>
 
         {/* Right Side Navigation (Desktop) */}
-        <div className="hidden md:flex items-center gap-4 relative z-20">
-          
-          {/* Past Events Dropdown */}
+        <div className="hidden lg:flex items-center gap-4 relative z-20">
           <PastEventsDropdown />
-
-          <Button variant="ghost" className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
-            LATEST NEWS
+          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
+            <Link href="/latest-news">LATEST NEWS</Link>
           </Button>
-
         </div>
 
         {/* Mobile menu toggle */}
-        <div className="md:flex lg:hidden flex items-center relative z-20">
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+        <div className="lg:hidden flex items-center relative z-20">
+          <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown Panel */}
+      {/* Mobile Menu — full-screen overlay */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-[#0E0C15]/95 border-b border-[#252134] backdrop-blur-md flex flex-col p-4 space-y-2 shadow-xl">
-          <div className="flex flex-col items-start w-full">
+        <div className="lg:hidden fixed inset-0 top-0 bg-[#0E0C15] flex flex-col items-center justify-center gap-6 z-40">
+          <Button variant="ghost" size="icon" className="absolute top-5 right-5 text-white hover:bg-white/10" onClick={closeMenu}>
+            <X className="w-5 h-5" />
+          </Button>
+          <div onClick={closeMenu}>
             <PastEventsDropdown />
           </div>
-          <div className="flex flex-col items-start w-full">
-            <Button variant="ghost" className="h-8 px-2 md:h-10 md:px-4 justify-start rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.1em] md:tracking-[0.2em] uppercase text-[9px] md:text-xs lg:text-sm">
-              LATEST NEWS
-            </Button>
-          </div>
+          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-sm">
+            <Link href="/latest-news" onClick={closeMenu}>LATEST NEWS</Link>
+          </Button>
         </div>
       )}
     </div>

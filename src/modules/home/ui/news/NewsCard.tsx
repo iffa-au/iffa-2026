@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import type { NewsItem } from "@/modules/home/data/newsData";
 
 type NewsCardProps = {
@@ -39,13 +37,6 @@ const NewsCard = ({ news }: NewsCardProps) => {
         <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-zinc-300">
           {news.excerpt}
         </p>
-
-        <Link
-          href={news.href}
-          className="mt-auto inline-flex w-fit pt-5 text-xs font-semibold uppercase tracking-[0.15em] text-yellow-500 transition-colors duration-200 hover:text-yellow-400"
-        >
-          Read More
-        </Link>
       </div>
     </article>
   );

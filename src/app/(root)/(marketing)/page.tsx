@@ -8,6 +8,10 @@ import HomeNews from "@/modules/home/News";
 export default function Home() {
   return (
     <main className="w-full min-h-screen bg-black">
+      <section className="px-6 py-10 text-white">
+        
+      </section>
+
       <TrailerSection
         videoslug="Hero_1v"
         title="Oman: A Global Filming Destination"
@@ -16,9 +20,9 @@ export default function Home() {
       />
 
       <TrailerSection
-        videoslug="Hero_2v"
-        title="Cassandra"
-        youtubeUrl="https://www.youtube.com/watch?v=7Pp5FiS0Lck"
+        videoUrl="https://dhbdzeb2cbayq.cloudfront.net/iffa/videos/The_Arab/index.m3u8"
+        title="The Arab"
+        youtubeUrl="https://youtu.be/kk3jGmIcFi0"
       />
 
       <TextDivider />
@@ -27,7 +31,15 @@ export default function Home() {
         <FeaturedMovies />
       </div>
 
-      <FeaturedSelection />
+      <TrailerSection
+        videoslug="Hero_2v"
+        title="Cassandra"
+        youtubeUrl="https://www.youtube.com/watch?v=7Pp5FiS0Lck"
+      />
+
+      <div className="-mt-12 md:-mt-16 lg:-mt-20">
+        <FeaturedSelection />
+      </div>
 
       <div className="-mt-8 md:-mt-10 lg:-mt-12">
         <TrailerSection
@@ -43,7 +55,7 @@ export default function Home() {
         <Carousel year={2025} />
       </div>
 
-      <div className="h-32 md:h-40 lg:h-44" />
+      <div className="h-0" />
 
       <HomeNews />
     </main>
