@@ -15,7 +15,7 @@ import {
 
 import { Button } from "@/components/ui/button"
 
-const years = ["2024", "2023", "2022"]
+const years = ["2025","2024", "2023", "2022"]
 
 export default function PastEventsDropdown() {
   const router = useRouter()

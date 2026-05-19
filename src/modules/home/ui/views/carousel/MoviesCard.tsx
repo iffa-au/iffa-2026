@@ -32,8 +32,8 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative hover:shadow-lg hover:shadow-gray-400 transition-shadow duration-300 rounded-xl overflow-hidden border border-accent-2 w-full max-w-[340px] mx-auto"
-      style={{ aspectRatio: "2/3", minWidth: "280px" }}
+      className="relative mx-auto min-w-0 w-full max-w-[340px] overflow-hidden rounded-xl border border-accent-2 transition-shadow duration-300 hover:shadow-lg hover:shadow-gray-400"
+      style={{ aspectRatio: "2/3" }}
     >
       {!imageLoaded && (
         <div className="absolute inset-0 bg-gray-300 animate-pulse flex items-center justify-center">
@@ -52,7 +52,7 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
 
       <div
         style={{ opacity: isHovered ? 1 : 0 }}
-        className="flex flex-col justify-center items-center absolute inset-0 px-6 py-8 bg-black/80 text-white text-center gap-y-6 transition-opacity duration-300"
+        className={`flex flex-col justify-center items-center absolute inset-0 px-6 py-8 bg-black/80 text-white text-center gap-y-6 transition-opacity duration-300 ${!isHovered ? "pointer-events-none" : ""}`}
       >
         <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold leading-tight">
           {film.title}
