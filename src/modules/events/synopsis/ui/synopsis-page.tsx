@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Film, Users } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
@@ -26,6 +26,7 @@ export type SynopsisCrewMember = {
   name: string;
   roles: string[];
   photo: string | null;
+  photos: Record<string, string | null>;
 };
 
 export type SynopsisFilm = {
@@ -70,12 +71,12 @@ function normalizeGenres(data: SubmissionApiResponse): string[] {
   return out;
 }
 
-function mapCrew(data: SubmissionApiResponse): SynopsisCrewMember[] {
+function mapCrew(data: SubmissionApiResponse, movieId: string): SynopsisCrewMember[] {
   const mapped: SynopsisCrewMember[] = [];
   if (!data.crew || typeof data.crew !== "object") return mapped;
 
   for (const roleKey of CREW_BUCKET_ORDER) {
-    const list = data.crew[roleKey];
+    const list = data.crew[roleKey as keyof typeof data.crew];
     if (!Array.isArray(list)) continue;
     list.forEach((member: unknown, idx: number) => {
       if (!member || typeof member !== "object") return;
@@ -101,10 +102,24 @@ function mapCrew(data: SubmissionApiResponse): SynopsisCrewMember[] {
         name,
         roles,
         photo: image,
+        photos: movieId ? { [movieId]: image } : {},
       });
     });
   }
-  return mapped;
+
+  // Deduplicate and merge roles just in case someone is listed multiple times
+  const uniqueMap = new Map<string, SynopsisCrewMember>();
+  mapped.forEach((m) => {
+    if (uniqueMap.has(m.castId)) {
+      const existing = uniqueMap.get(m.castId)!;
+      const mergedRoles = Array.from(new Set([...existing.roles, ...m.roles]));
+      uniqueMap.set(m.castId, { ...existing, roles: mergedRoles, photo: existing.photo || m.photo, photos: { ...existing.photos, ...m.photos } });
+    } else {
+      uniqueMap.set(m.castId, m);
+    }
+  });
+
+  return Array.from(uniqueMap.values());
 }
 
 export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
@@ -135,7 +150,7 @@ export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
       genres: normalizeGenres(data),
       posterUrl,
     },
-    crew: mapCrew(data),
+    crew: mapCrew(data, submissionId),
   };
 }
 
@@ -169,6 +184,134 @@ async function fetchSubmissionDetail(id: string, signal: AbortSignal): Promise<S
   );
 }
 
+// Support components for UI
+
+const getAvatarUrl = (name: string) => {
+  const formattedName = name.replace(/ /g, "+");
+  return `https://ui-avatars.com/api/?name=${formattedName}&background=random`;
+};
+
+const RoleBadgeList = ({ roles }: { roles: string[] }) => {
+  const [showAll, setShowAll] = useState(false);
+
+  const visibleRoles = showAll ? roles : roles.slice(0, 3);
+  const hiddenCount = roles.length - 3;
+
+  return (
+    <div className="flex flex-wrap gap-1.5 sm:gap-2">
+      {visibleRoles.map((role, idx) => (
+        <span
+          key={idx}
+          className="px-2 sm:px-3 py-1 bg-white/10 text-white/90 rounded-full text-xs sm:text-sm font-medium border border-white/20 backdrop-blur-sm truncate max-w-full"
+        >
+          {role}
+        </span>
+      ))}
+
+      {roles.length > 3 && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowAll(!showAll)
+          }}
+          className="px-2 sm:px-3 py-1 bg-white/10 text-white/70 rounded-full text-xs sm:text-sm font-medium border border-white/10"
+        >
+          {showAll ? "Show less" : `+${hiddenCount}`}
+        </button>
+      )}
+    </div>
+  );
+};
+
+const CastCard = ({ person, movieId }: { person: SynopsisCrewMember; movieId: string }) => {
+  const photoPath = (person.photos?.[movieId] || person.photo) ?? null;
+
+  const handleCastClick = () => {
+    // router.push(`/cast/${person.castId}?from=${movieId}`); 
+    // Left empty or routed to a generic endpoint if cast routes don't exist yet
+  };
+
+  return (
+    <div
+      onClick={() => handleCastClick()}
+      className="flex-shrink-0 w-48 sm:w-56 md:w-64 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden hover:scale-105 transition-transform duration-300 shadow-lg flex flex-col cursor-pointer"
+    >
+      {/* Photo Section */}
+      <div className="relative h-56 sm:h-64 md:h-72 overflow-hidden bg-black">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={photoPath || getAvatarUrl(person.name)}
+          alt={person.name}
+          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+          onError={(e) => {
+            const target = e.currentTarget;
+            target.onerror = null;
+            target.src = getAvatarUrl(person.name);
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
+        {/* Name overlay */}
+        <div className="absolute bottom-3 left-3 right-3">
+          <h3 className="text-white font-semibold text-base sm:text-lg leading-tight drop-shadow-lg line-clamp-2">
+            {person.name}
+          </h3>
+        </div>
+      </div>
+
+      {/* Roles Section */}
+      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-end">
+        <RoleBadgeList roles={person.roles} />
+      </div>
+    </div>
+  );
+};
+
+const CastSection = ({ cast, movieId }: { cast: SynopsisCrewMember[]; movieId: string }) => {
+  // Define sort logic (Directors first, then Producers, then Actors, then other)
+  const roleWeights: Record<string, number> = {
+    Director: 1,
+    Producer: 2,
+    Actor: 3,
+  };
+  
+  const sortedCast = [...cast].sort((a, b) => {
+    const wA = Math.min(...a.roles.map(r => roleWeights[r] || 99));
+    const wB = Math.min(...b.roles.map(r => roleWeights[r] || 99));
+    if (wA !== wB) return wA - wB;
+    return a.name.localeCompare(b.name);
+  });
+
+  return (
+    <div className="py-8 sm:py-12 lg:py-16 w-full">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-white hover:opacity-90">
+            <span>Cast & Crew</span>
+          </h2>
+          <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-full" />
+        </div>
+
+        {sortedCast.length > 0 ? (
+          <div className="relative">
+            <div className="flex overflow-x-auto gap-4 sm:gap-6 pb-4 scrollbar-thin scrollbar-thumb-yellow-600/50 scrollbar-track-white/10 px-2 min-h-[300px]">
+              {sortedCast.map((person) => (
+                <CastCard key={person.castId} person={person} movieId={movieId} />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12 sm:py-16 bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-white/10">
+            <Users className="w-12 sm:w-16 h-12 sm:h-16 text-white/40 mx-auto mb-4" />
+            <p className="text-white/60 text-base sm:text-lg">Cast and crew information not available</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
 export function SynopsisPage({ id }: SynopsisPageProps) {
   const [film, setFilm] = useState<SynopsisFilm | null>(null);
   const [crew, setCrew] = useState<SynopsisCrewMember[]>([]);
@@ -178,9 +321,12 @@ export function SynopsisPage({ id }: SynopsisPageProps) {
 
   useEffect(() => {
     if (!id) {
-      setFilm(null);
-      setCrew([]);
-      setLoading(false);
+      // Defer synchronous state update to avoid cascading effect renders warning
+      setTimeout(() => {
+        setFilm(null);
+        setCrew([]);
+        setLoading(false);
+      }, 0);
       return;
     }
 
@@ -209,187 +355,155 @@ export function SynopsisPage({ id }: SynopsisPageProps) {
     return () => controller.abort();
   }, [id]);
 
-  const synopsisNeedsToggle = useMemo(() => {
-    if (!film?.description) return false;
-    return film.description.trim().length > 220 || /\n\s*\n/.test(film.description);
-  }, [film?.description]);
+  const handleDescriptionToggle = () => {
+    setSynopsisExpanded(!synopsisExpanded);
+  };
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-black px-4 pb-16 pt-28 text-white">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-center py-24">
-          <div
-            className="h-10 w-10 animate-spin rounded-full border-2 border-white/15 border-t-[#c9a227]"
-            aria-hidden
-          />
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="text-center bg-white/5 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full border border-white/10 shadow-2xl">
+          <div className="w-20 h-20 bg-gradient-to-br from-yellow-600 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-pulse">
+            <Film className="w-10 h-10 text-black" />
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-4">Loading Film Details...</h2>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <main className="min-h-screen bg-black px-4 pb-16 pt-28 text-white">
-        <div className="mx-auto flex w-full max-w-lg flex-col items-center rounded-2xl border border-white/10 bg-white/[0.04] px-8 py-14 text-center backdrop-blur-sm">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#8b6914] to-[#c9a227]">
-            <Film className="h-8 w-8 text-black" />
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="text-center bg-white/5 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full border border-white/10 shadow-2xl">
+          <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-red-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Film className="w-10 h-10 text-white" />
           </div>
-          <h1 className="mb-3 text-xl font-semibold tracking-tight">Unable to load content</h1>
-          <p className="text-sm text-white/70">{error}</p>
+          <h2 className="text-xl font-semibold text-white mb-4">Unable to load content</h2>
+          <p className="text-white/70 mb-8">{error}</p>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (!film) {
     return (
-      <main className="min-h-screen bg-black px-4 pb-16 pt-28 text-white">
-        <div className="mx-auto flex w-full max-w-lg flex-col items-center rounded-2xl border border-white/10 bg-white/[0.04] px-8 py-14 text-center backdrop-blur-sm">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#8b6914] to-[#c9a227]">
-            <Film className="h-8 w-8 text-black" />
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="text-center bg-white/5 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full border border-white/10 shadow-2xl">
+          <div className="w-20 h-20 bg-gradient-to-br from-yellow-600 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Film className="w-10 h-10 text-black" />
           </div>
-          <h1 className="mb-3 text-xl font-semibold tracking-tight">Movie not found</h1>
-          <p className="text-sm text-white/70">
-            Sorry, we could not find the entry you are looking for.
+          <h2 className="text-xl font-semibold text-white mb-4">Movie not found</h2>
+          <p className="text-white/70 mb-8">
+            Sorry, we could not find the movie you are looking for.
           </p>
         </div>
-      </main>
+      </div>
     );
   }
 
-  const genreLine =
-    film.year != null && film.genres.length > 0
-      ? `${film.year} | ${film.genres.join(", ")}`
-      : film.year != null
-        ? String(film.year)
-        : film.genres.length > 0
-          ? `| ${film.genres.join(", ")}`
-          : null;
-
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 md:px-8">
-        <section className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-14">
-          <div className="flex shrink-0 justify-center lg:w-[38%] lg:justify-end">
-            <div className="w-full max-w-[280px] sm:max-w-[320px]">
-              <img
-                src={film.posterUrl}
-                alt={`${film.title} poster`}
-                className="w-full rounded-lg border border-white object-cover shadow-lg shadow-black/40"
-                style={{ aspectRatio: "2/3" }}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/fallbacks/no-poster.svg";
-                }}
-              />
+    <div className="min-h-screen bg-black pt-28 pb-16 text-white overflow-hidden">
+      <div className="flex flex-col items-center gap-6 sm:gap-8 lg:gap-10 py-[5%] lg:flex-row container mx-auto px-4 sm:px-6">
+        
+        {/* Left Side: Poster */}
+        <div className="w-full sm:w-3/4 lg:w-1/2 flex items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={film.posterUrl}
+            alt={`${film.title} Poster`}
+            className="w-2/3 sm:w-3/4 lg:w-1/2 rounded-lg border-2 border-white/10 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-yellow-600/30"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "/fallbacks/no-poster.svg";
+            }}
+          />
+        </div>
+        
+        {/* Right Side: details & synopsis */}
+        <div className="w-full sm:w-3/4 lg:w-1/2 flex flex-col gap-4 sm:gap-6 relative px-2 sm:px-0 z-10">
+          <div className="text-2xl pt-4 sm:pt-0 sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-yellow-500 leading-tight">
+            {film.title}
+          </div>
+          
+          <div className="flex w-full flex-row text-sm sm:text-base text-yellow-400/80 flex-wrap">
+            <div className="font-medium">{film.year}</div>{film.year && film.genres.length > 0 && <>&nbsp;|&nbsp;</>}
+            <div className="flex flex-wrap">
+              {film.genres.map((g, index) => (
+                <span key={index} className="ml-2">
+                  {g}
+                  {index < film.genres.length - 1 ? ", " : ""}
+                </span>
+              ))}
             </div>
           </div>
 
-          <div className="min-w-0 flex-1 lg:pt-2">
-            <h1 className="font-sans text-3xl font-bold tracking-tight text-[#d4af37] sm:text-4xl md:text-5xl">
-              {film.title}
-            </h1>
-
-            {genreLine ? (
-              <p className="mt-3 text-sm leading-relaxed text-[#c9a227]/95 sm:text-base">
-                {genreLine}
-              </p>
-            ) : null}
-
-            <div className="mt-8">
+          <div className="relative w-full max-w-[42rem]">
+            <div
+              className={`relative overflow-hidden transition-all duration-300 ${
+                synopsisExpanded ? "pointer-events-none" : ""
+              }`}
+            >
               <div
-                className={`rounded-xl border border-white/10 bg-zinc-900/80 px-5 py-5 backdrop-blur-sm sm:px-6 sm:py-6 ${
-                  synopsisExpanded ? "" : "relative max-h-[11.5rem] overflow-hidden sm:max-h-[13rem]"
+                className={`text-justify text-sm sm:text-base text-white/80 bg-white/5 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-white/10 cursor-pointer hover:bg-white/10 transition-all duration-300 ${
+                  !synopsisExpanded ? "line-clamp-3 sm:line-clamp-4" : "opacity-50"
                 }`}
+                onClick={handleDescriptionToggle}
               >
-                <div
-                  className={`text-sm leading-relaxed text-white/90 sm:text-base ${
-                    !synopsisExpanded && synopsisNeedsToggle ? "line-clamp-5 sm:line-clamp-6" : ""
-                  }`}
-                >
-                  {film.description ? (
-                    film.description.split(/\n\s*\n/).map((para, idx) => (
-                      <p key={idx} className={idx > 0 ? "mt-4" : ""}>
+                {film.description
+                  ? film.description.split(/\n\s*\n/).map((para, idx) => (
+                      <p key={idx} className="mb-4 last:mb-0">
                         {para}
                       </p>
                     ))
+                  : "No description available."}
+              </div>
+
+              {!synopsisExpanded && film.description && (
+                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none rounded-b-lg" />
+              )}
+            </div>
+
+            {synopsisExpanded && film.description && (
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-lg p-4 sm:p-6 border-2 border-yellow-600/30 shadow-2xl transform transition-all duration-500 animate-in fade-in zoom-in-95 z-20 overflow-y-auto">
+                <div className="text-justify text-sm sm:text-base text-white leading-relaxed space-y-4">
+                  {film.description.split(/\n\s*\n/).map((para, idx) => (
+                    <p key={idx}>{para}</p>
+                  ))}
+                </div>
+                <button
+                  onClick={handleDescriptionToggle}
+                  className="absolute top-3 right-3 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-200 group z-30"
+                >
+                  <ChevronUp className="w-5 h-5 text-white group-hover:scale-110 transition-transform duration-200" />
+                </button>
+              </div>
+            )}
+
+            {film.description && (
+              <button
+                onClick={handleDescriptionToggle}
+                className={`mt-4 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-600/20 to-yellow-500/20 hover:from-yellow-600/30 hover:to-yellow-500/30 text-white rounded-lg border border-yellow-600/30 hover:border-yellow-500/50 transition-all duration-300 flex items-center gap-2 relative z-30 group ${
+                  synopsisExpanded ? "bg-yellow-600/30 relative mt-4 shadow-xl z-10" : ""
+                }`}
+              >
+                <span className="font-medium">
+                  {synopsisExpanded ? "Show Less" : "Read More"}
+                </span>
+                <div className="transition-transform duration-300 group-hover:scale-110">
+                  {synopsisExpanded ? (
+                    <ChevronUp className="w-4 h-4" />
                   ) : (
-                    <p className="text-white/50">No synopsis available.</p>
+                    <ChevronDown className="w-4 h-4" />
                   )}
                 </div>
-                {!synopsisExpanded && synopsisNeedsToggle ? (
-                  <div
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-16 rounded-b-xl bg-gradient-to-t from-zinc-900 via-zinc-900/90 to-transparent"
-                    aria-hidden
-                  />
-                ) : null}
-              </div>
-
-              {synopsisNeedsToggle ? (
-                <button
-                  type="button"
-                  onClick={() => setSynopsisExpanded((v) => !v)}
-                  className="mt-5 inline-flex items-center gap-2 rounded-lg border border-[#6b5c2e]/60 bg-[#3d3518] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:border-[#c9a227]/50 hover:bg-[#4a4020]"
-                >
-                  {synopsisExpanded ? "Show less" : "Read more"}
-                  {synopsisExpanded ? (
-                    <ChevronUp className="h-4 w-4 opacity-90" aria-hidden />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 opacity-90" aria-hidden />
-                  )}
-                </button>
-              ) : null}
-            </div>
+              </button>
+            )}
           </div>
-        </section>
-
-        <section className="mt-16 border-t border-white/10 pt-14 md:mt-20 md:pt-16">
-          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl">
-            Cast &amp; Crew
-          </h2>
-          <div className="mt-4 h-1 w-20 rounded-full bg-gradient-to-r from-[#c9a227] to-[#8b6914]" />
-
-          {crew.length > 0 ? (
-            <div className="relative mt-10">
-              <div className="-mx-1 flex gap-4 overflow-x-auto pb-4 pt-1 sm:gap-6">
-                {crew.map((person) => (
-                  <article
-                    key={person.castId}
-                    className="w-36 shrink-0 text-center sm:w-40"
-                  >
-                    <div className="mx-auto mb-3 h-28 w-28 overflow-hidden rounded-full border border-white/15 bg-zinc-800 sm:h-32 sm:w-32">
-                      {person.photo ? (
-                        <img
-                          src={person.photo}
-                          alt={person.name ? `${person.name} headshot` : ""}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-white/25">
-                          <Users className="h-10 w-10" aria-hidden />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-sm font-semibold leading-snug text-white">{person.name}</p>
-                    <p className="mt-1 text-xs leading-snug text-[#c9a227]/90">
-                      {person.roles.join(", ")}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-14 text-center">
-              <Users className="mx-auto mb-4 h-12 w-12 text-white/30" aria-hidden />
-              <p className="text-sm text-white/55">Cast and crew information is not available.</p>
-            </div>
-          )}
-        </section>
+        </div>
       </div>
-    </main>
+
+      <CastSection cast={crew} movieId={film.movieId} />
+    </div>
   );
 }
