@@ -16,7 +16,6 @@ type FilmItem = {
 };
 
 type ApiFilmResponse = {
-  _id?: string;
   id?: string;
   title?: string;
   portraitImageUrl?: string;
@@ -24,8 +23,7 @@ type ApiFilmResponse = {
   directors?: string[];
 };
 
-// Hardcoded for now. Will be moved to env variable later.
-const API_BASE_URL = "http://localhost:8000/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL ?? "";
 
 // Cache to prevent repeated requests across component mounts
 const fetchCache: Record<string, FilmItem[]> = {};
@@ -62,7 +60,6 @@ const Carousel = ({ year }: CarouselProps) => {
         const cacheKey = `featured_${year}`;
         if (fetchCache[cacheKey]) {
           setFilms(fetchCache[cacheKey]);
-          setLoading(false);
           return;
         }
 
@@ -71,7 +68,7 @@ const Carousel = ({ year }: CarouselProps) => {
           return;
         }
 
-        const url = `${API_BASE_URL}/submissions?year=${year}&featured=true`;
+        const url = `${API_BASE_URL}/submissions?year=${year}&isFeatured=true`;
         const res = await fetch(url, { signal: controller.signal });
 
         if (!res.ok) {
@@ -88,7 +85,7 @@ const Carousel = ({ year }: CarouselProps) => {
         const items = Array.isArray(data) ? (data as ApiFilmResponse[]) : [];
 
         const mapped: FilmItem[] = items.map((item) => ({
-          movieId: item.id ?? item._id ?? "",
+          movieId: item.id ?? "",
           title: item.title ?? "",
           posterUrl:
             item.portraitImageUrl ??
@@ -103,6 +100,7 @@ const Carousel = ({ year }: CarouselProps) => {
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
           console.warn("Failed to load featured films:", err);
+          setError("Failed to load films.");
           setFilms([]);
         }
       } finally {
@@ -129,14 +127,14 @@ const Carousel = ({ year }: CarouselProps) => {
       const gap = getGap();
       const originalSetWidth = (films.length / 3) * (cardWidth + gap);
 
-      timelineRef.current = gsap.timeline({ repeat: -1, ease: "none" });
+      timelineRef.current = gsap.timeline({
+        repeat: -1,
+        onRepeat: () => gsap.set(container, { x: 0 }),
+      });
       timelineRef.current.to(container, {
         x: -originalSetWidth,
         duration: originalSetWidth / 50,
         ease: "none",
-        onComplete: () => {
-          gsap.set(container, { x: 0 });
-        },
       });
     };
 
