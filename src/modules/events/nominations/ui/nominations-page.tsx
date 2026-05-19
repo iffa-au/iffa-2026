@@ -104,11 +104,9 @@ export function NominationsPage({ year }: NominationsPageProps) {
                 ? String(item.id)
                 : undefined;
           const submissionObjectId =
-            typeof item._id === "string"
-              ? item._id
-              : typeof item.submissionId === "string"
-                ? item.submissionId
-                : undefined;
+            typeof item.submissionId === "string"
+              ? item.submissionId
+              : undefined;
 
           return {
             movieId: submissionObjectId ?? contentId ?? "",
@@ -162,15 +160,15 @@ export function NominationsPage({ year }: NominationsPageProps) {
   };
 
   const handleOpenSynopsis = async (film: FilmItem) => {
-    const key = film.submissionObjectId ?? film.contentId ?? film.movieId;
+    const key = film.submissionObjectId ?? film.contentId;
     if (!key) return;
 
     setResolveError(null);
     setResolvingKey(key);
 
     try {
-      if (isObjectId(film.submissionObjectId) || isObjectId(film.movieId)) {
-        router.push(`/synopsis/${film.submissionObjectId ?? film.movieId}`);
+      if (isObjectId(film.submissionObjectId)) {
+        router.push(`/synopsis/${film.submissionObjectId}`);
         return;
       }
 
@@ -181,11 +179,12 @@ export function NominationsPage({ year }: NominationsPageProps) {
         submissionId: film.submissionObjectId,
       });
 
-      if (resolvedObjectId) {
-        router.push(`/synopsis/${resolvedObjectId}`);
-      } else {
+      if (!resolvedObjectId) {
         setResolveError("Unable to resolve details for this movie.");
+        return;
       }
+
+      router.push(`/synopsis/${resolvedObjectId}`);
     } catch (err) {
       setResolveError(
         err instanceof Error
@@ -250,18 +249,19 @@ export function NominationsPage({ year }: NominationsPageProps) {
                   key={film.movieId || `${film.title}-${film.posterUrl}`}
                   className="flex min-w-0 justify-center transition-transform duration-300 hover:z-10 hover:scale-105"
                 >
+                  {(() => {
+                    const key = film.submissionObjectId ?? film.contentId;
+                    return (
                   <button
                     type="button"
                     onClick={() => void handleOpenSynopsis(film)}
-                    disabled={
-                      !film.movieId ||
-                      resolvingKey ===
-                        (film.submissionObjectId ?? film.contentId ?? film.movieId)
-                    }
+                    disabled={!key || resolvingKey === key}
                     className="block w-full max-w-[340px] disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     <MoviesCard film={film} />
                   </button>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
@@ -392,11 +392,7 @@ const resolveSubmissionId = async ({
 
       const matched = items.find((item) => {
         const itemObjectId =
-          typeof item._id === "string"
-            ? item._id
-            : typeof item.submissionId === "string"
-              ? item.submissionId
-              : undefined;
+          typeof item.submissionId === "string" ? item.submissionId : undefined;
         const itemContentId =
           item.contentId != null
             ? String(item.contentId)
@@ -411,7 +407,6 @@ const resolveSubmissionId = async ({
       });
 
       const resolved =
-        (typeof matched?._id === "string" && matched._id) ||
         (typeof matched?.submissionId === "string" && matched.submissionId) ||
         null;
 
