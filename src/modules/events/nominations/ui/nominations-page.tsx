@@ -86,7 +86,7 @@ export function NominationsPage({ year }: NominationsPageProps) {
         const normalizedBase = API_BASE_URL.endsWith("/")
           ? API_BASE_URL.slice(0, -1)
           : API_BASE_URL;
-        const url = `${normalizedBase}/awards/nominations?year=${encodeURIComponent(year)}`;
+        const url = `${normalizedBase}/nominations/fetchNomination?year=${encodeURIComponent(year)}`;
         const response = await fetch(url, { signal: controller.signal });
 
         if (!response.ok) {
@@ -371,8 +371,7 @@ const resolveSubmissionId = async ({
     : API_BASE_URL;
 
   const candidateUrls = [
-    `${normalizedBase}/awards/nominations?year=${encodeURIComponent(year)}`,
-    `${normalizedBase}/awards/submissions?year=${encodeURIComponent(year)}`,
+    `${normalizedBase}/nominations?year=${encodeURIComponent(year)}`,
     `${normalizedBase}/submissions?year=${encodeURIComponent(year)}`,
   ];
 

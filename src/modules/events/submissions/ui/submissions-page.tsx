@@ -137,7 +137,7 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
         const normalizedBase = API_BASE_URL.endsWith("/")
           ? API_BASE_URL.slice(0, -1)
           : API_BASE_URL;
-        const url = `${normalizedBase}/awards/submissions?year=${encodeURIComponent(year)}`;
+        const url = `${normalizedBase}/submissions?year=${encodeURIComponent(year)}`;
         const response = await fetch(url, { signal: controller.signal });
 
         if (!response.ok) {
@@ -367,7 +367,7 @@ const resolveSubmissionMongoId = async ({
     : API_BASE_URL;
 
   const candidateUrls = [
-    `${normalizedBase}/awards/submissions?year=${encodeURIComponent(year)}`,
+    `${normalizedBase}/fetchSubmissions?year=${encodeURIComponent(year)}`,
     `${normalizedBase}/submissions?year=${encodeURIComponent(year)}`,
   ];
 
