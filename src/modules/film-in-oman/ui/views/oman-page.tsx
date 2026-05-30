@@ -73,6 +73,53 @@ export function OmanPage() {
           </p>
         </div>
 
+          {/* Contact card: in-flow for small screens, absolute on md+ */}
+          <div className="md:hidden px-4 pb-4">
+            <div className="mx-auto max-w-xl rounded-lg bg-black/70 border border-white/10 p-5 text-left shadow-2xl">
+              <p className="text-sm text-[#e6ba35] font-semibold mb-3">For filming enquiries and production support in Oman, please contact:</p>
+
+              <div>
+                <h4 className="text-white font-bold">Oman Film Society</h4>
+                <a href="mailto:omanfilmsociety@gmail.com" className="text-[#9e9e9e] text-sm break-all">omanfilmsociety@gmail.com</a>
+              </div>
+
+              <div className="mt-3">
+                <h4 className="text-white font-bold">Mr. Mohammed bin Abdullah Al Ajmi</h4>
+                <p className="text-[#9e9e9e] text-sm">Chairman, Oman Film Society</p>
+                <a href="mailto:alajmifilm@gmail.com" className="text-[#9e9e9e] text-sm break-all">alajmifilm@gmail.com</a>
+              </div>
+
+              <div className="mt-3">
+                <h4 className="text-white font-bold">Mr. Fahad bin Ramadan Al-Maimani</h4>
+                <p className="text-[#9e9e9e] text-sm">Director of Local and International Relations, Oman Film Society</p>
+                <a href="mailto:fahad.almaimani@gmail.com" className="text-[#9e9e9e] text-sm break-all">fahad.almaimani@gmail.com</a>
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute z-30 right-4 bottom-20 hidden md:block lg:right-12 lg:bottom-32">
+            <div className="w-72 max-w-xs rounded-lg bg-black/70 border border-white/10 p-6 text-left shadow-2xl">
+              <p className="text-sm text-[#e6ba35] font-semibold mb-3">For filming enquiries and production support in Oman, please contact:</p>
+
+              <div>
+                <h4 className="text-white font-bold">Oman Film Society</h4>
+                <a href="mailto:omanfilmsociety@gmail.com" className="text-[#9e9e9e] text-sm break-all">omanfilmsociety@gmail.com</a>
+              </div>
+
+              <div className="mt-4">
+                <h4 className="text-white font-bold">Mr. Mohammed bin Abdullah Al Ajmi</h4>
+                <p className="text-[#9e9e9e] text-sm">Chairman, Oman Film Society</p>
+                <a href="mailto:alajmifilm@gmail.com" className="text-[#9e9e9e] text-sm break-all">alajmifilm@gmail.com</a>
+              </div>
+
+              <div className="mt-4">
+                <h4 className="text-white font-bold">Mr. Fahad bin Ramadan Al-Maimani</h4>
+                <p className="text-[#9e9e9e] text-sm">Director of Local and International Relations, Oman Film Society</p>
+                <a href="mailto:fahad.almaimani@gmail.com" className="text-[#9e9e9e] text-sm break-all">fahad.almaimani@gmail.com</a>
+              </div>
+            </div>
+          </div>
+
         {/* Bottom navigation cards */}
         <div className="absolute bottom-0 left-0 right-0 z-20 px-3 pb-3">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
