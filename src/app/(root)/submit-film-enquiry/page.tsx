@@ -1,5 +1,5 @@
 import React from 'react'
-import { SubmitFilmForm } from '@/modules/AboutUs/SubmitFilmForm';
+import SubmitFilmEnquiryForm from '@/modules/AboutUs/SubmitFilmEnquiryForm';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function SubmitFilm() {
   return (
     <div>
-        <SubmitFilmForm />
+        <SubmitFilmEnquiryForm />
       
     </div>
   )
