@@ -183,7 +183,7 @@ export function SubmitFilmForm() {
       crew: { actors: values.actors.map(norm), directors: values.directors.map(norm), producers: values.producers.map(norm), other: values.writers.map(norm) },
     };
     try {
-      const res = await fetch(`${API_BASE}/submissions/public`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch(`${API_BASE}/submissions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json?.success === false) throw new Error(json?.message || "Failed");
       setStatus("success");
