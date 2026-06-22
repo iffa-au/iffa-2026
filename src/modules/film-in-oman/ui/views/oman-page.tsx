@@ -1,31 +1,22 @@
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { videoUrls } from "../../data/oman-data";
+import { OmanContactCard } from "../components/oman-contact-card";
+import { omanNavCards } from "../../data/oman-nav-data";
 import {
   Location01Icon,
   Film01Icon,
   UserGroupIcon,
   TaskDone01Icon,
-  Mail01Icon,
 } from "@hugeicons/core-free-icons";
 import type { IconSvgElement } from "@hugeicons/react";
-import { OmanContactCard } from "../components/oman-contact-card";
 
 const iconMap: Record<string, IconSvgElement> = {
   Location01Icon,
   Film01Icon,
   UserGroupIcon,
   TaskDone01Icon,
-  Mail01Icon,
 };
-
-const cards = [
-  { iconName: "Location01Icon", title: "Filming Locations", descriptor: "Deserts, coastlines, mountains & heritage sites", href: "/oman/filming-locations" },
-  { iconName: "Film01Icon", title: "Filming Opportunities", descriptor: "Feature films, docs, commercials & more", href: "/oman/filming-opportunities" },
-  { iconName: "UserGroupIcon", title: "Production Support", descriptor: "End-to-end local crew & logistics", href: "/oman/production-support" },
-  { iconName: "TaskDone01Icon", title: "Filming Guide", descriptor: "Step-by-step permits & planning guide", href: "/oman/filming-guide" },
-  { iconName: "Mail01Icon", title: "Filming Enquiry", descriptor: "Submit a short filming enquiry form", href: "/oman/enquiry" },
-];
 
 export function OmanPage() {
   return (
@@ -52,7 +43,7 @@ export function OmanPage() {
       <section className="px-3 pb-8 pt-2">
         <div className="overflow-x-auto md:hidden -mx-1 px-1">
           <div className="grid grid-flow-col auto-cols-[min(42vw,180px)] gap-1.5 w-max">
-            {cards.map(({ iconName, title, descriptor, href }) => (
+            {omanNavCards.map(({ iconName, title, descriptor, href }) => (
               <Link key={href} href={href} className="block border border-white/20 hover:border-white/55 p-3">
                 <HugeiconsIcon icon={iconMap[iconName]} size={16} color="#C9943A" />
                 <h3 className="text-[#F5F0E8] text-[10px] tracking-widest uppercase mt-2">{title}</h3>
@@ -61,8 +52,8 @@ export function OmanPage() {
             ))}
           </div>
         </div>
-        <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-1.5">
-          {cards.map(({ iconName, title, descriptor, href }) => (
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-1.5">
+          {omanNavCards.map(({ iconName, title, descriptor, href }) => (
             <Link key={href} href={href} className="block border border-white/20 hover:border-white/55 p-4">
               <HugeiconsIcon icon={iconMap[iconName]} size={18} color="#C9943A" />
               <h3 className="text-[#F5F0E8] text-xs tracking-widest uppercase mt-3">{title}</h3>

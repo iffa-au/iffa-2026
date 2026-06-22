@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2, ChevronDown, ChevronUp, User } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, User, Copy } from "lucide-react";
 import { useState } from "react";
 import { useFieldArray, UseFormReturn } from "react-hook-form";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -24,11 +24,27 @@ interface CrewListProps {
   defaultEntry: PersonEntry;
   roleInput: { type: "select"; options: string[] } | { type: "text"; placeholder: string };
   error?: string;
+  minEntries?: number;
+  onDuplicateEntry?: (entry: PersonEntry) => void;
+  duplicateLabel?: string;
 }
 
-export function CrewList({ form, fieldName, title, label, defaultEntry, roleInput, error }: CrewListProps) {
+export function CrewList({
+  form,
+  fieldName,
+  title,
+  label,
+  defaultEntry,
+  roleInput,
+  error,
+  minEntries = 1,
+  onDuplicateEntry,
+  duplicateLabel,
+}: CrewListProps) {
   const { fields, append, remove } = useFieldArray({ control: form.control, name: fieldName });
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
+
+  const canRemove = fields.length > minEntries;
 
   return (
     <div className="space-y-3">
@@ -37,60 +53,94 @@ export function CrewList({ form, fieldName, title, label, defaultEntry, roleInpu
           <p className="text-white text-sm font-semibold">{title}</p>
           {error && <p className="text-red-400 text-xs mt-0.5">{error}</p>}
         </div>
-        <Button type="button" variant="ghost" size="sm" onClick={() => append({ ...defaultEntry })}
-          className="text-[#e6ba35] hover:bg-[#e6ba35]/10 text-xs gap-1.5 h-8 rounded-lg px-3">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => append({ ...defaultEntry })}
+          className="text-[#e6ba35] hover:bg-[#e6ba35]/10 text-xs gap-1.5 h-8 rounded-lg px-3"
+        >
           <Plus size={12} /> Add {label}
         </Button>
       </div>
 
+      {fields.length === 0 && (
+        <p className="text-[#5a5240] text-xs">No entries added yet.</p>
+      )}
+
       {fields.map((field, i) => {
-        const name = form.watch(`${fieldName}.${i}.fullName` as any);
+        const name = form.watch(`${fieldName}.${i}.fullName` as const);
         const open = !collapsed[i];
         return (
           <div key={field.id} className="rounded-xl border border-[#1e1c14] bg-[#080706] overflow-hidden">
-            {/* Header */}
             <div className="flex items-center px-4 py-2.5 gap-3 border-b border-[#12110e]">
-              <button type="button" onClick={() => setCollapsed(p => ({ ...p, [i]: !p[i] }))}
-                className="flex items-center gap-2.5 flex-1 text-left min-w-0">
+              <button
+                type="button"
+                onClick={() => setCollapsed((p) => ({ ...p, [i]: !p[i] }))}
+                className="flex items-center gap-2.5 flex-1 text-left min-w-0"
+              >
                 <div className="w-6 h-6 rounded-full bg-[#1a1810] border border-[#2a2418] flex items-center justify-center flex-shrink-0">
                   <User size={11} className="text-[#5a5240]" />
                 </div>
                 <span className="text-[#9a9278] text-sm truncate">{name?.trim() || `${label} ${i + 1}`}</span>
-                {open
-                  ? <ChevronUp size={12} className="text-[#4a4232] ml-auto flex-shrink-0" />
-                  : <ChevronDown size={12} className="text-[#4a4232] ml-auto flex-shrink-0" />}
+                {open ? (
+                  <ChevronUp size={12} className="text-[#4a4232] ml-auto flex-shrink-0" />
+                ) : (
+                  <ChevronDown size={12} className="text-[#4a4232] ml-auto flex-shrink-0" />
+                )}
               </button>
-              {fields.length > 1 && (
-                <button type="button" onClick={() => remove(i)}
-                  className="text-[#3a3420] hover:text-red-400 transition-colors p-1 flex-shrink-0">
+              {canRemove && (
+                <button
+                  type="button"
+                  onClick={() => remove(i)}
+                  className="text-[#3a3420] hover:text-red-400 transition-colors p-1 flex-shrink-0"
+                >
                   <Trash2 size={13} />
                 </button>
               )}
             </div>
 
-            {/* Body */}
             {open && (
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <FormField control={form.control} name={`${fieldName}.${i}.fullName` as any}
-                  render={({ field }: { field: any }) => (
+                <FormField
+                  control={form.control}
+                  name={`${fieldName}.${i}.fullName` as const}
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={L}>Full Name <span className="text-[#e6ba35]">*</span></FormLabel>
-                      <FormControl><Input {...field} placeholder="Full name" className={I} /></FormControl>
+                      <FormLabel className={L}>
+                        Full Name <span className="text-[#e6ba35]">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Full name" className={I} />
+                      </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
-                  )} />
+                  )}
+                />
 
-                <FormField control={form.control} name={`${fieldName}.${i}.role` as any}
-                  render={({ field }: { field: any }) => (
+                <FormField
+                  control={form.control}
+                  name={`${fieldName}.${i}.role` as const}
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={L}>Role <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormLabel className={L}>
+                        Role <span className="text-[#e6ba35]">*</span>
+                      </FormLabel>
                       <FormControl>
                         {roleInput.type === "select" ? (
                           <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger className={cn(I, "w-full")}><SelectValue placeholder="Select role" /></SelectTrigger>
+                            <SelectTrigger className={cn(I, "w-full")}>
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
                             <SelectContent className="bg-[#0e0d0a] border-[#2a2418] text-white">
-                              {roleInput.options.map(o => (
-                                <SelectItem key={o} value={o} className="focus:bg-[#e6ba35]/10 focus:text-[#e6ba35]">{o}</SelectItem>
+                              {roleInput.options.map((o) => (
+                                <SelectItem
+                                  key={o}
+                                  value={o}
+                                  className="focus:bg-[#e6ba35]/10 focus:text-[#e6ba35]"
+                                >
+                                  {o}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -100,36 +150,78 @@ export function CrewList({ form, fieldName, title, label, defaultEntry, roleInpu
                       </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
-                  )} />
+                  )}
+                />
 
-                <FormField control={form.control} name={`${fieldName}.${i}.imageUrl` as any}
-                  render={({ field }: { field: any }) => (
+                <FormField
+                  control={form.control}
+                  name={`${fieldName}.${i}.imageUrl` as const}
+                  render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel className={L}>Photo URL <span className="text-[#e6ba35]">*</span></FormLabel>
-                      <FormControl><Input {...field} placeholder="https://example.com/photo.jpg" className={I} /></FormControl>
-                      <FormMessage className="text-red-400 text-xs" />
-                    </FormItem>
-                  )} />
-
-                <FormField control={form.control} name={`${fieldName}.${i}.biography` as any}
-                  render={({ field }: { field: any }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel className={L}>Biography <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormLabel className={L}>
+                        Photo URL <span className="text-[#e6ba35]">*</span>
+                      </FormLabel>
                       <FormControl>
-                        <Textarea {...field} placeholder="Short biography…" rows={3}
-                          className={cn(I, "h-auto resize-none leading-relaxed")} />
+                        <Input {...field} placeholder="https://example.com/photo.jpg" className={I} />
                       </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
-                  )} />
+                  )}
+                />
 
-                <FormField control={form.control} name={`${fieldName}.${i}.instagram` as any}
-                  render={({ field }: { field: any }) => (
+                <FormField
+                  control={form.control}
+                  name={`${fieldName}.${i}.biography` as const}
+                  render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel className={L}>Instagram <span className="text-[#4a4232]">(optional)</span></FormLabel>
-                      <FormControl><Input {...field} placeholder="@handle or profile URL" className={I} /></FormControl>
+                      <FormLabel className={L}>
+                        Biography <span className="text-[#e6ba35]">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Short biography…"
+                          rows={3}
+                          className={cn(I, "h-auto resize-none leading-relaxed")}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
-                  )} />
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`${fieldName}.${i}.instagram` as const}
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel className={L}>
+                        Instagram <span className="text-[#4a4232]">(optional)</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="@handle or profile URL" className={I} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {onDuplicateEntry && duplicateLabel && (
+                  <div className="md:col-span-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const entry = form.getValues(`${fieldName}.${i}` as const);
+                        onDuplicateEntry(entry);
+                      }}
+                      className="text-[#9a9278] hover:text-[#e6ba35] hover:bg-[#e6ba35]/10 text-xs gap-1.5 h-8 px-3"
+                    >
+                      <Copy size={12} />
+                      {duplicateLabel}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>

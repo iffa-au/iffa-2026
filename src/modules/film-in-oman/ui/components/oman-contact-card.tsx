@@ -9,11 +9,12 @@ export function OmanContactCard({ className }: { className?: string }) {
         className
       )}
     >
-      <p className="text-sm text-[#e6ba35] font-semibold mb-3">
-        For filming enquiries and production support in Oman, please contact:
+      <p className="text-sm text-[#e6ba35] font-semibold mb-4">
+        For filming enquiries and production support in Oman:
       </p>
 
-      <div className="space-y-3 sm:space-y-4">
+      {/* Contact emails — restore when ready to publish
+      <div className="space-y-3 sm:space-y-4 mb-4">
         <div>
           <h4 className="text-white font-bold text-sm sm:text-base">Oman Film Society</h4>
           <a href="mailto:omanfilmsociety@gmail.com" className="text-[#9e9e9e] text-xs sm:text-sm break-all hover:text-[#C9943A]">
@@ -35,12 +36,13 @@ export function OmanContactCard({ className }: { className?: string }) {
           </a>
         </div>
       </div>
+      */}
 
       <Link
         href="/oman/enquiry"
-        className="mt-4 sm:mt-5 inline-block w-full rounded-md bg-[#C9943A] px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wide text-black transition hover:brightness-110"
+        className="inline-block w-full rounded-md bg-[#C9943A] px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wide text-black transition hover:brightness-110"
       >
-        Submit Filming Enquiry
+        Filming in Oman Enquiry Form
       </Link>
     </div>
   );
