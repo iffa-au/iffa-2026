@@ -1,7 +1,6 @@
 import React from 'react'
 import Header from '../components/header'
 import { Footer } from '../components/footer'
-import { EmailDevBanner } from '@/components/email-dev-banner'
 
 const RootLayout = ({children} : {children: React.ReactNode}) => {
   return (
@@ -11,7 +10,6 @@ const RootLayout = ({children} : {children: React.ReactNode}) => {
           {children}
         </main>
         <Footer />
-        <EmailDevBanner />
     </div>
   )
 }

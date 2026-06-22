@@ -29,7 +29,7 @@ export default function Home() {
       <TrailerSection
         videoslug="Hero_4v"
         title="Balandru"
-        youtubeUrl="https://youtu.be/5YXhpQ7wrL8?si=KVnsESZN4W3f3ZAK"
+        youtubeUrl="https://www.youtube.com/watch?v=-F3WzHG-m_I"
       />
 
       <div className="relative">

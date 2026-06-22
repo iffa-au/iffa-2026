@@ -10,42 +10,123 @@ const personSchema = z.object({
   instagram: z.string().optional(),
 });
 
-export const filmSchema = z.object({
-  title: z.string().min(1, "Film title is required"),
-  synopsis: z.string().min(20, "Synopsis must be at least 20 characters"),
-  releaseDate: z.string().min(1, "Release date is required"),
-  contentTypeId: z.string().min(1, "Content type is required"),
-  countryId: z.string().min(1, "Country is required"),
-  languageId: z.string().min(1, "Language is required"),
-  productionHouse: z.string().min(1, "Production house is required"),
-  distributor: z.string().optional(),
-  genreIds: z.array(z.string()).min(1, "Select at least one genre"),
-  potraitImageUrl: z.string().url("Must be a valid URL"),
-  landscapeImageUrl: z.string().url("Must be a valid URL"),
-  imdbUrl: z.string().url("Must be a valid IMDb URL"),
-  trailerUrl: z.string().url("Must be a valid URL"),
-  actors: z.array(personSchema).min(1, "At least one actor required"),
-  directors: z.array(personSchema).min(1, "At least one director required"),
-  producers: z.array(personSchema).min(1, "At least one producer required"),
-  writers: z.array(personSchema).min(1, "At least one other crew required"),
-  contactEmail: z.string().email("Must be a valid email"),
-  agreeRights: z.literal(true, {
-  message: "You must confirm this declaration",
-}),
-});
+/** Content type names (CMS metadata) that do not require an actors panel. */
+export const CONTENT_TYPES_WITHOUT_ACTORS = [
+  "Documentary",
+  "Animated Film",
+  "Animation",
+] as const;
 
-export type FilmValues = z.infer<typeof filmSchema>;
+export const WATCH_FORMAT_OPTIONS = [
+  { value: "theatrical", label: "Theatrical" },
+  { value: "ott", label: "OTT / Streaming" },
+  { value: "tv", label: "TV" },
+  { value: "festival", label: "Festival only" },
+  { value: "other", label: "Other" },
+] as const;
+
+export function contentTypeHidesActors(contentTypeName?: string): boolean {
+  if (!contentTypeName) return false;
+  const normalized = contentTypeName.trim().toLowerCase();
+  return CONTENT_TYPES_WITHOUT_ACTORS.some(
+    (name) => name.toLowerCase() === normalized,
+  );
+}
+
+export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
+  return z
+    .object({
+      title: z.string().min(1, "Film title is required"),
+      synopsis: z.string().min(20, "Synopsis must be at least 20 characters"),
+      releaseDate: z.string().min(1, "Release date is required"),
+      contentTypeId: z.string().min(1, "Content type is required"),
+      countryId: z.string().min(1, "Country is required"),
+      releaseCountryIds: z
+        .array(z.string())
+        .min(1, "Select at least one country of release"),
+      watchFormats: z
+        .array(z.string())
+        .min(1, "Select at least one watch format"),
+      languageId: z.string().min(1, "Language is required"),
+      productionHouse: z.string().min(1, "Production house is required"),
+      distributor: z.string().optional(),
+      genreIds: z.array(z.string()).min(1, "Select at least one genre"),
+      potraitImageUrl: z.string().url("Must be a valid URL"),
+      landscapeImageUrl: z.string().url("Must be a valid URL"),
+      imdbUrl: z.string().url("Must be a valid IMDb URL"),
+      trailerUrl: z.string().url("Must be a valid download URL"),
+      actors: z.array(personSchema),
+      directors: z.array(personSchema).min(1, "At least one director required"),
+      producers: z.array(personSchema).min(1, "At least one producer required"),
+      writers: z.array(
+        z.object({
+          fullName: z.string(),
+          role: z.string(),
+          imageUrl: z.string(),
+          biography: z.string(),
+          instagram: z.string().optional(),
+        }),
+      ),
+      notes: z.string().max(1000, "Notes must be 1000 characters or less").optional(),
+      contactEmail: z.string().email("Must be a valid email"),
+      agreeRights: z.literal(true, {
+        message: "You must confirm this declaration",
+      }),
+    })
+    .superRefine((data, ctx) => {
+      const contentTypeName = contentTypes.find(
+        (ct) => ct._id === data.contentTypeId,
+      )?.name;
+      if (!contentTypeHidesActors(contentTypeName) && data.actors.length < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["actors"],
+          message: "At least one actor required",
+        });
+      }
+
+      for (const [index, writer] of data.writers.entries()) {
+        if (!writer.fullName.trim()) continue;
+        const result = personSchema.safeParse(writer);
+        if (!result.success) {
+          for (const issue of result.error.issues) {
+            ctx.addIssue({
+              ...issue,
+              path: ["writers", index, ...(issue.path ?? [])],
+            });
+          }
+        }
+      }
+    });
+}
+
+export type FilmValues = z.infer<ReturnType<typeof buildFilmSchema>>;
 export type PersonEntry = z.infer<typeof personSchema>;
 
 export const BLANK_PERSON: PersonEntry = {
-  fullName: "", role: "", imageUrl: "", biography: "", instagram: "",
+  fullName: "",
+  role: "",
+  imageUrl: "",
+  biography: "",
+  instagram: "",
 };
 
+export function filterFilledCrew(entries: PersonEntry[]): PersonEntry[] {
+  return entries.filter((entry) => entry.fullName.trim().length > 0);
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
-interface Option { _id: string; name: string }
+interface Option {
+  _id: string;
+  name: string;
+}
 interface SubmissionOptions {
-  genres: Option[]; contentTypes: Option[]; countries: Option[]; languages: Option[];
-  loading: boolean; error: Error | null;
+  genres: Option[];
+  contentTypes: Option[];
+  countries: Option[];
+  languages: Option[];
+  loading: boolean;
+  error: Error | null;
 }
 
 export function useSubmissionOptions(baseUrl: string): SubmissionOptions {
@@ -62,25 +143,39 @@ export function useSubmissionOptions(baseUrl: string): SubmissionOptions {
       const res = await fetch(`${baseUrl}/${path}`);
       if (!res.ok) throw new Error(`Failed to fetch ${path}`);
       const json = await res.json();
-      const arr = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
-      return arr.map((x: any) => ({ _id: x._id, name: x.name }));
+      const arr = Array.isArray(json?.data)
+        ? json.data
+        : Array.isArray(json)
+          ? json
+          : [];
+      return arr.map((x: { _id: string; name: string }) => ({
+        _id: x._id,
+        name: x.name,
+      }));
     };
     (async () => {
       try {
         setLoading(true);
         const [g, ct, lang, ctry] = await Promise.all([
-          fetchList("genres"), fetchList("content-types"),
-          fetchList("languages"), fetchList("countries"),
+          fetchList("genres"),
+          fetchList("content-types"),
+          fetchList("languages"),
+          fetchList("countries"),
         ]);
         if (cancelled) return;
-        setGenres(g); setContentTypes(ct); setLanguages(lang); setCountries(ctry);
+        setGenres(g);
+        setContentTypes(ct);
+        setLanguages(lang);
+        setCountries(ctry);
       } catch (err) {
         if (!cancelled) setError(err as Error);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [baseUrl]);
 
   return { genres, contentTypes, countries, languages, loading, error };

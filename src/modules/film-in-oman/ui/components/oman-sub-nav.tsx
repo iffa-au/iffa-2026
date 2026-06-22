@@ -8,58 +8,26 @@ import {
   Film01Icon,
   UserGroupIcon,
   TaskDone01Icon,
-  Mail01Icon,
 } from "@hugeicons/core-free-icons";
 import type { IconSvgElement } from "@hugeicons/react";
+import { OmanContactCard } from "./oman-contact-card";
+import { omanNavCards } from "../../data/oman-nav-data";
 
 const iconMap: Record<string, IconSvgElement> = {
   Location01Icon,
   Film01Icon,
   UserGroupIcon,
   TaskDone01Icon,
-  Mail01Icon,
 };
 
-const cards = [
-  {
-    iconName: "Location01Icon",
-    title: "Filming Locations",
-    descriptor: "Deserts, coastlines, mountains & heritage sites",
-    href: "/oman/filming-locations",
-  },
-  {
-    iconName: "Film01Icon",
-    title: "Filming Opportunities",
-    descriptor: "Feature films, docs, commercials & more",
-    href: "/oman/filming-opportunities",
-  },
-  {
-    iconName: "UserGroupIcon",
-    title: "Production Support",
-    descriptor: "End-to-end local crew & logistics",
-    href: "/oman/production-support",
-  },
-  {
-    iconName: "TaskDone01Icon",
-    title: "Filming Guide",
-    descriptor: "Step-by-step permits & planning guide",
-    href: "/oman/filming-guide",
-  },
-  {
-    iconName: "Mail01Icon",
-    title: "Filming Enquiry",
-    descriptor: "Submit a short filming enquiry form",
-    href: "/oman/enquiry",
-  },
-];
-
-export function OmanSubNav() {
+export function OmanSubNav({ showContactCard = true }: { showContactCard?: boolean }) {
   const pathname = usePathname();
+  const isEnquiryPage = pathname === "/oman/enquiry";
 
   return (
-    <div className="w-full px-3 pb-3">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1.5">
-        {cards.map(({ iconName, title, descriptor, href }) => {
+    <div className="w-full px-3 pb-3 space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+        {omanNavCards.map(({ iconName, title, descriptor, href }) => {
           const isActive = pathname === href;
           return (
             <Link
@@ -71,11 +39,7 @@ export function OmanSubNav() {
                   : "bg-transparent border border-white/20 hover:border-white/55"
               }`}
             >
-              <HugeiconsIcon
-                icon={iconMap[iconName]}
-                size={18}
-                color="#C9943A"
-              />
+              <HugeiconsIcon icon={iconMap[iconName]} size={18} color="#C9943A" />
               <h3
                 className={`text-xs tracking-widest uppercase mt-3 leading-snug ${
                   isActive ? "text-[#C9943A]" : "text-[#F5F0E8] group-hover:text-[#C9943A]"
@@ -83,13 +47,14 @@ export function OmanSubNav() {
               >
                 {title}
               </h3>
-              <p className="text-[#9e9e9e] text-[10px] mt-1 leading-relaxed">
-                {descriptor}
-              </p>
+              <p className="text-[#9e9e9e] text-[10px] mt-1 leading-relaxed">{descriptor}</p>
             </Link>
           );
         })}
       </div>
+      {showContactCard && !isEnquiryPage && (
+        <OmanContactCard className="mx-auto max-w-lg w-full lg:max-w-none" />
+      )}
     </div>
   );
 }

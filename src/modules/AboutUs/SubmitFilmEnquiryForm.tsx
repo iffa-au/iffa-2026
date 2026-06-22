@@ -1,21 +1,20 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, ChevronDown, X, Loader2, AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-import { useSubmissionOptions } from "@/utils/FilmSubmission.utils";
+import { useSubmissionOptions, WATCH_FORMAT_OPTIONS } from "@/utils/FilmSubmission.utils";
 import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
+import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 
 type EnquiryValues = {
   name: string;
@@ -27,6 +26,8 @@ type EnquiryValues = {
   distributor?: string;
   releaseDate: string;
   trailerUrl: string;
+  releaseCountryIds: string[];
+  watchFormats: string[];
   contentTypeId: string;
   genreIds: string[];
   countryId: string;
@@ -45,73 +46,6 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
       </div>
       <div className="p-7">{children}</div>
     </section>
-  );
-}
-
-function GenreSelect({ options, value, onChange, placeholder = "Select genres", error }: {
-  options: { value: string; label: string }[];
-  value: string[];
-  onChange: (v: string[]) => void;
-  placeholder?: string;
-  error?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
-
-  const toggle = (v: string) => onChange(value.includes(v) ? value.filter(x => x !== v) : [...value, v]);
-  const selected = options.filter(o => value.includes(o.value));
-
-  return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen(!open)}
-        className={cn(
-          "w-full min-h-[44px] bg-[#0a0908] border rounded-lg px-4 py-2 text-left flex items-center justify-between gap-2 transition-all focus:outline-none",
-          open ? "border-[#e6ba35]/50" : "border-[#2a2418] hover:border-[#3d3520]",
-          error && "border-red-500/50"
-        )}>
-        <div className="flex flex-wrap gap-1.5 flex-1">
-          {selected.length === 0
-            ? <span className="text-[#3d3828] text-sm">{placeholder}</span>
-            : selected.map(o => (
-              <Badge key={o.value}
-                className="bg-[#e6ba35]/12 text-[#e6ba35] border border-[#e6ba35]/25 px-2 py-0 text-xs rounded-md gap-1 font-normal">
-                {o.label}
-                <span role="button" onClick={e => { e.stopPropagation(); toggle(o.value); }}
-                  className="opacity-50 hover:opacity-100 cursor-pointer">
-                  <X size={9} />
-                </span>
-              </Badge>
-            ))}
-        </div>
-        <ChevronDown size={13} className={cn("flex-shrink-0 text-[#4a4232] transition-transform", open && "rotate-180")} />
-      </button>
-
-      {open && (
-        <div className="absolute z-50 w-full mt-1.5 rounded-xl border border-[#2a2418] bg-[#0e0d0a] shadow-2xl shadow-black/80 overflow-hidden">
-          <div className="max-h-52 overflow-y-auto">
-            {options.length === 0
-              ? <p className="text-[#4a4232] text-xs text-center py-4">Loading…</p>
-              : options.map(o => (
-                <button type="button" key={o.value} onClick={() => toggle(o.value)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors text-left",
-                    value.includes(o.value) ? "bg-[#e6ba35]/8 text-[#e6ba35]" : "text-[#9a9278] hover:bg-[#141210] hover:text-white"
-                  )}>
-                  {o.label}
-                  {value.includes(o.value) && <CheckCircle2 size={12} className="text-[#e6ba35]" />}
-                </button>
-              ))}
-          </div>
-        </div>
-      )}
-      {error && <p className="text-red-400 text-xs mt-1.5">{error}</p>}
-    </div>
   );
 }
 
@@ -147,6 +81,7 @@ export function SubmitFilmEnquiryForm() {
     defaultValues: {
       name: "", email: "", role: "", title: "", synopsis: "",
       productionHouse: "", distributor: "", releaseDate: "", trailerUrl: "",
+      releaseCountryIds: [], watchFormats: [],
       contentTypeId: "", genreIds: [], countryId: "", languageId: "",
     },
   });
@@ -162,6 +97,11 @@ export function SubmitFilmEnquiryForm() {
       }
       if (!values.releaseDate) throw new Error("Missing release date");
       if (!values.genreIds || values.genreIds.length === 0) throw new Error("At least one genre required");
+      if (!values.releaseCountryIds?.length) throw new Error("At least one release country required");
+      if (!values.watchFormats?.length) throw new Error("At least one watch format required");
+      if (!values.contentTypeId) throw new Error("Screen format is required");
+      if (!values.countryId) throw new Error("Country is required");
+      if (!values.languageId) throw new Error("Language is required");
 
       const payload = {
         name: values.name.trim(),
@@ -173,11 +113,13 @@ export function SubmitFilmEnquiryForm() {
         distributor: values.distributor?.trim() || "",
         releaseDate: values.releaseDate,
         trailerUrl: values.trailerUrl.trim(),
+        releaseCountryIds: values.releaseCountryIds,
+        watchFormats: values.watchFormats,
         contentType: values.contentTypeId,
         genreIds: values.genreIds,
         country: values.countryId,
         language: values.languageId,
-      } as any;
+      };
 
       const res = await fetch(`${API_BASE}/film-enquiries/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json().catch(() => ({}));
@@ -196,7 +138,7 @@ export function SubmitFilmEnquiryForm() {
           "Production House": values.productionHouse,
           Distributor: values.distributor || "Not provided",
           "Release Date": values.releaseDate,
-          "Trailer URL": values.trailerUrl,
+          "Trailer Download URL": values.trailerUrl,
         },
       });
 
@@ -286,9 +228,12 @@ export function SubmitFilmEnquiryForm() {
                 )} />
 
                 <FormField control={form.control} name="trailerUrl" render={({ field }: any) => (
-                  <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Trailer URL <span className="text-[#e6ba35]">*</span></FormLabel>
-                    <FormControl><Input {...field} placeholder="https://youtube.com/watch?v=..." className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11" /></FormControl>
+                  <FormItem className="md:col-span-2">
+                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Downloadable Trailer Link <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="https://drive.google.com/... or direct .mp4 link" className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11" /></FormControl>
+                    <p className="text-[#5a5240] text-[11px] mt-1.5 leading-relaxed">
+                      Provide a direct download link. If the trailer is not in English, please include English subtitles.
+                    </p>
                     <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )} />
@@ -314,7 +259,13 @@ export function SubmitFilmEnquiryForm() {
                     <FormItem>
                       <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Genres <span className="text-[#e6ba35]">*</span></FormLabel>
                       <FormControl>
-                        <GenreSelect options={genres.map(g => ({ value: g._id, label: g.name }))} value={field.value} onChange={field.onChange} placeholder={loading ? "Loading genres…" : "Select one or more genres"} error={form.formState.errors.genreIds?.message} />
+                        <MultiSelectDropdown
+                          options={genres.map(g => ({ value: g._id, label: g.name }))}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder={loading ? "Loading genres…" : "Select one or more genres"}
+                          disabled={loading}
+                        />
                       </FormControl>
                     </FormItem>
                   )} />
@@ -322,7 +273,7 @@ export function SubmitFilmEnquiryForm() {
 
                 <FormField control={form.control} name="countryId" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Country <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Country of Origin <span className="text-[#e6ba35]">*</span></FormLabel>
                     <Select value={field.value} onValueChange={field.onChange} disabled={loading}>
                       <FormControl>
                         <SelectTrigger className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11 w-full">
@@ -351,6 +302,39 @@ export function SubmitFilmEnquiryForm() {
                     </Select>
                   </FormItem>
                 )} />
+
+                <div className="md:col-span-2">
+                  <FormField control={form.control} name="releaseCountryIds" render={({ field }: any) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Country of Release <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormControl>
+                        <MultiSelectDropdown
+                          options={countries.map(c => ({ value: c._id, label: c.name }))}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder={loading ? "Loading countries…" : "Select one or more release countries"}
+                          disabled={loading}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+
+                <div className="md:col-span-2">
+                  <FormField control={form.control} name="watchFormats" render={({ field }: any) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">How can it be watched? <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormControl>
+                        <MultiSelectDropdown
+                          options={WATCH_FORMAT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select theatrical, OTT, etc."
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )} />
+                </div>
 
               </div>
             </Section>

@@ -2,10 +2,10 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
-  Check, CheckCircle2, ChevronDown, X, Loader2, AlertCircle,
+  CheckCircle2, Loader2, AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,13 +13,22 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-import { filmSchema, useSubmissionOptions, BLANK_PERSON, type FilmValues } from "@/utils/FilmSubmission.utils";
+import {
+  buildFilmSchema,
+  useSubmissionOptions,
+  BLANK_PERSON,
+  WATCH_FORMAT_OPTIONS,
+  contentTypeHidesActors,
+  filterFilledCrew,
+  type FilmValues,
+  type PersonEntry,
+} from "@/utils/FilmSubmission.utils";
 import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
+import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { CrewList } from "./components/CrewList";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -50,74 +59,6 @@ function Section({ step, title, desc, children }: { step: number; title: string;
       </div>
       <div className="p-7">{children}</div>
     </section>
-  );
-}
-
-// ─── Multi-select ─────────────────────────────────────────────────────────────
-function GenreSelect({ options, value, onChange, placeholder = "Select genres", error }: {
-  options: { value: string; label: string }[];
-  value: string[];
-  onChange: (v: string[]) => void;
-  placeholder?: string;
-  error?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
-
-  const toggle = (v: string) => onChange(value.includes(v) ? value.filter(x => x !== v) : [...value, v]);
-  const selected = options.filter(o => value.includes(o.value));
-
-  return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen(!open)}
-        className={cn(
-          "w-full min-h-[44px] bg-[#0a0908] border rounded-lg px-4 py-2 text-left flex items-center justify-between gap-2 transition-all focus:outline-none",
-          open ? "border-[#e6ba35]/50" : "border-[#2a2418] hover:border-[#3d3520]",
-          error && "border-red-500/50"
-        )}>
-        <div className="flex flex-wrap gap-1.5 flex-1">
-          {selected.length === 0
-            ? <span className="text-[#3d3828] text-sm">{placeholder}</span>
-            : selected.map(o => (
-              <Badge key={o.value}
-                className="bg-[#e6ba35]/12 text-[#e6ba35] border border-[#e6ba35]/25 px-2 py-0 text-xs rounded-md gap-1 font-normal">
-                {o.label}
-                <span role="button" onClick={e => { e.stopPropagation(); toggle(o.value); }}
-                  className="opacity-50 hover:opacity-100 cursor-pointer">
-                  <X size={9} />
-                </span>
-              </Badge>
-            ))}
-        </div>
-        <ChevronDown size={13} className={cn("flex-shrink-0 text-[#4a4232] transition-transform", open && "rotate-180")} />
-      </button>
-
-      {open && (
-        <div className="absolute z-50 w-full mt-1.5 rounded-xl border border-[#2a2418] bg-[#0e0d0a] shadow-2xl shadow-black/80 overflow-hidden">
-          <div className="max-h-52 overflow-y-auto">
-            {options.length === 0
-              ? <p className="text-[#4a4232] text-xs text-center py-4">Loading…</p>
-              : options.map(o => (
-                <button type="button" key={o.value} onClick={() => toggle(o.value)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors text-left",
-                    value.includes(o.value) ? "bg-[#e6ba35]/8 text-[#e6ba35]" : "text-[#9a9278] hover:bg-[#141210] hover:text-white"
-                  )}>
-                  {o.label}
-                  {value.includes(o.value) && <Check size={12} className="text-[#e6ba35]" />}
-                </button>
-              ))}
-          </div>
-        </div>
-      )}
-      {error && <p className="text-red-400 text-xs mt-1.5">{error}</p>}
-    </div>
   );
 }
 
@@ -154,34 +95,74 @@ function SuccessScreen() {
 export function SubmitFilmForm() {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const { genres, contentTypes, countries, languages, loading } = useSubmissionOptions(API_BASE);
+  const filmSchema = useMemo(() => buildFilmSchema(contentTypes), [contentTypes]);
 
   const form = useForm<FilmValues>({
     resolver: zodResolver(filmSchema),
     defaultValues: {
       title: "", synopsis: "", releaseDate: "", contentTypeId: "", countryId: "",
+      releaseCountryIds: [], watchFormats: [],
       languageId: "", productionHouse: "", distributor: "", genreIds: [],
       potraitImageUrl: "", landscapeImageUrl: "", imdbUrl: "", trailerUrl: "",
       actors: [{ ...BLANK_PERSON, role: "Actor in a leading role" }],
       directors: [{ ...BLANK_PERSON, role: "Director" }],
       producers: [{ ...BLANK_PERSON, role: "Producer" }],
-      writers: [{ ...BLANK_PERSON, role: "" }],
+      writers: [],
+      notes: "",
       contactEmail: "",
       agreeRights: false as any,
     },
   });
 
+  const contentTypeId = form.watch("contentTypeId");
+  const selectedContentTypeName = contentTypes.find((ct) => ct._id === contentTypeId)?.name;
+  const hideActors = contentTypeHidesActors(selectedContentTypeName);
+
+  useEffect(() => {
+    if (hideActors) {
+      form.setValue("actors", []);
+    } else if (form.getValues("actors").length === 0) {
+      form.setValue("actors", [{ ...BLANK_PERSON, role: "Actor in a leading role" }]);
+    }
+  }, [hideActors, form]);
+
+  const duplicateDirectorAsProducer = (entry: PersonEntry) => {
+    const producers = form.getValues("producers");
+    const exists = producers.some(
+      (p) => p.fullName.trim().toLowerCase() === entry.fullName.trim().toLowerCase(),
+    );
+    if (!exists && entry.fullName.trim()) {
+      form.setValue("producers", [
+        ...producers,
+        { ...entry, role: "Producer" },
+      ]);
+    }
+  };
+
   if (status === "success") return <SuccessScreen />;
 
   const onSubmit = async (values: FilmValues) => {
     setStatus("submitting");
-    const norm = (p: any) => ({ fullName: p.fullName.trim(), role: p.role.trim(), imageUrl: p.imageUrl.trim(), biography: p.biography.trim(), instagramUrl: p.instagram?.trim() || "" });
+    const norm = (p: PersonEntry) => ({
+      fullName: p.fullName.trim(),
+      role: p.role.trim(),
+      imageUrl: p.imageUrl.trim(),
+      biography: p.biography.trim(),
+      instagramUrl: p.instagram?.trim() || "",
+    });
     const payload = {
       ...values,
       synopsis: values.synopsis.replace(/\r?\n+/g, " ").replace(/\s{2,}/g, " ").trim(),
+      notes: values.notes?.trim() || "",
       submissionYear: new Date().getFullYear(),
       isFeatured: false,
       genreId: values.genreIds[0],
-      crew: { actors: values.actors.map(norm), directors: values.directors.map(norm), producers: values.producers.map(norm), other: values.writers.map(norm) },
+      crew: {
+        actors: filterFilledCrew(values.actors).map(norm),
+        directors: values.directors.map(norm),
+        producers: values.producers.map(norm),
+        other: filterFilledCrew(values.writers).map(norm),
+      },
     };
     try {
       const res = await fetch(`${API_BASE}/submissions/public`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -205,7 +186,8 @@ export function SubmitFilmForm() {
           Distributor: values.distributor || "Not provided",
           "Contact Email": values.contactEmail,
           "IMDb URL": values.imdbUrl,
-          "Trailer URL": values.trailerUrl,
+          "Trailer Download URL": values.trailerUrl,
+          Notes: values.notes?.trim() || "Not provided",
         },
       });
 
@@ -319,6 +301,43 @@ export function SubmitFilmForm() {
                     </FormItem>
                   )} />
 
+                <div className="md:col-span-2">
+                  <FormField control={form.control} name="releaseCountryIds"
+                    render={({ field }: { field: any }) => (
+                      <FormItem>
+                        <FormLabel className={L}>Country of Release <span className="text-[#e6ba35]">*</span></FormLabel>
+                        <FormControl>
+                          <MultiSelectDropdown
+                            options={countries.map(c => ({ value: c._id, label: c.name }))}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder={loading ? "Loading countries…" : "Select one or more release countries"}
+                            error={form.formState.errors.releaseCountryIds?.message}
+                            disabled={loading}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                </div>
+
+                <div className="md:col-span-2">
+                  <FormField control={form.control} name="watchFormats"
+                    render={({ field }: { field: any }) => (
+                      <FormItem>
+                        <FormLabel className={L}>How can it be watched? <span className="text-[#e6ba35]">*</span></FormLabel>
+                        <FormControl>
+                          <MultiSelectDropdown
+                            options={WATCH_FORMAT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select theatrical, OTT, etc."
+                            error={form.formState.errors.watchFormats?.message}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                </div>
+
                 <FormField control={form.control} name="languageId"
                   render={({ field }: { field: any }) => (
                     <FormItem>
@@ -360,12 +379,13 @@ export function SubmitFilmForm() {
                       <FormItem>
                         <FormLabel className={L}>Genres <span className="text-[#e6ba35]">*</span></FormLabel>
                         <FormControl>
-                          <GenreSelect
+                          <MultiSelectDropdown
                             options={genres.map(g => ({ value: g._id, label: g.name }))}
                             value={field.value}
                             onChange={field.onChange}
                             placeholder={loading ? "Loading genres…" : "Select one or more genres"}
                             error={form.formState.errors.genreIds?.message}
+                            disabled={loading}
                           />
                         </FormControl>
                       </FormItem>
@@ -377,17 +397,23 @@ export function SubmitFilmForm() {
             {/* ── 2 · Crew ── */}
             <Section step={2} title="Crew Information" desc="Add cast and key production crew">
               <div className="space-y-8">
-                <CrewList form={form} fieldName="actors" title="Actors — Lead & Supporting" label="Actor"
-                  defaultEntry={{ fullName: "", role: "Actor in a leading role", imageUrl: "", biography: "", instagram: "" }}
-                  roleInput={{ type: "select", options: ACTOR_ROLES }}
-                  error={form.formState.errors.actors?.message} />
+                {!hideActors && (
+                  <>
+                    <CrewList form={form} fieldName="actors" title="Actors — Lead & Supporting" label="Actor"
+                      defaultEntry={{ fullName: "", role: "Actor in a leading role", imageUrl: "", biography: "", instagram: "" }}
+                      roleInput={{ type: "select", options: ACTOR_ROLES }}
+                      error={form.formState.errors.actors?.message} />
 
-                <div className="border-t border-[#141210]" />
+                    <div className="border-t border-[#141210]" />
+                  </>
+                )}
 
                 <CrewList form={form} fieldName="directors" title="Director(s)" label="Director"
                   defaultEntry={{ fullName: "", role: "Director", imageUrl: "", biography: "", instagram: "" }}
                   roleInput={{ type: "select", options: DIRECTOR_ROLES }}
-                  error={form.formState.errors.directors?.message} />
+                  error={form.formState.errors.directors?.message}
+                  onDuplicateEntry={duplicateDirectorAsProducer}
+                  duplicateLabel="Also add as producer" />
 
                 <div className="border-t border-[#141210]" />
 
@@ -401,6 +427,7 @@ export function SubmitFilmForm() {
                 <CrewList form={form} fieldName="writers" title="Other — DOP, Editor, Writer, Music…" label="Credit"
                   defaultEntry={{ fullName: "", role: "", imageUrl: "", biography: "", instagram: "" }}
                   roleInput={{ type: "text", placeholder: "e.g. Writer, DOP, Composer" }}
+                  minEntries={0}
                   error={form.formState.errors.writers?.message} />
               </div>
             </Section>
@@ -437,14 +464,38 @@ export function SubmitFilmForm() {
 
                 <FormField control={form.control} name="trailerUrl"
                   render={({ field }: { field: any }) => (
-                    <FormItem>
-                      <FormLabel className={L}>Trailer URL <span className="text-[#e6ba35]">*</span></FormLabel>
-                      <FormControl><Input {...field} placeholder="https://youtube.com/watch?v=..." className={I} /></FormControl>
+                    <FormItem className="md:col-span-2">
+                      <FormLabel className={L}>Downloadable Trailer Link <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="https://drive.google.com/... or direct .mp4 link" className={I} />
+                      </FormControl>
+                      <p className="text-[#5a5240] text-[11px] mt-1.5 leading-relaxed">
+                        Provide a direct download link (Google Drive, Dropbox, WeTransfer, etc.). If the trailer is not in English, please include English subtitles.
+                      </p>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />
 
-                {/* Divider */}
+                <div className="md:col-span-2">
+                  <FormField control={form.control} name="notes"
+                    render={({ field }: { field: any }) => (
+                      <FormItem>
+                        <FormLabel className={L}>Additional Notes <span className="text-[#3a3420]">(optional)</span></FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder="Anything else you would like us to know…"
+                            rows={4}
+                            maxLength={1000}
+                            className={cn(I, "h-auto resize-none leading-relaxed")}
+                          />
+                        </FormControl>
+                        <p className="text-[#4a4232] text-[10px] mt-1">{field.value?.length || 0}/1000</p>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )} />
+                </div>
+
                 <div className="md:col-span-2 border-t border-[#141210] my-1" />
 
                 <FormField control={form.control} name="contactEmail"
