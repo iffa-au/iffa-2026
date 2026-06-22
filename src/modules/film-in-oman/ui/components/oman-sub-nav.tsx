@@ -8,6 +8,7 @@ import {
   Film01Icon,
   UserGroupIcon,
   TaskDone01Icon,
+  Mail01Icon,
 } from "@hugeicons/core-free-icons";
 import type { IconSvgElement } from "@hugeicons/react";
 
@@ -16,6 +17,7 @@ const iconMap: Record<string, IconSvgElement> = {
   Film01Icon,
   UserGroupIcon,
   TaskDone01Icon,
+  Mail01Icon,
 };
 
 const cards = [
@@ -43,6 +45,12 @@ const cards = [
     descriptor: "Step-by-step permits & planning guide",
     href: "/oman/filming-guide",
   },
+  {
+    iconName: "Mail01Icon",
+    title: "Filming Enquiry",
+    descriptor: "Submit a short filming enquiry form",
+    href: "/oman/enquiry",
+  },
 ];
 
 export function OmanSubNav() {
@@ -50,7 +58,7 @@ export function OmanSubNav() {
 
   return (
     <div className="w-full px-3 pb-3">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1.5">
         {cards.map(({ iconName, title, descriptor, href }) => {
           const isActive = pathname === href;
           return (

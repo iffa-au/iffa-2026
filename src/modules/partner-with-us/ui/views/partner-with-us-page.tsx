@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import emailjs from "@emailjs/browser";
+import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
 import { partnerLogos, partnershipTiers } from "../../data/partner-data";
 
 type FormData = {
@@ -49,12 +49,20 @@ export function PartnerWithUsPage() {
     setStatus("Sending...");
 
     try {
-      await emailjs.sendForm(
-        "service_sx058wl",
-        "template_l0yivqg",
-        formRef.current,
-        "YaVecTMmUJA_vz_f9"
-      );
+      await sendConfirmationEmails({
+        formType: "partner",
+        submitterEmail: formData.sender_email,
+        submitterName: formData.sender_name,
+        fields: {
+          "Company Name": formData.company_name,
+          "Company URL": formData.company_url,
+          "Contact Name": formData.sender_name,
+          "Email Address": formData.sender_email,
+          Phone: formData.phone,
+          "Interested Tier": formData.interested_tier,
+          Message: formData.message,
+        },
+      });
       setStatus("success");
       setShowSuccessModal(true);
       setFormData(emptyForm);
