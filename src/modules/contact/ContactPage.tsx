@@ -6,8 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import emailjs from "@emailjs/browser";
-import { Loader2 } from     "lucide-react";
+import { Loader2 } from "lucide-react";
+import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
 
 import {
   Form,
@@ -47,13 +47,19 @@ export default function ContactPage() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      await emailjs.send(
-        "service_sx058wl",
-        "template_7wfy5ai",
-        values,
-        "YaVecTMmUJA_vz_f9"
-      );
-      alert("Message sent successfully!");
+      await sendConfirmationEmails({
+        formType: "contact",
+        submitterEmail: values.email,
+        submitterName: values.fullName,
+        fields: {
+          "Full Name": values.fullName,
+          "Phone Number": values.phoneNumber,
+          "City/State": values.address,
+          "Email Address": values.email,
+          Message: values.message,
+        },
+      });
+      alert("Message sent successfully! A confirmation email has been sent.");
       form.reset();
     } catch (error) {
       alert("Failed to send message, please try again later.");

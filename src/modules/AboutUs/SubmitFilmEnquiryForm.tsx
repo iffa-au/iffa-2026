@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { useSubmissionOptions } from "@/utils/FilmSubmission.utils";
+import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
 
 type EnquiryValues = {
   name: string;
@@ -127,7 +128,7 @@ function SuccessScreen() {
         Enquiry Received
       </h2>
       <p className="text-[#6b6347] text-sm max-w-sm leading-relaxed mb-8">
-        Thanks — we've received your enquiry and will contact you by email.
+        Thanks — we've received your enquiry. A confirmation email has been sent and we will contact you shortly.
       </p>
       <div className="flex gap-3">
         <Button asChild className="bg-[#e6ba35] hover:bg-[#d4a82e] text-black font-bold uppercase tracking-widest text-xs rounded-lg px-6 h-10">
@@ -181,6 +182,24 @@ export function SubmitFilmEnquiryForm() {
       const res = await fetch(`${API_BASE}/film-enquiries/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json?.success === false) throw new Error(json?.message || "Failed");
+
+      await sendConfirmationEmails({
+        formType: "film-enquiry",
+        submitterEmail: values.email,
+        submitterName: values.name,
+        fields: {
+          "Full Name": values.name,
+          Email: values.email,
+          Role: values.role,
+          "Film Title": values.title,
+          Synopsis: values.synopsis,
+          "Production House": values.productionHouse,
+          Distributor: values.distributor || "Not provided",
+          "Release Date": values.releaseDate,
+          "Trailer URL": values.trailerUrl,
+        },
+      });
+
       setStatus("success");
     } catch (err) {
       console.error(err);

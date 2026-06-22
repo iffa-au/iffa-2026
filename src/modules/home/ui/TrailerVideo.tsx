@@ -1,6 +1,5 @@
 "use client";
 
-// External libraries and React hooks
 import Link from "next/link";
 import Hls from "hls.js";
 import { memo, useEffect, useRef, useState } from "react";
@@ -13,7 +12,6 @@ type TrailerSectionProps = {
   learnMoreUrl?: string;
 };
 
-// Expected shape of media data returned by backend
 type MediaApiResponse = {
   s3Key?: string;
   videoS3Key?: string;
@@ -22,11 +20,9 @@ type MediaApiResponse = {
   posterS3Key?: string;
 };
 
-// Public environment values for backend API and CloudFront media domain
 const API_URL = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL;
 const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL ?? "";
 
-// Builds a valid CloudFront URL by safely joining base URL and media key
 const buildCloudFrontUrl = (key: string) => {
   const normalizedBase = CLOUDFRONT_URL.endsWith("/")
     ? CLOUDFRONT_URL.slice(0, -1)
@@ -42,7 +38,6 @@ const TrailerSection = ({
   youtubeUrl,
   learnMoreUrl,
 }: TrailerSectionProps) => {
-  // Local UI state for loading, media sources, and playback state
   const [loading, setLoading] = useState(true);
   const [src, setSrc] = useState<string | null>(null);
   const [posterSrc, setPosterSrc] = useState<string | null>(null);
@@ -51,7 +46,6 @@ const TrailerSection = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLElement | null>(null);
 
-  // Fetches media details for the given slug from backend
   const fetchMedia = async (videoSlug: string): Promise<MediaApiResponse | null> => {
     if (!API_URL) {
       console.error("Missing NEXT_PUBLIC_SUBMIT_FILM_URL environment variable.");
@@ -73,7 +67,6 @@ const TrailerSection = ({
     }
   };
 
-  // Loads video and poster keys, then converts them to CloudFront URLs.
   useEffect(() => {
     if (videoUrl) {
       setSrc(videoUrl);
@@ -100,7 +93,6 @@ const TrailerSection = ({
     loadMedia();
   }, [videoslug, videoUrl]);
 
-  // Detects when section is on screen to lazy-start playback logic.
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => setIsVisible(entry.isIntersecting),
@@ -112,7 +104,6 @@ const TrailerSection = ({
     return () => observer.disconnect();
   }, []);
 
-  // Initializes and manages playback when video is visible and source exists.
   useEffect(() => {
     if (!isVisible || !src) return;
 
@@ -129,22 +120,19 @@ const TrailerSection = ({
     const isHls = src.endsWith(".m3u8");
 
     if (isHls && Hls.isSupported()) {
-      // Chrome / Firefox: use hls.js
       const hls = new Hls({ autoStartLoad: true });
       hls.loadSource(src);
       hls.attachMedia(video);
       hls.once(Hls.Events.MANIFEST_PARSED, onLoaded);
       return () => hls.destroy();
-    } else {
-      // Safari (native HLS) or plain mp4/etc.
-      video.src = src;
-      video.load();
-      video.addEventListener("loadedmetadata", onLoaded);
-      return () => video.removeEventListener("loadedmetadata", onLoaded);
     }
+
+    video.src = src;
+    video.load();
+    video.addEventListener("loadedmetadata", onLoaded);
+    return () => video.removeEventListener("loadedmetadata", onLoaded);
   }, [isVisible, src]);
 
-  // Keeps playback in sync with viewport visibility.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;

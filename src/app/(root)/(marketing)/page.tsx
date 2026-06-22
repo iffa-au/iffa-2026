@@ -33,8 +33,14 @@ export default function Home() {
 
       <TrailerSection
         videoslug="Hero_2v"
-        title="Cassandra"
-        youtubeUrl="https://www.youtube.com/watch?v=7Pp5FiS0Lck"
+        title="Firebreak"
+        youtubeUrl="https://youtu.be/5YXhpQ7wrL8?si=2ePMrOPQ0iXiczSD"
+      />
+
+      <TrailerSection
+        videoslug="Hero_4v"
+        title="Balandru"
+        youtubeUrl="https://youtu.be/5YXhpQ7wrL8?si=KVnsESZN4W3f3ZAK"
       />
 
       <div className="-mt-12 md:-mt-16 lg:-mt-20">

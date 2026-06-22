@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { filmSchema, useSubmissionOptions, BLANK_PERSON, type FilmValues } from "@/utils/FilmSubmission.utils";
+import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
 import { CrewList } from "./components/CrewList";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -134,7 +135,7 @@ function SuccessScreen() {
         Submission Received
       </h2>
       <p className="text-[#6b6347] text-sm max-w-sm leading-relaxed mb-8">
-        Thank you. Our team will review your film and reach out via your provided email.
+        Thank you. A confirmation email has been sent. Our team will review your film and reach out via your provided email.
       </p>
       <div className="flex gap-3">
         <Button asChild className="bg-[#e6ba35] hover:bg-[#d4a82e] text-black font-bold uppercase tracking-widest text-xs rounded-lg px-6 h-10">
@@ -186,6 +187,28 @@ export function SubmitFilmForm() {
       const res = await fetch(`${API_BASE}/submissions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json?.success === false) throw new Error(json?.message || "Failed");
+
+      const submitterName =
+        values.directors[0]?.fullName?.trim() ||
+        values.producers[0]?.fullName?.trim() ||
+        "Filmmaker";
+
+      await sendConfirmationEmails({
+        formType: "film-submission",
+        submitterEmail: values.contactEmail,
+        submitterName,
+        fields: {
+          "Film Title": values.title,
+          Synopsis: values.synopsis,
+          "Release Date": values.releaseDate,
+          "Production House": values.productionHouse,
+          Distributor: values.distributor || "Not provided",
+          "Contact Email": values.contactEmail,
+          "IMDb URL": values.imdbUrl,
+          "Trailer URL": values.trailerUrl,
+        },
+      });
+
       setStatus("success");
     } catch (err) {
       console.error(err);
