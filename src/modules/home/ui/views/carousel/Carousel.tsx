@@ -43,12 +43,29 @@ const getGap = (): number => {
 
 const Carousel = ({ year }: CarouselProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const [films, setFilms] = useState<FilmItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.1, rootMargin: "200px" },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
+
     const controller = new AbortController();
 
     const fetchFeatured = async () => {
@@ -110,7 +127,7 @@ const Carousel = ({ year }: CarouselProps) => {
 
     void fetchFeatured();
     return () => controller.abort();
-  }, [year]);
+  }, [year, isVisible]);
 
   useEffect(() => {
     if (films.length === 0) return;
@@ -157,9 +174,13 @@ const Carousel = ({ year }: CarouselProps) => {
     };
   }, [films]);
 
+  if (!isVisible) {
+    return <div ref={sectionRef} className="w-full min-h-[200px]" />;
+  }
+
   if (loading) {
     return (
-      <div className="w-full p-6 md:p-10 lg:p-14 flex justify-center items-center">
+      <div ref={sectionRef} className="w-full p-6 md:p-10 lg:p-14 flex justify-center items-center">
         <div className="h-8 w-8 rounded-full border-4 border-white/20 border-t-white animate-spin" />
       </div>
     );
@@ -167,7 +188,7 @@ const Carousel = ({ year }: CarouselProps) => {
 
   if (error) {
     return (
-      <div className="w-full p-6 md:p-10 lg:p-14 text-center">
+      <div ref={sectionRef} className="w-full p-6 md:p-10 lg:p-14 text-center">
         <div className="text-red-400 text-sm md:text-base">{error}</div>
       </div>
     );
@@ -176,7 +197,7 @@ const Carousel = ({ year }: CarouselProps) => {
   if (films.length === 0) return null;
 
   return (
-    <div className="w-full overflow-hidden p-6 md:p-10 lg:p-14 lg:h-[622px]">
+    <div ref={sectionRef} className="w-full overflow-hidden p-6 md:p-10 lg:p-14 lg:h-[622px]">
       <div className="relative">
         <div className="overflow-hidden">
           <div

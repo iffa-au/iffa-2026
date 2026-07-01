@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Hls from "hls.js";
 import { memo, useEffect, useRef, useState } from "react";
+import { fetchJsonCached } from "@/lib/media-cache";
 
 type TrailerSectionProps = {
   videoslug?: string;
@@ -38,71 +39,59 @@ const TrailerSection = ({
   youtubeUrl,
   learnMoreUrl,
 }: TrailerSectionProps) => {
-  const [loading, setLoading] = useState(true);
-  const [src, setSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(Boolean(videoslug && !videoUrl));
+  const [src, setSrc] = useState<string | null>(videoUrl ?? null);
   const [posterSrc, setPosterSrc] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLElement | null>(null);
 
-  const fetchMedia = async (videoSlug: string): Promise<MediaApiResponse | null> => {
-    if (!API_URL) {
-      console.error("Missing NEXT_PUBLIC_SUBMIT_FILM_URL environment variable.");
-      return null;
-    }
-
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_URL}/media-assets/title/${videoSlug}`, {
-        cache: "no-store",
-      });
-      const data = res.ok ? ((await res.json()) as MediaApiResponse) : null;
-      setLoading(false);
-      return data;
-    } catch (err) {
-      console.error(err);
-      setLoading(false);
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    if (videoUrl) {
-      setSrc(videoUrl);
-      setLoading(false);
-      return;
-    }
-    if (!videoslug) return;
-
-    const loadMedia = async () => {
-      const media = await fetchMedia(videoslug);
-      if (!media) return;
-
-      const videoKey = media.videoS3Key ?? media.s3Key;
-      if (videoKey) {
-        setSrc(buildCloudFrontUrl(videoKey));
-      }
-
-      const photoKey = media.photoS3Key ?? media.imageS3Key ?? media.posterS3Key;
-      if (photoKey) {
-        setPosterSrc(buildCloudFrontUrl(photoKey));
-      }
-    };
-
-    loadMedia();
-  }, [videoslug, videoUrl]);
-
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => setIsVisible(entry.isIntersecting),
-      { threshold: 0.4 }
+      { threshold: 0.25, rootMargin: "150px" },
     );
 
     if (containerRef.current) observer.observe(containerRef.current);
 
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!isVisible || videoUrl || !videoslug || !API_URL) return;
+
+    let cancelled = false;
+
+    const loadMedia = async () => {
+      setLoading(true);
+      const media = await fetchJsonCached<MediaApiResponse>(
+        `${API_URL}/media-assets/title/${videoslug}`,
+      );
+
+      if (cancelled) return;
+
+      if (media) {
+        const videoKey = media.videoS3Key ?? media.s3Key;
+        if (videoKey) {
+          setSrc(buildCloudFrontUrl(videoKey));
+        }
+
+        const photoKey =
+          media.photoS3Key ?? media.imageS3Key ?? media.posterS3Key;
+        if (photoKey) {
+          setPosterSrc(buildCloudFrontUrl(photoKey));
+        }
+      }
+
+      setLoading(false);
+    };
+
+    void loadMedia();
+    return () => {
+      cancelled = true;
+    };
+  }, [isVisible, videoslug, videoUrl]);
 
   useEffect(() => {
     if (!isVisible || !src) return;
@@ -120,10 +109,13 @@ const TrailerSection = ({
     const isHls = src.endsWith(".m3u8");
 
     if (isHls && Hls.isSupported()) {
-      const hls = new Hls({ autoStartLoad: true });
+      const hls = new Hls({ autoStartLoad: false });
       hls.loadSource(src);
       hls.attachMedia(video);
-      hls.once(Hls.Events.MANIFEST_PARSED, onLoaded);
+      hls.once(Hls.Events.MANIFEST_PARSED, () => {
+        hls.startLoad();
+        onLoaded();
+      });
       return () => hls.destroy();
     }
 
@@ -173,7 +165,7 @@ const TrailerSection = ({
             muted
             loop
             playsInline
-            preload="metadata"
+            preload="none"
             poster={posterSrc ?? undefined}
             className={`w-full h-full object-cover transition-opacity duration-700 ${
               isReady ? "opacity-100" : "opacity-0"

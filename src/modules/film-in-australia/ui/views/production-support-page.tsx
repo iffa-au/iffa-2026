@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LazyBackgroundVideo } from "@/components/ui/lazy-background-video";
 import { AustraliaSubNav } from "../components/australia-sub-nav";
 import { services, videoUrls } from "../../data/australia-data";
 
@@ -7,13 +8,9 @@ export function ProductionSupportPage() {
     <div className="w-full bg-[#0d0d0d] flex flex-col">
       {/* Hero */}
       <div className="relative w-full h-[55vh] overflow-hidden">
-        <video
-          className="absolute inset-0 w-full h-full object-cover z-0"
+        <LazyBackgroundVideo
           src={videoUrls.productionSupport}
-          autoPlay
-          loop
-          muted
-          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d]/80 via-[#0d0d0d]/20 to-transparent" />
         <div className="absolute bottom-10 left-10 lg:left-16 z-10">

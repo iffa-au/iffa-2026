@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LazyBackgroundVideo } from "@/components/ui/lazy-background-video";
 import { opportunities, videoUrls } from "../../data/malaysia-data";
 import { MalaysiaSidebar } from "../components/malaysia-sidebar";
 
@@ -6,14 +7,7 @@ export function FilmingOpportunitiesPage() {
   return (
     <div className="w-full bg-[#0d0d0d] flex flex-col">
       <div className="relative w-full h-[65vh] overflow-hidden">
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          src={videoUrls.filmingOpportunities}
-          autoPlay
-          loop
-          muted
-          playsInline
-        />
+        <LazyBackgroundVideo src={videoUrls.filmingOpportunities} />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d]/30 via-transparent to-[#0d0d0d]" />
         <div className="absolute bottom-10 left-8 lg:left-16 z-10">
           <Link

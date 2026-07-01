@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { LazyBackgroundVideo } from "@/components/ui/lazy-background-video";
 import { OmanSubNav } from "../components/oman-sub-nav";
 import {
   filmingLocations,
@@ -26,13 +27,9 @@ export function FilmingLocationsPage() {
       <div className="h-[calc(100vh-4rem)] flex flex-col">
         <section className="relative flex-1 flex items-center justify-center overflow-hidden bg-[#0d0d0d]">
           {/* Background video */}
-          <video
-            className="absolute inset-0 w-full h-full object-cover z-0"
+          <LazyBackgroundVideo
             src={videoUrls.filmingLocations}
-            autoPlay
-            loop
-            muted
-            playsInline
+            className="absolute inset-0 w-full h-full object-cover z-0"
           />
           {/* Dark overlay */}
           <div className="absolute inset-0 bg-black/60 z-10" />
