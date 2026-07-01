@@ -17,6 +17,8 @@ function SlideContent({ film }: { film: FeaturedFilm }) {
         <img
           src={film.posterUrl}
           alt={`${film.titlePart1} ${film.titlePart2}`}
+          loading="lazy"
+          decoding="async"
           className="h-auto w-full object-contain transition-transform duration-700 group-hover:scale-105"
         />
       </div>

@@ -7,6 +7,7 @@ import {
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
 import type { IconSvgElement } from "@hugeicons/react";
+import { LazyBackgroundVideo } from "@/components/ui/lazy-background-video";
 import { OmanSubNav } from "../components/oman-sub-nav";
 import { productionServices, videoUrls } from "../../data/oman-data";
 
@@ -24,13 +25,9 @@ export function ProductionSupportPage() {
       <div className="h-[calc(100vh-4rem)] flex flex-col">
         <section className="relative flex-1 flex items-center justify-center overflow-hidden bg-[#0d0d0d]">
           {/* Background video */}
-          <video
-            className="absolute inset-0 w-full h-full object-cover z-0"
+          <LazyBackgroundVideo
             src={videoUrls.productionSupport}
-            autoPlay
-            loop
-            muted
-            playsInline
+            className="absolute inset-0 w-full h-full object-cover z-0"
           />
           {/* Dark overlay */}
           <div className="absolute inset-0 bg-black/60 z-10" />

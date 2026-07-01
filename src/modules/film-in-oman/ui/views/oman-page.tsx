@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { LazyBackgroundVideo } from "@/components/ui/lazy-background-video";
 import { videoUrls } from "../../data/oman-data";
 import { OmanContactCard } from "../components/oman-contact-card";
 import { omanNavCards } from "../../data/oman-nav-data";
@@ -22,7 +23,7 @@ export function OmanPage() {
   return (
     <div className="w-full bg-[#0d0d0d]">
       <section className="relative w-full h-[40vh] min-h-[280px] sm:h-[45vh] md:h-[55vh] lg:h-[62vh]">
-        <video className="absolute inset-0 w-full h-full object-cover" src={videoUrls.omanHub} autoPlay loop muted playsInline />
+        <LazyBackgroundVideo src={videoUrls.omanHub} />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/25 to-[#0d0d0d]" />
         <div className="absolute inset-0 z-10">
           <div className="absolute top-1/2 left-1/2 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 px-6 text-center">

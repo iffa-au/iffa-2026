@@ -6,6 +6,7 @@ import {
   AlertCircleIcon,
   Alert01Icon,
 } from "@hugeicons/core-free-icons";
+import { LazyBackgroundVideo } from "@/components/ui/lazy-background-video";
 import { OmanSubNav } from "../components/oman-sub-nav";
 import { workflowSteps, warningItems, videoUrls } from "../../data/oman-data";
 
@@ -17,13 +18,9 @@ export function FilmingGuidePage() {
       <div className="h-[calc(100vh-4rem)] flex flex-col">
         <section className="relative flex-1 flex items-center justify-center overflow-hidden bg-[#0d0d0d]">
           {/* Background video */}
-          <video
-            className="absolute inset-0 w-full h-full object-cover z-0"
+          <LazyBackgroundVideo
             src={videoUrls.filmingGuide}
-            autoPlay
-            loop
-            muted
-            playsInline
+            className="absolute inset-0 w-full h-full object-cover z-0"
           />
           {/* Dark overlay */}
           <div className="absolute inset-0 bg-black/60 z-10" />

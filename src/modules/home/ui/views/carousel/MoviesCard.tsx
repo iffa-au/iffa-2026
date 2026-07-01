@@ -45,6 +45,8 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
         src={film.posterUrl ?? "/fallbacks/no-poster.svg"}
         alt={(film.title ?? "Film") + " Poster"}
         className="h-full w-full object-cover"
+        loading="lazy"
+        decoding="async"
         onLoad={handleImageLoad}
         onError={handleImageError}
         style={{ opacity: imageLoaded ? 1 : 0 }}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LazyBackgroundVideo } from "@/components/ui/lazy-background-video";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { IconSvgElement } from "@hugeicons/react";
 import {
@@ -20,13 +21,9 @@ export function AustraliaPage() {
   return (
     <div className="relative w-full h-screen overflow-hidden bg-[#0d0d0d]">
       {/* Background video */}
-      <video
-        className="absolute inset-0 w-full h-full object-cover z-0"
+      <LazyBackgroundVideo
         src={videoUrls.australiaHub}
-        autoPlay
-        loop
-        muted
-        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0"
       />
 
       {/* Dark overlay */}

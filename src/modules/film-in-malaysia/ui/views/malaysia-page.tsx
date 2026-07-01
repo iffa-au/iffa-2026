@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LazyBackgroundVideo } from "@/components/ui/lazy-background-video";
 import { MapPin, Film, Users, ListChecks, type LucideIcon } from "lucide-react";
 import { videoUrls, subPages } from "../../data/malaysia-data";
 
@@ -13,13 +14,9 @@ export function MalaysiaPage() {
   return (
     <div className="w-full bg-[#0d0d0d]">
       <section className="relative h-screen overflow-hidden">
-        <video
-          className="absolute inset-0 w-full h-full object-cover z-0"
+        <LazyBackgroundVideo
           src={videoUrls.malaysiaHub}
-          autoPlay
-          loop
-          muted
-          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0"
         />
         <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0d0d0d]/80 via-[#0d0d0d]/30 to-transparent [clip-path:polygon(0_0,85%_0,100%_100%,0_100%)]" />
         <div className="relative z-10 flex items-stretch justify-between h-full">
