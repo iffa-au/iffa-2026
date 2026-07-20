@@ -43,3 +43,5 @@ next-env.d.ts
 #AI Files
 AGENT_CONTEXT.md
 
+#Environment Variables
+.env
