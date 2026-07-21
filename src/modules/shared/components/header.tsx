@@ -63,8 +63,8 @@ export default function Header() {
           <Button variant="ghost" size="icon" className="absolute top-5 right-5 text-white hover:bg-white/10" onClick={closeMenu}>
             <X className="w-5 h-5" />
           </Button>
-          <div onClick={closeMenu}>
-            <PastEventsDropdown />
+          <div>
+            <PastEventsDropdown onNavigate={closeMenu} />
           </div>
           <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-sm">
             <Link href="/latest-news" onClick={closeMenu}>LATEST NEWS</Link>

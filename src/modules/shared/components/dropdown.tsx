@@ -17,11 +17,12 @@ import { Button } from "@/components/ui/button"
 
 const years = ["2025","2024", "2023", "2022"]
 
-export default function PastEventsDropdown() {
+export default function PastEventsDropdown({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter()
 
   const handleNavigate = (year: string, type: string) => {
     router.push(`/events/${year}/${type}`)
+    onNavigate?.()
   }
 
   return (
