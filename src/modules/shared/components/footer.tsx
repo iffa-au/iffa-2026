@@ -65,7 +65,7 @@ export function Footer() {
                 <img
                   src="/IFFA_logo.png"
                   alt="IFFA Logo"
-                  className="w-24 sm:w-28 group-hover:scale-110 transition-all duration-700 filter drop-shadow-2xl relative z-10"
+                  className="w-24 sm:w-28 h:auto group-hover:scale-110 transition-all duration-700 filter drop-shadow-2xl relative z-10"
                 />
               </Link>
 
