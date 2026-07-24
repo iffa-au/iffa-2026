@@ -4,7 +4,7 @@ export const videoUrls = {
   malaysiaHub: `${CF}iffa/videos/Malaysia/malaysia_bg.mp4`,
   filmingLocations: `${CF}iffa/videos/Malaysia/malaysia_filming_loc.mp4`,
   filmingOpportunities: `${CF}iffa/videos/Malaysia/malaysia_opportunities.mov`,
-  productionSupport: `${CF}iffa/videos/Malaysia/malaysia_production.mp4`,
+  productionSupport: `${CF}iffa/videos/Malaysia/production_support.mp4`,
   filmingGuide: `${CF}iffa/videos/Malaysia/filming_workflow.mov`,
 } as const;
 
