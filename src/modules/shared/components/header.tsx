@@ -26,8 +26,9 @@ export default function Header() {
             src="/IFFA_logo.png"
             alt="IFFA Logo"
             width={80}
-            height={40}
-            className="w-20"
+            height={80}
+            loading="eager"
+            className="w-20 h-auto"
           />
         </Link>
 

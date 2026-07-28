@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Raleway, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { GoogleAnalyticsProvider } from "@/modules/shared/components/google-analytics";
 
 const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
 
@@ -25,7 +26,15 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", raleway.variable, geistMono.variable, "font-sans", "dark")}
     >
-      <body className="min-h-full flex flex-col bg-[#0d0d0d] overflow-x-hidden">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#0d0d0d] overflow-x-hidden">
+        {children}
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <GoogleAnalyticsProvider
+            gaId={process.env.NEXT_PUBLIC_GA_ID}
+          />
+        )}
+
+      </body>
     </html>
   );
 }
