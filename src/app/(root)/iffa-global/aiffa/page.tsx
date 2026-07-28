@@ -6,12 +6,22 @@ const introParagraphs = [
 
 const leaders = [
   {
+    name: "TBA",
+    title: "TBA",
+    instagram: "",
+    instagramUrl: "",
+    initials: "?",
+    bio: "Details coming soon.",
+    image: "",
+  },
+  {
     name: "Fahad Al Maimani",
     title: "Lecturer, Filmmaking | Board Member, Oman Film Society",
     instagram: "@fahadmaimani",
     instagramUrl: "https://www.instagram.com/fahadmaimani",
     initials: "FM",
     bio: "Fahad Al Maimani is an Omani academic, filmmaker, and cultural leader dedicated to advancing film education and independent cinema in Oman. He serves as a Lecturer in Filmmaking at the University of Technology and Applied Sciences (UTAS), where he contributes to the academic and practical development of emerging filmmakers.",
+    image: "/assets/leaders/Fahad.png",
   },
   {
     name: "Mohammed bin Abdullah Al-Ajmi",
@@ -20,6 +30,7 @@ const leaders = [
     instagramUrl: "https://www.instagram.com/alajmiphoto",
     initials: "MA",
     bio: "Mohammed bin Abdullah Al-Ajmi is an Omani filmmaker, cinematographer, and cultural leader committed to developing the film industry in Oman and across the Arab region. He serves as Chairman of the Oman Film Society and CEO of Silver Lens Production, where he supports emerging filmmakers and promotes Omani cinema internationally.",
+    image: "/assets/leaders/Abdullah.png",
   },
 ];
 
@@ -84,16 +95,24 @@ export default function AiffaPage() {
             <div className="h-px w-full bg-white/20"></div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {leaders.map((person) => (
               <article
                 key={person.name}
                 className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-lg"
               >
                 <div className="mb-4 flex items-center gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-yellow-400/50 bg-black text-xs font-bold text-yellow-400">
-                    {person.initials}
-                  </div>
+                  {person.image ? (
+                    <img
+                      src={person.image}
+                      alt={person.name}
+                      className="h-12 w-12 flex-shrink-0 rounded-full border border-yellow-400/50 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-yellow-400/50 bg-black text-xs font-bold text-yellow-400">
+                      {person.initials}
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <h3 className="text-sm font-bold leading-tight text-yellow-400 sm:text-base">
                       {person.name}

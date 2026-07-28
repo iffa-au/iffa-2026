@@ -42,4 +42,4 @@ next-env.d.ts
 
 # local agent context files
 AGENT_CONTEXT.md
-docs/CODEBASE_OVERVIEW.md
+CODEBASE_OVERVIEW.md
