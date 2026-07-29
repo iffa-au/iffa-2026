@@ -1,31 +1,47 @@
 import { FORM_TYPE_LABELS } from "./config";
 import type { ConfirmationEmailPayload } from "./types";
 
+/**
+ * Fields already surfaced by the EmailJS admin template's own header table
+ * (Full Name / Email / Phone Number / City-State). Left out of the body so
+ * they aren't shown twice.
+ */
+const HEADER_FIELD_KEYS = new Set([
+  "full name",
+  "contact name",
+  "email",
+  "email address",
+  "contact email",
+  "phone",
+  "phone number",
+  "country",
+  "city/state",
+]);
+
 function formatFields(fields: Record<string, string>): string {
-  return Object.entries(fields)
-    .filter(([, v]) => v.trim().length > 0)
-    .map(([key, value]) => `${key}: ${value}`)
-    .join("\n");
+  const detailFields = Object.entries(fields).filter(
+    ([key, value]) => value.trim().length > 0 && !HEADER_FIELD_KEYS.has(key.toLowerCase())
+  );
+
+  // If all that's left is the free-text message, show it bare rather than
+  // re-labelling it under a "Message:" line.
+  if (detailFields.length === 1 && detailFields[0][0].toLowerCase() === "message") {
+    return detailFields[0][1];
+  }
+
+  return detailFields.map(([key, value]) => `${key}: ${value}`).join("\n");
 }
 
 export function buildAdminEmailContent(payload: ConfirmationEmailPayload): {
   subject: string;
   message: string;
 } {
-  const label = FORM_TYPE_LABELS[payload.formType] ?? payload.formType;
   const fieldsText = formatFields(payload.fields);
 
   return {
-    subject: `New ${label} — ${payload.submitterName}`,
+    subject: `New ${FORM_TYPE_LABELS[payload.formType] ?? payload.formType} — ${payload.submitterName}`,
     message: [
-      `A new ${label} has been submitted on the IFFA website.`,
-      "",
-      `From: ${payload.submitterName}`,
-      `Email: ${payload.submitterEmail}`,
-      "",
-      "— Submission Details —",
       fieldsText,
-      "",
       `Submitted at: ${new Date().toLocaleString("en-AU", { timeZone: "Australia/Sydney" })}`,
     ].join("\n"),
   };
@@ -44,11 +60,8 @@ export function buildUserEmailContent(payload: ConfirmationEmailPayload): {
         subject: "IFFA — Film Submission Received",
         message: [
           `Dear ${payload.submitterName},`,
-          "",
           `Thank you for submitting "${filmTitle}" to the IFFA Awards.`,
-          "",
           "We have received your submission and our team will review it shortly. You will be contacted at this email address if we need any further information.",
-          "",
           "Best regards,",
           "The IFFA Awards Team",
         ].join("\n"),
@@ -61,11 +74,8 @@ export function buildUserEmailContent(payload: ConfirmationEmailPayload): {
         subject: "IFFA — Film Enquiry Received",
         message: [
           `Dear ${payload.submitterName},`,
-          "",
           `Thank you for your enquiry regarding "${filmTitle}".`,
-          "",
           "We have received your message and a member of our team will be in touch with you shortly.",
-          "",
           "Best regards,",
           "The IFFA Awards Team",
         ].join("\n"),
@@ -78,11 +88,8 @@ export function buildUserEmailContent(payload: ConfirmationEmailPayload): {
         subject: "Filming in Oman — Enquiry Received",
         message: [
           `Dear ${payload.submitterName},`,
-          "",
           `Thank you for your filming enquiry from ${company}.`,
-          "",
           "We have received your enquiry and the Oman Film Society team will review it and contact you regarding locations, permits, and next steps.",
-          "",
           "Best regards,",
           "Oman Film Society",
           "In collaboration with IFFA",
@@ -95,9 +102,7 @@ export function buildUserEmailContent(payload: ConfirmationEmailPayload): {
         subject: "IFFA — We Received Your Message",
         message: [
           `Dear ${payload.submitterName},`,
-          "",
           "Thank you for contacting IFFA Awards. We have received your message and will respond as soon as possible.",
-          "",
           "Best regards,",
           "The IFFA Awards Team",
         ].join("\n"),
@@ -108,9 +113,7 @@ export function buildUserEmailContent(payload: ConfirmationEmailPayload): {
         subject: "IFFA — Partnership Enquiry Received",
         message: [
           `Dear ${payload.submitterName},`,
-          "",
           "Thank you for your interest in partnering with IFFA Awards. We have received your enquiry and our partnerships team will be in touch shortly.",
-          "",
           "Best regards,",
           "The IFFA Awards Team",
         ].join("\n"),
@@ -121,9 +124,7 @@ export function buildUserEmailContent(payload: ConfirmationEmailPayload): {
         subject: `IFFA — ${label} Received`,
         message: [
           `Dear ${payload.submitterName},`,
-          "",
           `Thank you for your ${label.toLowerCase()}. We have received your submission and will be in touch shortly.`,
-          "",
           "Best regards,",
           "The IFFA Awards Team",
         ].join("\n"),

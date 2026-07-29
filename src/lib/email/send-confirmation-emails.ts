@@ -25,7 +25,7 @@ async function sendViaEmailJS(
 
 function withDevNote(body: string, note?: string): string {
   if (!note) return body;
-  return `[DEV MODE — redirected to IFFA inbox]\n${note}\n\n${body}`;
+  return `[DEV MODE — redirected to IFFA inbox]\n${note}\n${body}`;
 }
 
 /**
