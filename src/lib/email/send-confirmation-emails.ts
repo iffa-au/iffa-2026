@@ -7,6 +7,7 @@ import {
   getUserRecipient,
   isEmailDevRedirect,
 } from "./config";
+import { FIELD_KEYS } from "./field-keys";
 import type { ConfirmationEmailPayload } from "./types";
 
 type EmailParams = Record<string, string>;
@@ -63,8 +64,8 @@ export async function sendConfirmationEmails(
     reply_to: payload.submitterEmail,
     fullName: payload.submitterName,
     email: payload.submitterEmail,
-    phoneNumber: payload.fields["Phone Number"] ?? payload.fields["Phone"] ?? "",
-    address: payload.fields["Country"] ?? payload.fields["City/State"] ?? "",
+    phoneNumber: payload.fields[FIELD_KEYS.PHONE_NUMBER] ?? "",
+    address: payload.fields[FIELD_KEYS.COUNTRY] ?? payload.fields[FIELD_KEYS.CITY_STATE] ?? "",
   };
 
   let adminSent = false;

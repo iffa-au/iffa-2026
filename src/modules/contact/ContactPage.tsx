@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { Loader2 } from "lucide-react";
 import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
+import { FIELD_KEYS } from "@/lib/email/field-keys";
 
 import {
   Form,
@@ -53,11 +54,11 @@ export default function ContactPage() {
         submitterEmail: values.email,
         submitterName: values.fullName,
         fields: {
-          "Full Name": values.fullName,
-          "Phone Number": values.phoneNumber,
-          "City/State": values.address,
-          "Email Address": values.email,
-          Message: values.message,
+          [FIELD_KEYS.FULL_NAME]: values.fullName,
+          [FIELD_KEYS.PHONE_NUMBER]: values.phoneNumber,
+          [FIELD_KEYS.CITY_STATE]: values.address,
+          [FIELD_KEYS.EMAIL]: values.email,
+          [FIELD_KEYS.MESSAGE]: values.message,
         },
       });
 

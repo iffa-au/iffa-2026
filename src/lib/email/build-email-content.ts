@@ -1,4 +1,5 @@
 import { FORM_TYPE_LABELS } from "./config";
+import { FIELD_KEYS } from "./field-keys";
 import type { ConfirmationEmailPayload } from "./types";
 
 /**
@@ -6,17 +7,15 @@ import type { ConfirmationEmailPayload } from "./types";
  * (Full Name / Email / Phone Number / City-State). Left out of the body so
  * they aren't shown twice.
  */
-const HEADER_FIELD_KEYS = new Set([
-  "full name",
-  "contact name",
-  "email",
-  "email address",
-  "contact email",
-  "phone",
-  "phone number",
-  "country",
-  "city/state",
-]);
+const HEADER_FIELD_KEYS = new Set(
+  [
+    FIELD_KEYS.FULL_NAME,
+    FIELD_KEYS.EMAIL,
+    FIELD_KEYS.PHONE_NUMBER,
+    FIELD_KEYS.COUNTRY,
+    FIELD_KEYS.CITY_STATE,
+  ].map((key) => key.toLowerCase())
+);
 
 function formatFields(fields: Record<string, string>): string {
   const detailFields = Object.entries(fields).filter(
@@ -25,7 +24,7 @@ function formatFields(fields: Record<string, string>): string {
 
   // If all that's left is the free-text message, show it bare rather than
   // re-labelling it under a "Message:" line.
-  if (detailFields.length === 1 && detailFields[0][0].toLowerCase() === "message") {
+  if (detailFields.length === 1 && detailFields[0][0].toLowerCase() === FIELD_KEYS.MESSAGE.toLowerCase()) {
     return detailFields[0][1];
   }
 

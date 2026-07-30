@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
+import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { OmanSubNav } from "./components/oman-sub-nav";
 
 const PROJECT_TYPES = [
@@ -92,11 +93,11 @@ export function OmanEnquiryForm() {
         submitterEmail: values.email,
         submitterName: values.fullName,
         fields: {
-          "Full Name": values.fullName,
+          [FIELD_KEYS.FULL_NAME]: values.fullName,
           "Company / Production House": values.company,
-          Country: values.country,
-          "Email Address": values.email,
-          "Phone Number": values.phone ?? "Not provided",
+          [FIELD_KEYS.COUNTRY]: values.country,
+          [FIELD_KEYS.EMAIL]: values.email,
+          [FIELD_KEYS.PHONE_NUMBER]: values.phone ?? "Not provided",
           "Project Type": values.projectType,
           "Brief Project Description": values.description,
           "Proposed Filming Dates": values.filmingDates,
