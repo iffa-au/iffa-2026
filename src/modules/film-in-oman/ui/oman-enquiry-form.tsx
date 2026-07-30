@@ -104,6 +104,7 @@ export function OmanEnquiryForm() {
           "Additional Comments": values.additionalComments ?? "None",
         },
       });
+
       setStatus("success");
     } catch {
       setStatus("error");

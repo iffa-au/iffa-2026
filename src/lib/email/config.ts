@@ -1,6 +1,11 @@
 import type { FormType } from "./types";
 
-/** EmailJS — existing IFFA account credentials (override via env) */
+/**
+ * EmailJS — existing IFFA account credentials (override via env).
+ * NEXT_PUBLIC_* vars are baked into the client bundle at build time, not read
+ * at runtime — changing them in the hosting dashboard (e.g. Amplify) has no
+ * effect until a fresh build is triggered, not just a redeploy/restart.
+ */
 export const EMAILJS_CONFIG = {
   serviceId:
     process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID ?? "service_sx058wl",

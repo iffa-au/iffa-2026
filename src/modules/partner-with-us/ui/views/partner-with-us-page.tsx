@@ -63,6 +63,7 @@ export function PartnerWithUsPage() {
           Message: formData.message,
         },
       });
+
       setStatus("success");
       setShowSuccessModal(true);
       setFormData(emptyForm);

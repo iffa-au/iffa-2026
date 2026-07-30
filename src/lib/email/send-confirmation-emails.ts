@@ -30,7 +30,10 @@ function withDevNote(body: string, note?: string): string {
 
 /**
  * Sends admin notification + user confirmation via EmailJS.
- * Failures are logged but do not throw — call after the form action succeeds.
+ * Throws if the admin notification fails — for forms with no other backend,
+ * that's the only record of the submission, so callers should treat it as a
+ * failed submission. A failed user confirmation alone does not throw, since
+ * the admin already has the enquiry either way.
  */
 export async function sendConfirmationEmails(
   payload: ConfirmationEmailPayload
@@ -80,6 +83,7 @@ export async function sendConfirmationEmails(
     adminSent = true;
   } catch (err) {
     console.error("[email] Admin notification failed:", err);
+    throw new Error("Admin notification failed to send", { cause: err });
   }
 
   try {
