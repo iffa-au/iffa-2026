@@ -24,7 +24,7 @@ const leaders = [
     instagramUrl: "https://www.instagram.com/fahadmaimani",
     initials: "FM",
     bio: "Fahad Al Maimani is an Omani academic, filmmaker, and cultural leader dedicated to advancing film education and independent cinema in Oman. He serves as a Lecturer in Filmmaking at the University of Technology and Applied Sciences (UTAS), where he contributes to the academic and practical development of emerging filmmakers.",
-    image: "/assets/leaders/Fahad.png",
+    image: "/assets/leaders/Fahad.webp",
     imagePosition: "center 20%",
   },
   {
@@ -34,7 +34,7 @@ const leaders = [
     instagramUrl: "https://www.instagram.com/alajmiphoto",
     initials: "MA",
     bio: "Mohammed bin Abdullah Al-Ajmi is an Omani filmmaker, cinematographer, and cultural leader committed to developing the film industry in Oman and across the Arab region. He serves as Chairman of the Oman Film Society and CEO of Silver Lens Production, where he supports emerging filmmakers and promotes Omani cinema internationally.",
-    image: "/assets/leaders/Abdullah.png",
+    image: "/assets/leaders/Abdullah.webp",
     imagePosition: "center",
   },
 ];
