@@ -7,6 +7,7 @@ import {
   getUserRecipient,
   isEmailDevRedirect,
 } from "./config";
+import { FIELD_KEYS } from "./field-keys";
 import type { ConfirmationEmailPayload } from "./types";
 
 type EmailParams = Record<string, string>;
@@ -25,12 +26,15 @@ async function sendViaEmailJS(
 
 function withDevNote(body: string, note?: string): string {
   if (!note) return body;
-  return `[DEV MODE — redirected to IFFA inbox]\n${note}\n\n${body}`;
+  return `[DEV MODE — redirected to IFFA inbox]\n${note}\n${body}`;
 }
 
 /**
  * Sends admin notification + user confirmation via EmailJS.
- * Failures are logged but do not throw — call after the form action succeeds.
+ * Throws if the admin notification fails — for forms with no other backend,
+ * that's the only record of the submission, so callers should treat it as a
+ * failed submission. A failed user confirmation alone does not throw, since
+ * the admin already has the enquiry either way.
  */
 export async function sendConfirmationEmails(
   payload: ConfirmationEmailPayload
@@ -60,8 +64,8 @@ export async function sendConfirmationEmails(
     reply_to: payload.submitterEmail,
     fullName: payload.submitterName,
     email: payload.submitterEmail,
-    phoneNumber: payload.fields["Phone Number"] ?? payload.fields["Phone"] ?? "",
-    address: payload.fields["Country"] ?? payload.fields["City/State"] ?? "",
+    phoneNumber: payload.fields[FIELD_KEYS.PHONE_NUMBER] ?? "",
+    address: payload.fields[FIELD_KEYS.COUNTRY] ?? payload.fields[FIELD_KEYS.CITY_STATE] ?? "",
   };
 
   let adminSent = false;
@@ -80,6 +84,7 @@ export async function sendConfirmationEmails(
     adminSent = true;
   } catch (err) {
     console.error("[email] Admin notification failed:", err);
+    throw new Error("Admin notification failed to send", { cause: err });
   }
 
   try {

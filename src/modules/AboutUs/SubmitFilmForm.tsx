@@ -28,6 +28,7 @@ import {
   type PersonEntry,
 } from "@/utils/FilmSubmission.utils";
 import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
+import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { CrewList } from "./components/CrewList";
 
@@ -184,7 +185,7 @@ export function SubmitFilmForm() {
           "Release Date": values.releaseDate,
           "Production House": values.productionHouse,
           Distributor: values.distributor || "Not provided",
-          "Contact Email": values.contactEmail,
+          [FIELD_KEYS.EMAIL]: values.contactEmail,
           "IMDb URL": values.imdbUrl,
           "Trailer Download URL": values.trailerUrl,
           Notes: values.notes?.trim() || "Not provided",

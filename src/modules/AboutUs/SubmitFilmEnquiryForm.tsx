@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { useSubmissionOptions, WATCH_FORMAT_OPTIONS } from "@/utils/FilmSubmission.utils";
 import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
+import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 
 type EnquiryValues = {
@@ -130,8 +131,8 @@ export function SubmitFilmEnquiryForm() {
         submitterEmail: values.email,
         submitterName: values.name,
         fields: {
-          "Full Name": values.name,
-          Email: values.email,
+          [FIELD_KEYS.FULL_NAME]: values.name,
+          [FIELD_KEYS.EMAIL]: values.email,
           Role: values.role,
           "Film Title": values.title,
           Synopsis: values.synopsis,
