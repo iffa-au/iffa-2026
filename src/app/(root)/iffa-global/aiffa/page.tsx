@@ -1,3 +1,5 @@
+import { FaInstagram } from "react-icons/fa";
+
 const introParagraphs = [
   "AIFFA - the Arab International Film Festival of Australia - is a dedicated cultural and cinematic platform celebrating Arab and Omani storytelling within Australia's vibrant creative landscape.",
   "Initiated by the Oman Film Society in collaboration with IFFA, AIFFA serves as a dynamic bridge between the Arab world and Australia, showcasing powerful narratives, emerging voices, and culturally significant works from across the region.",
@@ -13,6 +15,7 @@ const leaders = [
     initials: "?",
     bio: "Details coming soon.",
     image: "",
+    imagePosition: "center",
   },
   {
     name: "Fahad Al Maimani",
@@ -21,7 +24,8 @@ const leaders = [
     instagramUrl: "https://www.instagram.com/fahadmaimani",
     initials: "FM",
     bio: "Fahad Al Maimani is an Omani academic, filmmaker, and cultural leader dedicated to advancing film education and independent cinema in Oman. He serves as a Lecturer in Filmmaking at the University of Technology and Applied Sciences (UTAS), where he contributes to the academic and practical development of emerging filmmakers.",
-    image: "/assets/leaders/Fahad.png",
+    image: "/assets/leaders/Fahad.webp",
+    imagePosition: "center 20%",
   },
   {
     name: "Mohammed bin Abdullah Al-Ajmi",
@@ -30,7 +34,8 @@ const leaders = [
     instagramUrl: "https://www.instagram.com/alajmiphoto",
     initials: "MA",
     bio: "Mohammed bin Abdullah Al-Ajmi is an Omani filmmaker, cinematographer, and cultural leader committed to developing the film industry in Oman and across the Arab region. He serves as Chairman of the Oman Film Society and CEO of Silver Lens Production, where he supports emerging filmmakers and promotes Omani cinema internationally.",
-    image: "/assets/leaders/Abdullah.png",
+    image: "/assets/leaders/Abdullah.webp",
+    imagePosition: "center",
   },
 ];
 
@@ -95,45 +100,54 @@ export default function AiffaPage() {
             <div className="h-px w-full bg-white/20"></div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {leaders.map((person) => (
               <article
                 key={person.name}
-                className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-lg"
+                className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-yellow-400/30 hover:shadow-xl hover:shadow-yellow-400/5"
               >
-                <div className="mb-4 flex items-center gap-4">
+                <div className="relative aspect-[4/5] w-full flex-shrink-0 bg-black">
                   {person.image ? (
                     <img
                       src={person.image}
                       alt={person.name}
-                      className="h-12 w-12 flex-shrink-0 rounded-full border border-yellow-400/50 object-cover"
+                      style={{ objectPosition: person.imagePosition }}
+                      className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-yellow-400/50 bg-black text-xs font-bold text-yellow-400">
-                      {person.initials}
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-yellow-400/10 via-yellow-400/5 to-black">
+                      <span className="text-5xl font-black text-yellow-400/20">
+                        {person.initials}
+                      </span>
                     </div>
                   )}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-bold leading-tight text-yellow-400 sm:text-base">
-                      {person.name}
-                    </h3>
-                    <p className="mt-1 text-xs leading-snug text-yellow-300/90">
-                      {person.title}
-                    </p>
-                  </div>
-                  <a
-                    href={person.instagramUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-gray-400 transition hover:text-yellow-400"
-                  >
-                    {person.instagram}
-                  </a>
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+
+                  {person.instagramUrl && (
+                    <a
+                      href={person.instagramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${person.name} on Instagram`}
+                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-yellow-400 hover:text-black"
+                    >
+                      <FaInstagram className="h-4 w-4" />
+                    </a>
+                  )}
                 </div>
 
-                <p className="text-sm leading-relaxed text-gray-300 sm:text-base">
-                  {person.bio}
-                </p>
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="text-base font-bold leading-tight text-white">
+                    {person.name}
+                  </h3>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-yellow-400">
+                    {person.title}
+                  </p>
+                  <div className="mt-3 h-px w-10 bg-yellow-400/40" />
+                  <p className="mt-3 text-sm leading-relaxed text-gray-400">
+                    {person.bio}
+                  </p>
+                </div>
               </article>
             ))}
           </div>
