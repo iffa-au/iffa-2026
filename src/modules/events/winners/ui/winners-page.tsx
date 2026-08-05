@@ -80,8 +80,8 @@ export function WinnersPage({ year }: WinnersPageProps) {
           category: w.awardCategoryName ?? "",
           movieName: w.title ?? "",
           photoUrl:
-            w.landscapeImageUrl ??
-            w.portraitImageUrl ??
+            w.landscapeImageUrl ||
+            w.portraitImageUrl ||
             "/fallbacks/no-poster.svg",
           winnerName: w.crewMemberName ?? "",
         }));

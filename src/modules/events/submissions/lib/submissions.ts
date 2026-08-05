@@ -93,8 +93,8 @@ export const mapSubmissionFilmListItem = (
     submissionObjectId,
     title: item.title ?? "",
     posterUrl:
-      item.portraitImageUrl ??
-      item.landscapeImageUrl ??
+      item.portraitImageUrl ||
+      item.landscapeImageUrl ||
       "/fallbacks/no-poster.svg",
     directors: Array.isArray(item.directors) ? item.directors : [],
     year,

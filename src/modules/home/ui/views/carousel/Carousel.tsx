@@ -111,8 +111,8 @@ const Carousel = ({ year }: CarouselProps) => {
           movieId: item.id ?? "",
           title: item.title ?? "",
           posterUrl:
-            item.portraitImageUrl ??
-            item.landscapeImageUrl ??
+            item.portraitImageUrl ||
+            item.landscapeImageUrl ||
             "/fallbacks/no-poster.svg",
           directors: Array.isArray(item.directors) ? item.directors : [],
         }));
