@@ -79,7 +79,7 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
   return (
     <>
       <div
-        className="group relative mx-auto w-full max-w-[340px] overflow-hidden rounded-xl border border-white/10 bg-zinc-900 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-yellow-500/40 hover:shadow-2xl hover:shadow-yellow-500/10"
+        className="group relative mx-auto w-full max-w-[340px] overflow-hidden rounded-xl border border-white/10 bg-zinc-900 text-left shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-yellow-500/40 hover:shadow-2xl hover:shadow-yellow-500/10"
         style={{ aspectRatio: "2/3" }}
       >
         {!imageLoaded && (

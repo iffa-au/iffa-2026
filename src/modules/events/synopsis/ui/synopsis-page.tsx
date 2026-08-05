@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Film, Users } from "lucide-react";
+import { pickImageUrl } from "@/modules/events/submissions/lib/submissions";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
@@ -127,13 +128,12 @@ export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
   crew: SynopsisCrewMember[];
 } {
   const submissionId = String(data._id ?? data.id ?? "");
-  const portrait =
-    data.portraitImageUrl ||
-    data.potraitImageUrl ||
-    data.portraitUrl ||
-    "";
-  const posterUrl =
-    portrait || data.landscapeImageUrl || "/fallbacks/no-poster.svg";
+  const posterUrl = pickImageUrl(
+    data.portraitImageUrl,
+    data.potraitImageUrl,
+    data.portraitUrl,
+    data.landscapeImageUrl
+  );
 
   let year: number | undefined;
   if (data.releaseDate) {

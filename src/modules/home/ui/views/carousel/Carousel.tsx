@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import MoviesCard from "./MoviesCard";
+import { pickImageUrl } from "@/modules/events/submissions/lib/submissions";
 
 type CarouselProps = {
   year: number | string;
@@ -110,10 +111,7 @@ const Carousel = ({ year }: CarouselProps) => {
         const mapped: FilmItem[] = items.map((item) => ({
           movieId: item.id ?? "",
           title: item.title ?? "",
-          posterUrl:
-            item.portraitImageUrl ||
-            item.landscapeImageUrl ||
-            "/fallbacks/no-poster.svg",
+          posterUrl: pickImageUrl(item.portraitImageUrl, item.landscapeImageUrl),
           directors: Array.isArray(item.directors) ? item.directors : [],
         }));
 

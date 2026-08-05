@@ -1,33 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Award, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import MoviesCard from "@/modules/home/ui/views/carousel/MoviesCard";
-
-type NominationApiItem = {
-  id?: string | number;
-  contentId?: string | number;
-  submissionId?: string;
-  _id?: string;
-  title?: string;
-  portraitImageUrl?: string;
-  landscapeImageUrl?: string;
-  directors?: string[];
-};
-
-type FilmItem = {
-  movieId: string;
-  contentId?: string;
-  submissionObjectId?: string;
-  title: string;
-  posterUrl: string;
-  directors: string[];
-};
+import {
+  isObjectId,
+  mapSubmissionFilmListItem,
+  resolveSubmissionMongoId,
+  type FilmCardItem,
+  type SubmissionApiItem,
+} from "@/modules/events/submissions/lib/submissions";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-const OBJECT_ID_REGEX = /^[a-f0-9]{24}$/i;
 
 const getItemsPerPage = () => {
   if (typeof window === "undefined") return 12;
@@ -47,7 +34,7 @@ export function NominationsPage({ year }: NominationsPageProps) {
   const targetYear = parseInt(year, 10);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(getItemsPerPage);
-  const [films, setFilms] = useState<FilmItem[]>([]);
+  const [films, setFilms] = useState<FilmCardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
@@ -94,32 +81,10 @@ export function NominationsPage({ year }: NominationsPageProps) {
         }
 
         const data: unknown = await response.json();
-        const items = Array.isArray(data) ? (data as NominationApiItem[]) : [];
-
-        const mapped: FilmItem[] = items.map((item) => {
-          const contentId =
-            item.contentId != null
-              ? String(item.contentId)
-              : item.id != null
-                ? String(item.id)
-                : undefined;
-          const submissionObjectId =
-            typeof item.submissionId === "string"
-              ? item.submissionId
-              : undefined;
-
-          return {
-            movieId: submissionObjectId ?? contentId ?? "",
-            contentId,
-            submissionObjectId,
-            title: item.title ?? "",
-            posterUrl:
-              item.portraitImageUrl ||
-              item.landscapeImageUrl ||
-              "/fallbacks/no-poster.svg",
-            directors: Array.isArray(item.directors) ? item.directors : [],
-          };
-        });
+        const items = Array.isArray(data) ? (data as SubmissionApiItem[]) : [];
+        const mapped = items.map((item) =>
+          mapSubmissionFilmListItem(item, year)
+        );
 
         setFilms(mapped);
         setCurrentPage(1);
@@ -159,7 +124,7 @@ export function NominationsPage({ year }: NominationsPageProps) {
     if (currentPage < totalPages) handlePageChange(currentPage + 1);
   };
 
-  const handleOpenSynopsis = async (film: FilmItem) => {
+  const handleOpenSynopsis = async (film: FilmCardItem) => {
     const key = film.submissionObjectId ?? film.contentId;
     if (!key) return;
 
@@ -172,7 +137,7 @@ export function NominationsPage({ year }: NominationsPageProps) {
         return;
       }
 
-      const resolvedObjectId = await resolveSubmissionId({
+      const resolvedObjectId = await resolveSubmissionMongoId({
         year,
         contentId: film.contentId,
         title: film.title,
@@ -200,6 +165,7 @@ export function NominationsPage({ year }: NominationsPageProps) {
     targetYear === 2025
       ? "IFFA Awards 2025 - Nominations Announcement"
       : `${year} Nominations`;
+  const isUpcomingOrCurrentYear = targetYear >= new Date().getFullYear();
 
   if (loading) {
     return (
@@ -225,17 +191,10 @@ export function NominationsPage({ year }: NominationsPageProps) {
     <main className="min-h-screen bg-black px-4 py-10 text-white">
       <div className="mx-auto w-full max-w-7xl">
         <div className="mb-12 text-center">
-          <h1 className="showingx mb-4 text-4xl font-bold tracking-tight text-accent-4 md:text-6xl">
+          <h1 className="mb-4 text-4xl font-bold tracking-tight text-white md:text-6xl">
             {pageTitle}
           </h1>
-          <div className="mx-auto mb-6 h-1 w-24 bg-gradient-to-r from-accent-3 to-accent-6" />
-          <p className="showingx text-lg text-accent-6">
-            {films.length > 0
-              ? ""
-              : targetYear === 2025
-                ? "Official list coming soon"
-                : "No nominations found"}
-          </p>
+          <div className="mx-auto mb-6 h-1 w-24 bg-gradient-to-r from-yellow-500 to-yellow-200" />
           {resolveError ? (
             <p className="mt-2 text-sm text-red-400">{resolveError}</p>
           ) : null}
@@ -318,28 +277,47 @@ export function NominationsPage({ year }: NominationsPageProps) {
             )}
           </>
         ) : (
-          <div className="py-20 text-center">
-            <div className="mb-4 text-6xl opacity-50">[film]</div>
-            {targetYear === 2025 ? (
+          <div className="mx-auto flex max-w-xl flex-col items-center rounded-2xl border border-white/10 bg-white/3 px-6 py-14 text-center sm:px-12 sm:py-16">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/10 sm:h-20 sm:w-20">
+              <Award className="h-8 w-8 text-yellow-500 sm:h-10 sm:w-10" />
+            </div>
+
+            {isUpcomingOrCurrentYear ? (
               <>
-                <h2 className="mb-4 text-2xl font-semibold text-white md:text-3xl">
-                  Nominations not published yet
+                <h2 className="mb-3 text-2xl font-semibold text-white md:text-3xl">
+                  Nominations Not Announced Yet
                 </h2>
-                <p className="mx-auto max-w-3xl text-lg text-blue-200">
-                  The official list of nominations for IFFA Awards 2025 will be
-                  released on <strong>15 October 2025</strong>.
+                <p className="mx-auto max-w-md text-base text-white/60 md:text-lg">
+                  The official {targetYear} nominations list is still being
+                  finalized. Check back soon, or explore the films already
+                  submitted for consideration.
                 </p>
               </>
             ) : (
               <>
-                <h2 className="mb-2 text-2xl font-semibold text-white">
-                  No Nominations Found
+                <h2 className="mb-3 text-2xl font-semibold text-white md:text-3xl">
+                  No Nominations On Record
                 </h2>
-                <p className="text-blue-200">
-                  There are no nominations to display for {targetYear}.
+                <p className="mx-auto max-w-md text-base text-white/60 md:text-lg">
+                  We don&apos;t have a published nominations list for {targetYear}.
                 </p>
               </>
             )}
+
+            <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+              <Link
+                href={`/events/${year}/submissions`}
+                className="w-full rounded-lg bg-yellow-500 px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-black transition-colors hover:bg-yellow-400 sm:w-auto"
+              >
+                Browse Submitted Films
+              </Link>
+              <Link
+                href="/submit-film-enquiry"
+                className="w-full rounded-lg border border-white/20 bg-white/5 px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-white/10 sm:w-auto"
+              >
+                Submit Your Film Enquiry
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -347,74 +325,3 @@ export function NominationsPage({ year }: NominationsPageProps) {
   );
 }
 
-const isObjectId = (value?: string) =>
-  typeof value === "string" && OBJECT_ID_REGEX.test(value);
-
-type ResolveSubmissionIdParams = {
-  year: string;
-  contentId?: string;
-  title?: string;
-  submissionId?: string;
-};
-
-const resolveSubmissionId = async ({
-  year,
-  contentId,
-  title,
-  submissionId,
-}: ResolveSubmissionIdParams): Promise<string | null> => {
-  if (isObjectId(submissionId)) return submissionId ?? null;
-  if (isObjectId(contentId)) return contentId ?? null;
-
-  const normalizedBase = API_BASE_URL.endsWith("/")
-    ? API_BASE_URL.slice(0, -1)
-    : API_BASE_URL;
-
-  const candidateUrls = [
-    `${normalizedBase}/nominations?year=${encodeURIComponent(year)}`,
-    `${normalizedBase}/submissions?year=${encodeURIComponent(year)}`,
-  ];
-
-  for (const url of candidateUrls) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) continue;
-
-      const payload: unknown = await response.json();
-      const items = Array.isArray(payload)
-        ? (payload as NominationApiItem[])
-        : payload &&
-            typeof payload === "object" &&
-            "data" in payload &&
-            Array.isArray((payload as { data?: unknown }).data)
-          ? ((payload as { data: NominationApiItem[] }).data ?? [])
-          : [];
-
-      const matched = items.find((item) => {
-        const itemObjectId =
-          typeof item.submissionId === "string" ? item.submissionId : undefined;
-        const itemContentId =
-          item.contentId != null
-            ? String(item.contentId)
-            : item.id != null
-              ? String(item.id)
-              : undefined;
-
-        if (contentId && itemContentId === contentId) return true;
-        if (submissionId && itemObjectId === submissionId) return true;
-        if (title && item.title && item.title === title) return true;
-        return false;
-      });
-
-      const resolved =
-        (typeof matched?.submissionId === "string" && matched.submissionId) ||
-        null;
-
-      if (resolved && isObjectId(resolved)) return resolved;
-    } catch {
-      // Continue trying the next endpoint candidate.
-    }
-  }
-
-  return null;
-};
