@@ -39,6 +39,17 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       title: z.string().min(1, "Film title is required"),
       synopsis: z.string().min(20, "Synopsis must be at least 20 characters"),
       releaseDate: z.string().min(1, "Release date is required"),
+      // Digit-only strings (not numbers) so the field type matches what a
+      // controlled <input> naturally holds — see sanitizeDurationInput in
+      // SubmitFilmForm.tsx, which guarantees only digits ever land here.
+      durationHours: z
+        .string()
+        .regex(/^\d+$/, "Must be a whole number")
+        .refine((v) => Number(v) <= 10, "Please enter a realistic runtime"),
+      durationMinutes: z
+        .string()
+        .regex(/^\d+$/, "Must be a whole number")
+        .refine((v) => Number(v) <= 59, "Must be between 0 and 59"),
       contentTypeId: z.string().min(1, "Content type is required"),
       countryId: z.string().min(1, "Country is required"),
       releaseCountryIds: z
@@ -74,6 +85,14 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       }),
     })
     .superRefine((data, ctx) => {
+      if (Number(data.durationHours) === 0 && Number(data.durationMinutes) === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["durationMinutes"],
+          message: "Duration is required",
+        });
+      }
+
       const contentTypeName = contentTypes.find(
         (ct) => ct._id === data.contentTypeId,
       )?.name;
