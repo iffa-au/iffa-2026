@@ -44,6 +44,20 @@ const PRODUCER_ROLES = ["Producer", "Executive Producer"];
 const L = "text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono";
 const I = "bg-[#0a0908] border-[#2a2418] text-white placeholder-[#3d3828] focus:border-[#e6ba35]/50 focus-visible:ring-[#e6ba35]/20 focus-visible:ring-1 rounded-lg h-11";
 
+// Keeps duration inputs digit-only and within range as the user types,
+// rather than relying on <input type="number"> alone (which still lets
+// browsers accept "e", "-", "+", or out-of-range values).
+function sanitizeDurationInput(raw: string, max: number, onChange: (value: string) => void) {
+  const digitsOnly = raw.replace(/[^0-9]/g, "");
+  if (digitsOnly === "") {
+    onChange("0");
+    return;
+  }
+  const num = Number(digitsOnly);
+  if (num > max) return;
+  onChange(String(num));
+}
+
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Section({ step, title, desc, children }: { step: number; title: string; desc?: string; children: React.ReactNode }) {
   return (
@@ -101,7 +115,7 @@ export function SubmitFilmForm() {
   const form = useForm<FilmValues>({
     resolver: zodResolver(filmSchema),
     defaultValues: {
-      title: "", synopsis: "", releaseDate: "", contentTypeId: "", countryId: "",
+      title: "", synopsis: "", releaseDate: "", durationHours: "0", durationMinutes: "0", contentTypeId: "", countryId: "",
       releaseCountryIds: [], watchFormats: [],
       languageId: "", productionHouse: "", distributor: "", genreIds: [],
       potraitImageUrl: "", landscapeImageUrl: "", imdbUrl: "", trailerUrl: "",
@@ -265,6 +279,54 @@ export function SubmitFilmForm() {
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />
+
+                <div>
+                  <FormLabel className={L}>Duration <span className="text-[#e6ba35]">*</span></FormLabel>
+                  <div className="mt-2 flex items-start gap-3">
+                    <FormField control={form.control} name="durationHours"
+                      render={({ field }: { field: any }) => (
+                        <FormItem>
+                          <div className="flex items-center gap-2">
+                            <FormControl>
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                min={0}
+                                max={10}
+                                placeholder="0"
+                                className={cn(I, "w-20 text-center")}
+                                value={field.value}
+                                onChange={(e) => sanitizeDurationInput(e.target.value, 10, field.onChange)}
+                              />
+                            </FormControl>
+                            <span className="text-[#7a7258] text-xs">hr</span>
+                          </div>
+                          <FormMessage className="text-red-400 text-xs" />
+                        </FormItem>
+                      )} />
+                    <FormField control={form.control} name="durationMinutes"
+                      render={({ field }: { field: any }) => (
+                        <FormItem>
+                          <div className="flex items-center gap-2">
+                            <FormControl>
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                min={0}
+                                max={59}
+                                placeholder="0"
+                                className={cn(I, "w-20 text-center")}
+                                value={field.value}
+                                onChange={(e) => sanitizeDurationInput(e.target.value, 59, field.onChange)}
+                              />
+                            </FormControl>
+                            <span className="text-[#7a7258] text-xs">min</span>
+                          </div>
+                          <FormMessage className="text-red-400 text-xs" />
+                        </FormItem>
+                      )} />
+                  </div>
+                </div>
 
                 <FormField control={form.control} name="contentTypeId"
                   render={({ field }: { field: any }) => (

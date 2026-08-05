@@ -54,8 +54,14 @@ const Carousel = ({ year }: CarouselProps) => {
     const el = sectionRef.current;
     if (!el) return;
 
+    // One-shot reveal: once intersected we never flip back to hidden, and we
+    // stop observing so a trailing `isIntersecting: false` can't undo it.
     const observer = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setIsVisible(true);
+        observer.disconnect();
+      },
       { threshold: 0.1, rootMargin: "200px" },
     );
 
@@ -112,7 +118,11 @@ const Carousel = ({ year }: CarouselProps) => {
         }));
 
         const duplicatedForScroll = [...mapped, ...mapped, ...mapped];
-        fetchCache[cacheKey] = duplicatedForScroll; // Cache the processed result
+        // Only cache a real result — caching an empty/misshaped response would
+        // stick for the whole page session and permanently blank the row.
+        if (mapped.length > 0) {
+          fetchCache[cacheKey] = duplicatedForScroll;
+        }
         setFilms(duplicatedForScroll);
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
@@ -130,10 +140,10 @@ const Carousel = ({ year }: CarouselProps) => {
   }, [year, isVisible]);
 
   useEffect(() => {
-    if (films.length === 0) return;
-
+    // The track only exists once revealed with films, so gate on both: this
+    // effect must never attach a timeline to a stale/absent container.
     const container = containerRef.current;
-    if (!container) return;
+    if (!isVisible || films.length === 0 || !container) return;
 
     const createAnimation = () => {
       if (timelineRef.current) {
@@ -172,50 +182,61 @@ const Carousel = ({ year }: CarouselProps) => {
       wrapper?.removeEventListener("mouseleave", handleMouseLeave);
       window.removeEventListener("resize", handleResize);
     };
-  }, [films]);
+  }, [films, isVisible]);
 
-  if (!isVisible) {
-    return <div ref={sectionRef} className="w-full min-h-[200px]" />;
-  }
+  const renderBody = () => {
+    if (!isVisible) return null;
 
-  if (loading) {
+    if (loading) {
+      return (
+        <div className="w-full p-6 md:p-10 lg:p-14 flex justify-center items-center">
+          <div className="h-8 w-8 rounded-full border-4 border-white/20 border-t-white animate-spin" />
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="w-full p-6 md:p-10 lg:p-14 text-center">
+          <div className="text-red-400 text-sm md:text-base">{error}</div>
+        </div>
+      );
+    }
+
+    // Genuinely empty list renders nothing (and was never cached, so a later
+    // mount will retry the fetch).
+    if (films.length === 0) return null;
+
     return (
-      <div ref={sectionRef} className="w-full p-6 md:p-10 lg:p-14 flex justify-center items-center">
-        <div className="h-8 w-8 rounded-full border-4 border-white/20 border-t-white animate-spin" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div ref={sectionRef} className="w-full p-6 md:p-10 lg:p-14 text-center">
-        <div className="text-red-400 text-sm md:text-base">{error}</div>
-      </div>
-    );
-  }
-
-  if (films.length === 0) return null;
-
-  return (
-    <div ref={sectionRef} className="w-full overflow-hidden p-6 md:p-10 lg:p-14 lg:h-[622px]">
-      <div className="relative">
-        <div className="overflow-hidden">
-          <div
-            ref={containerRef}
-            className="flex gap-3 sm:gap-4 md:gap-6"
-            style={{ width: "fit-content", willChange: "transform" }}
-          >
-            {films.map((film, idx) => (
-              <div
-                key={`${film.movieId}-${idx}`}
-                className="flex-shrink-0 w-[280px] sm:w-[300px] md:w-[320px] lg:w-[340px]"
-              >
-                <MoviesCard film={film} />
-              </div>
-            ))}
+      <div className="w-full overflow-hidden p-6 md:p-10 lg:p-14 lg:h-[622px]">
+        <div className="relative">
+          <div className="overflow-hidden">
+            <div
+              ref={containerRef}
+              className="flex gap-3 sm:gap-4 md:gap-6"
+              style={{ width: "fit-content", willChange: "transform" }}
+            >
+              {films.map((film, idx) => (
+                <div
+                  key={`${film.movieId}-${idx}`}
+                  className="flex-shrink-0 w-[280px] sm:w-[300px] md:w-[320px] lg:w-[340px]"
+                >
+                  <MoviesCard film={film} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
+    );
+  };
+
+  // Single stable node for the observer: it mounts once and never unmounts,
+  // so every state swap happens in its children. The min-height only applies
+  // while collapsed, giving it size to intersect without adding a gap later.
+  return (
+    <div ref={sectionRef} className={isVisible ? "w-full" : "w-full min-h-[200px]"}>
+      {renderBody()}
     </div>
   );
 };

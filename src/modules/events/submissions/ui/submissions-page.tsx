@@ -1,87 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Film } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import MoviesCard from "@/modules/home/ui/views/carousel/MoviesCard";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-const OBJECT_ID_REGEX = /^[a-f0-9]{24}$/i;
-
-type SubmissionApiItem = {
-  id?: unknown;
-  contentId?: unknown;
-  submissionId?: unknown;
-  _id?: unknown;
-  title?: string;
-  portraitImageUrl?: string;
-  landscapeImageUrl?: string;
-  directors?: string[];
-};
-
-type FilmCardItem = {
-  movieId: string;
-  contentId?: string;
-  submissionObjectId?: string;
-  title: string;
-  posterUrl: string;
-  directors: string[];
-};
-
-const isObjectId = (value?: string | null) =>
-  typeof value === "string" && OBJECT_ID_REGEX.test(value);
-
-const coerceMongoIdString = (value: unknown): string | undefined => {
-  if (typeof value === "string" && isObjectId(value)) return value;
-  if (
-    value &&
-    typeof value === "object" &&
-    "$oid" in value &&
-    typeof (value as { $oid?: unknown }).$oid === "string" &&
-    isObjectId((value as { $oid: string }).$oid)
-  ) {
-    return (value as { $oid: string }).$oid;
-  }
-  return undefined;
-};
-
-const pickMongoSubmissionId = (item: SubmissionApiItem): string | undefined =>
-  coerceMongoIdString(item.id) ??
-  coerceMongoIdString(item.submissionId) ??
-  coerceMongoIdString(item._id);
-
-const pickContentId = (item: SubmissionApiItem): string | undefined => {
-  if (item.contentId != null) return String(item.contentId);
-  if (item.id != null) {
-    if (typeof item.id === "object") return undefined;
-    const idStr = String(item.id);
-    if (idStr && !isObjectId(idStr)) return idStr;
-  }
-  return undefined;
-};
-
-const mapSubmissionFilmListItem = (item: SubmissionApiItem): FilmCardItem => {
-  const submissionObjectId = pickMongoSubmissionId(item);
-  const contentId = pickContentId(item);
-  return {
-    movieId: submissionObjectId ?? contentId ?? "",
-    contentId,
-    submissionObjectId,
-    title: item.title ?? "",
-    posterUrl:
-      item.portraitImageUrl ??
-      item.landscapeImageUrl ??
-      "/fallbacks/no-poster.svg",
-    directors: Array.isArray(item.directors) ? item.directors : [],
-  };
-};
-
-const synopsisHrefForFilm = (film: FilmCardItem): string | null => {
-  const id = film.submissionObjectId ?? (isObjectId(film.movieId) ? film.movieId : null);
-  return id ? `/synopsis/${id}` : null;
-};
+import {
+  fetchSubmissionsForYear,
+  filmActionKey,
+  resolveSubmissionMongoId,
+  synopsisHrefForFilm,
+  type FilmCardItem,
+} from "../lib/submissions";
 
 const getItemsPerPage = () => {
   if (typeof window === "undefined") return 12;
@@ -129,24 +60,12 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
 
     const controller = new AbortController();
 
-    const fetchSubmissions = async () => {
+    const loadSubmissions = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const normalizedBase = API_BASE_URL.endsWith("/")
-          ? API_BASE_URL.slice(0, -1)
-          : API_BASE_URL;
-        const url = `${normalizedBase}/submissions?year=${encodeURIComponent(year)}`;
-        const response = await fetch(url, { signal: controller.signal });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch submissions (${response.status})`);
-        }
-
-        const data: unknown = await response.json();
-        const items = Array.isArray(data) ? (data as SubmissionApiItem[]) : [];
-        const mapped: FilmCardItem[] = items.map(mapSubmissionFilmListItem);
+        const mapped = await fetchSubmissionsForYear(year, controller.signal);
 
         setFilms(mapped);
         setCurrentPage(1);
@@ -159,7 +78,7 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
       }
     };
 
-    void fetchSubmissions();
+    void loadSubmissions();
     return () => controller.abort();
   }, [year]);
 
@@ -185,9 +104,6 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
   const handleNextPage = () => {
     if (currentPage < totalPages) handlePageChange(currentPage + 1);
   };
-
-  const filmActionKey = (film: FilmCardItem) =>
-    film.submissionObjectId ?? film.contentId ?? film.movieId;
 
   const openSynopsisAfterResolve = async (film: FilmCardItem) => {
     const key = filmActionKey(film);
@@ -235,11 +151,11 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
     <main className="min-h-screen bg-black px-4 py-10 text-white">
       <div className="mx-auto w-full max-w-7xl">
         <div className="mb-12 text-center">
-          <h1 className="showingx mb-4 text-4xl font-bold tracking-tight text-accent-4 md:text-6xl">
+          <h1 className="mb-4 text-4xl font-bold tracking-tight text-accent-4 md:text-6xl">
             {year} Submissions
           </h1>
           <div className="mx-auto mb-6 h-1 w-24 bg-gradient-to-r from-accent-3 to-accent-6" />
-          <p className="showingx text-lg text-accent-6">
+          <p className="text-lg text-accent-6">
             {films.length > 0 ? "" : "No movies found"}
           </p>
         </div>
@@ -281,7 +197,7 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
           </div>
         ) : (
           <div className="py-20 text-center">
-            <div className="mb-4 text-6xl opacity-50">[film]</div>
+            <Film className="mx-auto mb-4 h-16 w-16 text-white/30" />
             <h2 className="mb-2 text-2xl font-semibold text-white">
               No Movies Found
             </h2>
@@ -345,62 +261,3 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
     </main>
   );
 }
-
-type ResolveSubmissionIdParams = {
-  year: string;
-  contentId?: string;
-  title?: string;
-  submissionId?: string;
-};
-
-const resolveSubmissionMongoId = async ({
-  year,
-  contentId,
-  title,
-  submissionId,
-}: ResolveSubmissionIdParams): Promise<string | null> => {
-  if (isObjectId(submissionId)) return submissionId ?? null;
-  if (isObjectId(contentId)) return contentId ?? null;
-
-  const normalizedBase = API_BASE_URL.endsWith("/")
-    ? API_BASE_URL.slice(0, -1)
-    : API_BASE_URL;
-
-  const candidateUrls = [
-    `${normalizedBase}/fetchSubmissions?year=${encodeURIComponent(year)}`,
-    `${normalizedBase}/submissions?year=${encodeURIComponent(year)}`,
-  ];
-
-  for (const url of candidateUrls) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) continue;
-
-      const payload: unknown = await response.json();
-      const items = Array.isArray(payload)
-        ? (payload as SubmissionApiItem[])
-        : payload &&
-            typeof payload === "object" &&
-            "data" in payload &&
-            Array.isArray((payload as { data?: unknown }).data)
-          ? ((payload as { data: SubmissionApiItem[] }).data ?? [])
-          : [];
-
-      const matched = items.find((item) => {
-        const itemObjectId = pickMongoSubmissionId(item);
-        const itemContentId = pickContentId(item);
-        if (contentId && itemContentId === contentId) return true;
-        if (submissionId && itemObjectId === submissionId) return true;
-        if (title && item.title && item.title === title) return true;
-        return false;
-      });
-
-      const resolved = matched ? pickMongoSubmissionId(matched) : null;
-      if (resolved && isObjectId(resolved)) return resolved;
-    } catch {
-      // Continue trying the next endpoint candidate.
-    }
-  }
-
-  return null;
-};
