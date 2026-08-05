@@ -10,10 +10,9 @@ type Film = {
   title?: string;
   directors?: string[];
   year?: string;
-  // Not yet returned by the submissions API — falls back to a placeholder
-  // until the API response includes these fields.
-  rating?: string;
   genre?: string;
+  // Not yet returned by the submissions API — falls back to a placeholder
+  // until the API response includes this field.
   duration?: string;
   cast?: string[];
   description?: string;
@@ -24,7 +23,6 @@ type MoviesCardProps = {
   film: Film;
 };
 
-const RATING_PLACEHOLDER = "NR";
 const GENRE_PLACEHOLDER = "Genre TBA";
 const DURATION_PLACEHOLDER = "Duration TBA";
 const DESCRIPTION_PLACEHOLDER = "Synopsis coming soon.";
@@ -129,9 +127,6 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-xs text-white/70">
-                <span className="rounded border border-white/30 px-1.5 py-0.5 text-[10px] font-semibold">
-                  {film.rating ?? RATING_PLACEHOLDER}
-                </span>
                 <span>
                   {film.genre ?? GENRE_PLACEHOLDER} ·{" "}
                   {film.duration ?? DURATION_PLACEHOLDER}

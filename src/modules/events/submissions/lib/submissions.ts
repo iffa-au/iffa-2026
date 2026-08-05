@@ -10,12 +10,10 @@ export type SubmissionApiItem = {
   portraitImageUrl?: string;
   landscapeImageUrl?: string;
   directors?: string[];
-  // Not yet returned by the API — wire these up as the endpoint adds them.
-  rating?: string;
   genre?: string;
   genres?: string[];
-  duration?: string;
-  runtime?: string | number;
+  durationHours?: number;
+  durationMinutes?: number;
   cast?: string[];
   description?: string;
   synopsis?: string;
@@ -33,12 +31,22 @@ export type FilmCardItem = {
   posterUrl: string;
   directors: string[];
   year?: string;
-  rating?: string;
   genre?: string;
   duration?: string;
   cast?: string[];
   description?: string;
   trailerUrl?: string;
+};
+
+const formatDuration = (
+  hours?: number,
+  minutes?: number
+): string | undefined => {
+  if (!hours && !minutes) return undefined;
+  const parts: string[] = [];
+  if (hours) parts.push(`${hours}h`);
+  if (minutes) parts.push(`${minutes}m`);
+  return parts.join(" ");
 };
 
 export const isObjectId = (value?: string | null): value is string =>
@@ -90,11 +98,8 @@ export const mapSubmissionFilmListItem = (
       "/fallbacks/no-poster.svg",
     directors: Array.isArray(item.directors) ? item.directors : [],
     year,
-    rating: item.rating,
     genre: item.genre ?? item.genres?.join(" / "),
-    duration:
-      item.duration ??
-      (item.runtime != null ? String(item.runtime) : undefined),
+    duration: formatDuration(item.durationHours, item.durationMinutes),
     cast: Array.isArray(item.cast) ? item.cast : undefined,
     description: item.description ?? item.synopsis ?? item.logline,
     trailerUrl: item.trailerUrl ?? item.trailer ?? item.youtubeUrl,
