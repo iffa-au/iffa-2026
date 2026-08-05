@@ -99,9 +99,20 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
           style={{ opacity: imageLoaded ? 1 : 0 }}
         />
 
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent transition-colors duration-300 group-hover:from-black group-hover:via-black/85" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/80 via-55% to-transparent" />
 
-        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2.5 p-4">
+        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-yellow-500 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black">
+              IFFA
+            </span>
+            {film.year && (
+              <span className="text-xs font-medium text-white/80">
+                {film.year} Selection
+              </span>
+            )}
+          </div>
+
           <div>
             <h3 className="line-clamp-2 text-sm font-bold leading-tight text-white sm:text-base">
               {title}
@@ -113,37 +124,20 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
             )}
           </div>
 
-          <div className="grid grid-rows-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:grid-rows-[1fr] group-hover:opacity-100">
-            <div className="flex flex-col gap-2 overflow-hidden">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-md bg-yellow-500 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black">
-                  IFFA
-                </span>
-                {film.year && (
-                  <span className="text-xs font-medium text-white/80">
-                    {film.year} Selection
-                  </span>
-                )}
-              </div>
+          <p className="text-xs text-white/70">
+            {film.genre ?? GENRE_PLACEHOLDER} ·{" "}
+            {film.duration ?? DURATION_PLACEHOLDER}
+          </p>
 
-              <div className="flex flex-wrap items-center gap-2 text-xs text-white/70">
-                <span>
-                  {film.genre ?? GENRE_PLACEHOLDER} ·{" "}
-                  {film.duration ?? DURATION_PLACEHOLDER}
-                </span>
-              </div>
+          {cast.length > 0 && (
+            <p className="truncate text-xs text-white/70">
+              {cast.join(", ")}
+            </p>
+          )}
 
-              {cast.length > 0 && (
-                <p className="truncate text-xs text-white/70">
-                  {cast.join(", ")}
-                </p>
-              )}
-
-              <p className="line-clamp-2 text-xs leading-relaxed text-white/60">
-                {film.description ?? DESCRIPTION_PLACEHOLDER}
-              </p>
-            </div>
-          </div>
+          <p className="line-clamp-2 text-xs leading-relaxed text-white/60">
+            {film.description ?? DESCRIPTION_PLACEHOLDER}
+          </p>
 
           <span
             role="button"
@@ -152,7 +146,7 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") openTrailer(e);
             }}
-            className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-full border border-yellow-500 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-yellow-500 transition-all duration-300 hover:scale-105 hover:bg-yellow-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black group-hover:scale-105 group-hover:bg-yellow-500 group-hover:text-black"
+            className="mt-1 inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-full border border-yellow-500 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-yellow-500 transition-all duration-300 hover:scale-105 hover:bg-yellow-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             <Play className="h-3 w-3 fill-current" />
             Watch Trailer
