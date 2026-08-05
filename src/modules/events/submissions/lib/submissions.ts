@@ -1,5 +1,24 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const OBJECT_ID_REGEX = /^[a-f0-9]{24}$/i;
+const FALLBACK_POSTER = "/fallbacks/no-poster.svg";
+
+/**
+ * CMS data entry can put a bare domain (e.g. "www.example.com") into an
+ * image-URL field. Rendered as-is in an <img src>, the browser treats that
+ * as a relative path and requests it against the current page route —
+ * producing a bogus 404 against the app router instead of a broken image.
+ */
+export const isValidMediaUrl = (value?: string): value is string =>
+  !!value && /^(https?:\/\/|\/)/i.test(value);
+
+export const pickImageUrl = (
+  ...candidates: (string | undefined)[]
+): string => {
+  for (const candidate of candidates) {
+    if (isValidMediaUrl(candidate)) return candidate;
+  }
+  return FALLBACK_POSTER;
+};
 
 export type SubmissionApiItem = {
   id?: unknown;
@@ -92,10 +111,7 @@ export const mapSubmissionFilmListItem = (
     contentId,
     submissionObjectId,
     title: item.title ?? "",
-    posterUrl:
-      item.portraitImageUrl ||
-      item.landscapeImageUrl ||
-      "/fallbacks/no-poster.svg",
+    posterUrl: pickImageUrl(item.portraitImageUrl, item.landscapeImageUrl),
     directors: Array.isArray(item.directors) ? item.directors : [],
     year,
     genre: item.genre ?? item.genres?.join(" / "),
