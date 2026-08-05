@@ -89,7 +89,7 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
         )}
 
         <img
-          src={film.posterUrl ?? "/fallbacks/no-poster.svg"}
+          src={film.posterUrl || "/fallbacks/no-poster.svg"}
           alt={`${title} poster`}
           className="absolute -inset-px object-cover transition-transform duration-500 ease-out group-hover:scale-105"
           loading="lazy"
