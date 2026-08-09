@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, Film, Users } from "lucide-react";
-import { pickImageUrl } from "@/modules/events/submissions/lib/submissions";
+import { ChevronDown, ChevronUp, Film, Play, Users } from "lucide-react";
+import {
+  formatDuration,
+  getYouTubeEmbedUrl,
+  pickImageUrl,
+} from "@/modules/events/submissions/lib/submissions";
+import TrailerModal from "@/modules/home/ui/views/carousel/TrailerModal";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
@@ -20,6 +25,9 @@ type SubmissionApiResponse = {
   genreIds?: unknown[];
   genres?: unknown[];
   crew?: Record<string, unknown>;
+  durationHours?: number;
+  durationMinutes?: number;
+  trailerUrl?: string;
 };
 
 export type SynopsisCrewMember = {
@@ -37,6 +45,9 @@ export type SynopsisFilm = {
   year?: number;
   genres: string[];
   posterUrl: string;
+  backdropUrl: string;
+  duration?: string;
+  trailerEmbedUrl: string | null;
 };
 
 type SynopsisPageProps = {
@@ -134,6 +145,12 @@ export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
     data.portraitUrl,
     data.landscapeImageUrl
   );
+  const backdropUrl = pickImageUrl(
+    data.landscapeImageUrl,
+    data.portraitImageUrl,
+    data.potraitImageUrl,
+    data.portraitUrl
+  );
 
   let year: number | undefined;
   if (data.releaseDate) {
@@ -149,6 +166,9 @@ export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
       year,
       genres: normalizeGenres(data),
       posterUrl,
+      backdropUrl,
+      duration: formatDuration(data.durationHours, data.durationMinutes),
+      trailerEmbedUrl: getYouTubeEmbedUrl(data.trailerUrl),
     },
     crew: mapCrew(data, submissionId),
   };
@@ -316,6 +336,7 @@ export function SynopsisPage({ id }: SynopsisPageProps) {
   const [film, setFilm] = useState<SynopsisFilm | null>(null);
   const [crew, setCrew] = useState<SynopsisCrewMember[]>([]);
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
+  const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -363,7 +384,7 @@ export function SynopsisPage({ id }: SynopsisPageProps) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="text-center bg-white/5 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full border border-white/10 shadow-2xl">
-          <div className="w-20 h-20 bg-gradient-to-br from-yellow-600 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-pulse">
+          <div className="w-20 h-20 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-pulse">
             <Film className="w-10 h-10 text-black" />
           </div>
           <h2 className="text-xl font-semibold text-white mb-4">Loading Film Details...</h2>
@@ -376,7 +397,7 @@ export function SynopsisPage({ id }: SynopsisPageProps) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="text-center bg-white/5 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full border border-white/10 shadow-2xl">
-          <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-red-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Film className="w-10 h-10 text-white" />
           </div>
           <h2 className="text-xl font-semibold text-white mb-4">Unable to load content</h2>
@@ -390,7 +411,7 @@ export function SynopsisPage({ id }: SynopsisPageProps) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="text-center bg-white/5 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full border border-white/10 shadow-2xl">
-          <div className="w-20 h-20 bg-gradient-to-br from-yellow-600 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <div className="w-20 h-20 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Film className="w-10 h-10 text-black" />
           </div>
           <h2 className="text-xl font-semibold text-white mb-4">Movie not found</h2>
@@ -402,108 +423,120 @@ export function SynopsisPage({ id }: SynopsisPageProps) {
     );
   }
 
+  const metaParts = [
+    film.year ? String(film.year) : null,
+    film.duration ?? null,
+    film.genres.length > 0 ? film.genres.join(", ") : null,
+  ].filter((part): part is string => Boolean(part));
+
   return (
-    <div className="min-h-screen bg-black pt-28 pb-16 text-white overflow-hidden">
-      <div className="flex flex-col items-center gap-6 sm:gap-8 lg:gap-10 py-[5%] lg:flex-row container mx-auto px-4 sm:px-6">
-        
-        {/* Left Side: Poster */}
-        <div className="w-full sm:w-3/4 lg:w-1/2 flex items-center justify-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={film.posterUrl}
-            alt={`${film.title} Poster`}
-            className="w-2/3 sm:w-3/4 lg:w-1/2 rounded-lg border-2 border-white/10 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-yellow-600/30"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = "/fallbacks/no-poster.svg";
-            }}
-          />
-        </div>
-        
-        {/* Right Side: details & synopsis */}
-        <div className="w-full sm:w-3/4 lg:w-1/2 flex flex-col gap-4 sm:gap-6 relative px-2 sm:px-0 z-10">
-          <div className="text-2xl pt-4 sm:pt-0 sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-yellow-500 leading-tight">
-            {film.title}
-          </div>
-          
-          <div className="flex w-full flex-row text-sm sm:text-base text-yellow-400/80 flex-wrap">
-            <div className="font-medium">{film.year}</div>{film.year && film.genres.length > 0 && <>&nbsp;|&nbsp;</>}
-            <div className="flex flex-wrap">
-              {film.genres.map((g, index) => (
-                <span key={index} className="ml-2">
-                  {g}
-                  {index < film.genres.length - 1 ? ", " : ""}
-                </span>
-              ))}
-            </div>
+    <div className="min-h-screen bg-black text-white">
+      {/* Hero backdrop */}
+      <div className="relative h-[42vh] min-h-[280px] w-full overflow-hidden sm:h-[52vh] lg:h-[62vh]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={film.backdropUrl}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full scale-105 object-cover opacity-50 blur-[2px]"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/10 to-transparent" />
+      </div>
+
+      {/* Poster + title, overlapping the backdrop */}
+      <div className="container relative z-10 mx-auto -mt-24 px-4 pb-4 sm:-mt-32 sm:px-6 lg:-mt-40">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-8">
+          <div className="mx-auto w-40 shrink-0 sm:mx-0 sm:w-48 lg:w-56">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={film.posterUrl}
+              alt={`${film.title} Poster`}
+              className="w-full rounded-xl border-2 border-white/10 shadow-2xl shadow-black/50"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/fallbacks/no-poster.svg";
+              }}
+            />
           </div>
 
-          <div className="relative w-full max-w-[42rem]">
-            <div
-              className={`relative overflow-hidden transition-all duration-300 ${
-                synopsisExpanded ? "pointer-events-none" : ""
-              }`}
-            >
-              <div
-                className={`text-justify text-sm sm:text-base text-white/80 bg-white/5 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-white/10 cursor-pointer hover:bg-white/10 transition-all duration-300 ${
-                  !synopsisExpanded ? "line-clamp-3 sm:line-clamp-4" : "opacity-50"
-                }`}
-                onClick={handleDescriptionToggle}
-              >
-                {film.description
-                  ? film.description.split(/\n\s*\n/).map((para, idx) => (
-                      <p key={idx} className="mb-4 last:mb-0">
-                        {para}
-                      </p>
-                    ))
-                  : "No description available."}
-              </div>
+          <div className="min-w-0 flex-1 text-center sm:pb-2 sm:text-left">
+            <span className="inline-flex items-center rounded-md bg-yellow-500 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-black">
+              IFFA Selection
+            </span>
+            <h1 className="mt-3 text-2xl font-bold leading-tight text-white sm:text-3xl lg:text-4xl xl:text-5xl">
+              {film.title}
+            </h1>
 
-              {!synopsisExpanded && film.description && (
-                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none rounded-b-lg" />
-              )}
-            </div>
-
-            {synopsisExpanded && film.description && (
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-lg p-4 sm:p-6 border-2 border-yellow-600/30 shadow-2xl transform transition-all duration-500 animate-in fade-in zoom-in-95 z-20 overflow-y-auto">
-                <div className="text-justify text-sm sm:text-base text-white leading-relaxed space-y-4">
-                  {film.description.split(/\n\s*\n/).map((para, idx) => (
-                    <p key={idx}>{para}</p>
-                  ))}
-                </div>
-                <button
-                  onClick={handleDescriptionToggle}
-                  className="absolute top-3 right-3 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-200 group z-30"
-                >
-                  <ChevronUp className="w-5 h-5 text-white group-hover:scale-110 transition-transform duration-200" />
-                </button>
+            {metaParts.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-sm text-white/70 sm:justify-start sm:text-base">
+                {metaParts.map((part, idx) => (
+                  <span key={idx} className="flex items-center gap-2.5">
+                    {idx > 0 && <span className="text-white/30">&bull;</span>}
+                    {part}
+                  </span>
+                ))}
               </div>
             )}
 
-            {film.description && (
+            {film.trailerEmbedUrl && (
               <button
-                onClick={handleDescriptionToggle}
-                className={`mt-4 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-600/20 to-yellow-500/20 hover:from-yellow-600/30 hover:to-yellow-500/30 text-white rounded-lg border border-yellow-600/30 hover:border-yellow-500/50 transition-all duration-300 flex items-center gap-2 relative z-30 group ${
-                  synopsisExpanded ? "bg-yellow-600/30 relative mt-4 shadow-xl z-10" : ""
-                }`}
+                onClick={() => setIsTrailerOpen(true)}
+                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-black transition-colors hover:bg-yellow-400"
               >
-                <span className="font-medium">
-                  {synopsisExpanded ? "Show Less" : "Read More"}
-                </span>
-                <div className="transition-transform duration-300 group-hover:scale-110">
-                  {synopsisExpanded ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </div>
+                <Play className="h-4 w-4 fill-current" />
+                Watch Trailer
               </button>
             )}
           </div>
         </div>
+
+        {/* Synopsis */}
+        <div className="mx-auto mt-10 max-w-3xl sm:mx-0 sm:mt-14">
+          <h2 className="mb-4 text-xl font-bold text-white sm:text-2xl">Synopsis</h2>
+          <div className="relative">
+            <div
+              className={`text-sm leading-relaxed text-white/80 sm:text-base ${
+                !synopsisExpanded ? "line-clamp-4" : ""
+              }`}
+            >
+              {film.description
+                ? film.description.split(/\n\s*\n/).map((para, idx) => (
+                    <p key={idx} className="mb-4 last:mb-0">
+                      {para}
+                    </p>
+                  ))
+                : "No description available."}
+            </div>
+          </div>
+
+          {film.description && (
+            <button
+              onClick={handleDescriptionToggle}
+              className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-widest text-yellow-500 transition-colors hover:text-yellow-400"
+            >
+              {synopsisExpanded ? "Show Less" : "Read More"}
+              {synopsisExpanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       <CastSection cast={crew} movieId={film.movieId} />
+
+      <TrailerModal
+        isOpen={isTrailerOpen}
+        onClose={() => setIsTrailerOpen(false)}
+        embedUrl={film.trailerEmbedUrl}
+        title={film.title}
+      />
     </div>
   );
 }

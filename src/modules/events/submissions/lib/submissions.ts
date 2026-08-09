@@ -57,7 +57,7 @@ export type FilmCardItem = {
   trailerUrl?: string;
 };
 
-const formatDuration = (
+export const formatDuration = (
   hours?: number,
   minutes?: number
 ): string | undefined => {
@@ -66,6 +66,29 @@ const formatDuration = (
   if (hours) parts.push(`${hours}h`);
   if (minutes) parts.push(`${minutes}m`);
   return parts.join(" ");
+};
+
+export const getYouTubeEmbedUrl = (url?: string): string | null => {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+    let videoId: string | null = null;
+
+    if (parsed.hostname.includes("youtu.be")) {
+      videoId = parsed.pathname.slice(1);
+    } else if (parsed.hostname.includes("youtube.com")) {
+      videoId = parsed.pathname.startsWith("/embed/")
+        ? parsed.pathname.split("/embed/")[1]
+        : parsed.searchParams.get("v");
+    }
+
+    return videoId
+      ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`
+      : null;
+  } catch {
+    return null;
+  }
 };
 
 export const isObjectId = (value?: string | null): value is string =>
