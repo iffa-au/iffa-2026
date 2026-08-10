@@ -31,6 +31,7 @@ import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
 import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { CrewList } from "./components/CrewList";
+import { WebpImageUpload } from "./components/WebpImageUpload";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const API_BASE = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL ||
@@ -501,8 +502,11 @@ export function SubmitFilmForm() {
                 <FormField control={form.control} name="potraitImageUrl"
                   render={({ field }: { field: any }) => (
                     <FormItem>
-                      <FormLabel className={L}>Portrait Poster URL <span className="text-[#e6ba35]">*</span></FormLabel>
-                      <FormControl><Input {...field} placeholder="https://example.com/poster.jpg" className={I} /></FormControl>
+                      <FormLabel className={L}>Portrait Poster <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormControl>
+                        <WebpImageUpload value={field.value} onChange={field.onChange} />
+                      </FormControl>
+                      <p className="text-[#5a5240] text-[11px] mt-1.5">WEBP only, up to 15MB.</p>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />
@@ -510,8 +514,11 @@ export function SubmitFilmForm() {
                 <FormField control={form.control} name="landscapeImageUrl"
                   render={({ field }: { field: any }) => (
                     <FormItem>
-                      <FormLabel className={L}>Landscape Banner URL <span className="text-[#e6ba35]">*</span></FormLabel>
-                      <FormControl><Input {...field} placeholder="https://example.com/banner.jpg" className={I} /></FormControl>
+                      <FormLabel className={L}>Landscape Banner <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormControl>
+                        <WebpImageUpload value={field.value} onChange={field.onChange} />
+                      </FormControl>
+                      <p className="text-[#5a5240] text-[11px] mt-1.5">WEBP only, up to 15MB.</p>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />
