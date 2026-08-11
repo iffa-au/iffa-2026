@@ -44,6 +44,9 @@ export default function Header() {
 
         {/* Right Side Navigation (Desktop) */}
         <div className="hidden lg:flex items-center gap-4 relative z-20">
+          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
+            <Link href="/festivals">FESTIVALS</Link>
+          </Button>
           <PastEventsDropdown />
           <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
             <Link href="/latest-news">LATEST NEWS</Link>
@@ -63,6 +66,9 @@ export default function Header() {
         <div className="lg:hidden fixed inset-0 top-0 bg-[#0E0C15] flex flex-col items-center justify-center gap-6 z-40">
           <Button variant="ghost" size="icon" className="absolute top-5 right-5 text-white hover:bg-white/10" onClick={closeMenu}>
             <X className="w-5 h-5" />
+          </Button>
+          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-sm">
+            <Link href="/festivals" onClick={closeMenu}>FESTIVALS</Link>
           </Button>
           <div>
             <PastEventsDropdown onNavigate={closeMenu} />

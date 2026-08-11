@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Play } from "lucide-react";
 
+import { getYouTubeEmbedUrl } from "@/lib/youtube";
 import TrailerModal from "./TrailerModal";
 
 type Film = {
@@ -26,27 +27,6 @@ type MoviesCardProps = {
 const GENRE_PLACEHOLDER = "Genre TBA";
 const DURATION_PLACEHOLDER = "Duration TBA";
 const DESCRIPTION_PLACEHOLDER = "Synopsis coming soon.";
-
-const getYouTubeEmbedUrl = (url?: string): string | null => {
-  if (!url) return null;
-
-  try {
-    const parsed = new URL(url);
-    let videoId: string | null = null;
-
-    if (parsed.hostname.includes("youtu.be")) {
-      videoId = parsed.pathname.slice(1);
-    } else if (parsed.hostname.includes("youtube.com")) {
-      videoId = parsed.pathname.startsWith("/embed/")
-        ? parsed.pathname.split("/embed/")[1]
-        : parsed.searchParams.get("v");
-    }
-
-    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` : null;
-  } catch {
-    return null;
-  }
-};
 
 const MoviesCard = ({ film }: MoviesCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
