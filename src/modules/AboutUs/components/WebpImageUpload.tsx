@@ -18,6 +18,36 @@ const buildCloudFrontUrl = (key: string) => {
   return `${normalizedBase}/${key}`;
 };
 
+const RETRY_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 600;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * A submission fires every image's upload in parallel (Promise.all in
+ * onSubmit) — a single transient network blip on any one of them would
+ * otherwise fail the whole batch even though the rest already reached S3.
+ * Only retries genuine network-level failures (fetch throwing, e.g. a
+ * dropped connection) — an HTTP error response still resolves normally and
+ * is handled by the caller, not retried here, since that's a real rejection
+ * (bad content type, S3 error, etc.), not a blip.
+ */
+async function fetchWithRetry(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= RETRY_ATTEMPTS; attempt++) {
+    try {
+      return await fetch(input, init);
+    } catch (err) {
+      lastError = err;
+      if (attempt < RETRY_ATTEMPTS) await sleep(RETRY_DELAY_MS * attempt);
+    }
+  }
+  throw lastError;
+}
+
 /**
  * Uploads a single confirmed webp file to S3 via a presigned PUT and
  * resolves to its public CloudFront URL. Called from SubmitFilmForm's
@@ -26,7 +56,7 @@ const buildCloudFrontUrl = (key: string) => {
  * modal much earlier in the session.
  */
 export async function uploadWebpImage(file: File): Promise<string> {
-  const presignRes = await fetch(`${API_BASE}/uploads/presign`, {
+  const presignRes = await fetchWithRetry(`${API_BASE}/uploads/presign`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ contentType: WEBP_CONTENT_TYPE }),
@@ -36,7 +66,7 @@ export async function uploadWebpImage(file: File): Promise<string> {
     throw new Error(presignJson?.message || "Could not start upload");
   }
 
-  const putRes = await fetch(presignJson.uploadUrl, {
+  const putRes = await fetchWithRetry(presignJson.uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": WEBP_CONTENT_TYPE },
     body: file,
