@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ImageUp, Loader2, X } from "lucide-react";
+import { ImageUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const API_BASE = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL ||
@@ -18,35 +18,75 @@ const buildCloudFrontUrl = (key: string) => {
   return `${normalizedBase}/${key}`;
 };
 
-type UploadStatus = "idle" | "uploading" | "error";
+/**
+ * Uploads a single confirmed webp file to S3 via a presigned PUT and
+ * resolves to its public CloudFront URL. Called from SubmitFilmForm's
+ * onSubmit — nothing is written to S3 before the whole form is submitted,
+ * even though a file may have been "confirmed" in this component's preview
+ * modal much earlier in the session.
+ */
+export async function uploadWebpImage(file: File): Promise<string> {
+  const presignRes = await fetch(`${API_BASE}/uploads/presign`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contentType: WEBP_CONTENT_TYPE }),
+  });
+  const presignJson = await presignRes.json().catch(() => ({}));
+  if (!presignRes.ok || !presignJson?.uploadUrl || !presignJson?.key) {
+    throw new Error(presignJson?.message || "Could not start upload");
+  }
+
+  const putRes = await fetch(presignJson.uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": WEBP_CONTENT_TYPE },
+    body: file,
+  });
+  if (!putRes.ok) throw new Error("Upload to storage failed");
+
+  return buildCloudFrontUrl(presignJson.key);
+}
 
 type WebpImageUploadProps = {
-  value: string;
-  onChange: (url: string) => void;
+  value: File | null;
+  onChange: (file: File | null) => void;
   className?: string;
 };
 
 export function WebpImageUpload({ value, onChange, className }: WebpImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const objectUrlRef = useRef<string | null>(null);
+  const stagingUrlRef = useRef<string | null>(null);
+  const confirmedUrlRef = useRef<string | null>(null);
 
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
-  const [status, setStatus] = useState<UploadStatus>("idle");
+  const [stagingFile, setStagingFile] = useState<File | null>(null);
+  const [stagingPreview, setStagingPreview] = useState<string | null>(null);
+  const [confirmedPreview, setConfirmedPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isModalOpen = pendingFile !== null;
+  // Local preview for whatever the field's confirmed value currently is —
+  // purely visual, no network involved.
+  useEffect(() => {
+    if (confirmedUrlRef.current) URL.revokeObjectURL(confirmedUrlRef.current);
+    if (!value) {
+      confirmedUrlRef.current = null;
+      setConfirmedPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(value);
+    confirmedUrlRef.current = url;
+    setConfirmedPreview(url);
+  }, [value]);
 
   useEffect(() => {
     return () => {
-      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+      if (stagingUrlRef.current) URL.revokeObjectURL(stagingUrlRef.current);
+      if (confirmedUrlRef.current) URL.revokeObjectURL(confirmedUrlRef.current);
     };
   }, []);
 
   const openPicker = () => inputRef.current?.click();
 
-  // File selection only stages the file for review — nothing is uploaded
-  // to S3 until the user confirms in the preview modal.
+  // Selecting a file only stages it for review in the modal — it doesn't
+  // touch the field value (and so doesn't touch S3) until confirmed.
   const handleFileSelected = (file: File | undefined) => {
     if (!file) return;
     setError(null);
@@ -60,68 +100,38 @@ export function WebpImageUpload({ value, onChange, className }: WebpImageUploadP
       return;
     }
 
-    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    if (stagingUrlRef.current) URL.revokeObjectURL(stagingUrlRef.current);
     const objectUrl = URL.createObjectURL(file);
-    objectUrlRef.current = objectUrl;
-    setPendingFile(file);
-    setPendingPreview(objectUrl);
+    stagingUrlRef.current = objectUrl;
+    setStagingFile(file);
+    setStagingPreview(objectUrl);
   };
 
   const closeModal = () => {
-    if (status === "uploading") return;
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
+    if (stagingUrlRef.current) {
+      URL.revokeObjectURL(stagingUrlRef.current);
+      stagingUrlRef.current = null;
     }
-    setPendingFile(null);
-    setPendingPreview(null);
-    setError(null);
-    setStatus("idle");
+    setStagingFile(null);
+    setStagingPreview(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const confirmUpload = async () => {
-    if (!pendingFile) return;
-    setStatus("uploading");
-    setError(null);
-
-    try {
-      const presignRes = await fetch(`${API_BASE}/uploads/presign`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentType: WEBP_CONTENT_TYPE }),
-      });
-      const presignJson = await presignRes.json().catch(() => ({}));
-      if (!presignRes.ok || !presignJson?.uploadUrl || !presignJson?.key) {
-        throw new Error(presignJson?.message || "Could not start upload");
-      }
-
-      const putRes = await fetch(presignJson.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": WEBP_CONTENT_TYPE },
-        body: pendingFile,
-      });
-      if (!putRes.ok) throw new Error("Upload to storage failed");
-
-      onChange(buildCloudFrontUrl(presignJson.key));
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-        objectUrlRef.current = null;
-      }
-      setPendingFile(null);
-      setPendingPreview(null);
-      setStatus("idle");
-      if (inputRef.current) inputRef.current.value = "";
-    } catch (err) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : "Upload failed. Please try again.");
-      setStatus("error");
-    }
+  const confirmSelection = () => {
+    if (!stagingFile) return;
+    onChange(stagingFile);
+    // Ownership of the staging object URL moves to the confirmed-preview
+    // effect above (it'll build its own from the new value) — just drop
+    // our staging ref without revoking so that preview keeps working.
+    stagingUrlRef.current = null;
+    setStagingFile(null);
+    setStagingPreview(null);
+    if (inputRef.current) inputRef.current.value = "";
   };
 
   const handleRemove = () => {
     setError(null);
-    onChange("");
+    onChange(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -138,11 +148,13 @@ export function WebpImageUpload({ value, onChange, className }: WebpImageUploadP
       {value ? (
         <div className="flex items-center gap-3 rounded-lg border border-[#2a2418] bg-[#0a0908] p-2.5">
           <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-md border border-[#2a2418] bg-black">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value} alt="Uploaded preview" className="h-full w-full object-cover" />
+            {confirmedPreview && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={confirmedPreview} alt="Selected preview" className="h-full w-full object-cover" />
+            )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs text-[#9a9278]">Image uploaded</p>
+            <p className="truncate text-xs text-[#9a9278]">{value.name}</p>
             <button
               type="button"
               onClick={openPicker}
@@ -169,19 +181,18 @@ export function WebpImageUpload({ value, onChange, className }: WebpImageUploadP
           )}
         >
           <ImageUp className="h-4 w-4" />
-          Upload .webp image
+          Select .webp image
         </button>
       )}
 
-      {error && !isModalOpen && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
+      {error && !stagingFile && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
 
       <ImagePreviewModal
-        isOpen={isModalOpen}
-        previewUrl={pendingPreview}
-        status={status}
+        isOpen={stagingFile !== null}
+        previewUrl={stagingPreview}
         error={error}
         onChooseAnother={openPicker}
-        onConfirm={() => void confirmUpload()}
+        onConfirm={confirmSelection}
         onClose={closeModal}
       />
     </div>
@@ -191,7 +202,6 @@ export function WebpImageUpload({ value, onChange, className }: WebpImageUploadP
 type ImagePreviewModalProps = {
   isOpen: boolean;
   previewUrl: string | null;
-  status: UploadStatus;
   error: string | null;
   onChooseAnother: () => void;
   onConfirm: () => void;
@@ -201,7 +211,6 @@ type ImagePreviewModalProps = {
 function ImagePreviewModal({
   isOpen,
   previewUrl,
-  status,
   error,
   onChooseAnother,
   onConfirm,
@@ -224,8 +233,6 @@ function ImagePreviewModal({
 
   if (!isOpen || !previewUrl || typeof document === "undefined") return null;
 
-  const isUploading = status === "uploading";
-
   return createPortal(
     <div
       role="dialog"
@@ -241,35 +248,24 @@ function ImagePreviewModal({
         className="relative w-full max-w-md overflow-hidden rounded-xl border border-[#2a2418] bg-[#0c0b08] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {!isUploading && (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cancel"
-            className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-[#e6ba35] hover:text-black"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cancel"
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-[#e6ba35] hover:text-black"
+        >
+          <X className="h-4 w-4" />
+        </button>
 
         <div className="relative aspect-square w-full bg-black">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={previewUrl} alt="Selected image preview" className="h-full w-full object-contain" />
-          {isUploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-              <Loader2 className="h-8 w-8 animate-spin text-[#e6ba35]" />
-            </div>
-          )}
         </div>
 
         <div className="p-5">
-          <p className="text-white text-sm font-semibold mb-1">
-            {isUploading ? "Uploading…" : "Use this image?"}
-          </p>
+          <p className="text-white text-sm font-semibold mb-1">Use this image?</p>
           <p className="text-[#7a7258] text-xs mb-4">
-            {isUploading
-              ? "Please wait while your image uploads."
-              : "Review your image before it's uploaded."}
+            It'll be uploaded when you submit the form.
           </p>
 
           {error && <p className="text-red-400 text-xs mb-4">{error}</p>}
@@ -278,19 +274,16 @@ function ImagePreviewModal({
             <button
               type="button"
               onClick={onChooseAnother}
-              disabled={isUploading}
-              className="flex-1 h-10 rounded-lg border border-[#2a2418] text-[#9a9278] text-xs font-semibold uppercase tracking-wide hover:bg-[#e6ba35]/10 hover:text-[#e6ba35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 h-10 rounded-lg border border-[#2a2418] text-[#9a9278] text-xs font-semibold uppercase tracking-wide hover:bg-[#e6ba35]/10 hover:text-[#e6ba35] transition-colors"
             >
               Choose Another
             </button>
             <button
               type="button"
               onClick={onConfirm}
-              disabled={isUploading}
-              className="flex-1 h-10 rounded-lg bg-[#e6ba35] text-black text-xs font-bold uppercase tracking-wide hover:bg-[#d4a82e] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="flex-1 h-10 rounded-lg bg-[#e6ba35] text-black text-xs font-bold uppercase tracking-wide hover:bg-[#d4a82e] transition-colors"
             >
-              {isUploading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {isUploading ? "Uploading" : "Upload"}
+              Use This Image
             </button>
           </div>
         </div>

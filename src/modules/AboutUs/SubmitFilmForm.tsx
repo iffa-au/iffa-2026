@@ -31,7 +31,7 @@ import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
 import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { CrewList } from "./components/CrewList";
-import { WebpImageUpload } from "./components/WebpImageUpload";
+import { WebpImageUpload, uploadWebpImage } from "./components/WebpImageUpload";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const API_BASE = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL ||
@@ -119,7 +119,7 @@ export function SubmitFilmForm() {
       title: "", synopsis: "", releaseDate: "", durationHours: "0", durationMinutes: "0", contentTypeId: "", countryId: "",
       releaseCountryIds: [], watchFormats: [],
       languageId: "", productionHouse: "", distributor: "", genreIds: [],
-      potraitImageUrl: "", landscapeImageUrl: "", imdbUrl: "", trailerUrl: "",
+      potraitImageUrl: null, landscapeImageUrl: null, imdbUrl: "", trailerUrl: "",
       actors: [{ ...BLANK_PERSON, role: "Actor in a leading role" }],
       directors: [{ ...BLANK_PERSON, role: "Director" }],
       producers: [{ ...BLANK_PERSON, role: "Producer" }],
@@ -159,28 +159,52 @@ export function SubmitFilmForm() {
 
   const onSubmit = async (values: FilmValues) => {
     setStatus("submitting");
-    const norm = (p: PersonEntry) => ({
+
+    // Every image field holds a confirmed File at this point (Zod already
+    // required it) — nothing has touched S3 yet. Upload them all now, right
+    // before the submission is created, so an abandoned form never leaves
+    // orphaned files in the bucket.
+    const norm = async (p: PersonEntry) => ({
       fullName: p.fullName.trim(),
       role: p.role.trim(),
-      imageUrl: p.imageUrl.trim(),
+      imageUrl: await uploadWebpImage(p.imageUrl as File),
       biography: p.biography.trim(),
       instagramUrl: p.instagram?.trim() || "",
     });
-    const payload = {
-      ...values,
-      synopsis: values.synopsis.replace(/\r?\n+/g, " ").replace(/\s{2,}/g, " ").trim(),
-      notes: values.notes?.trim() || "",
-      submissionYear: new Date().getFullYear(),
-      isFeatured: false,
-      genreId: values.genreIds[0],
-      crew: {
-        actors: filterFilledCrew(values.actors).map(norm),
-        directors: values.directors.map(norm),
-        producers: values.producers.map(norm),
-        other: filterFilledCrew(values.writers).map(norm),
-      },
-    };
+
+    const {
+      potraitImageUrl: _rawPotrait,
+      landscapeImageUrl: _rawLandscape,
+      actors: _rawActors,
+      directors: _rawDirectors,
+      producers: _rawProducers,
+      writers: _rawWriters,
+      ...restValues
+    } = values;
+
     try {
+      const [potraitImageUrl, landscapeImageUrl, actors, directors, producers, writers] =
+        await Promise.all([
+          uploadWebpImage(values.potraitImageUrl as File),
+          uploadWebpImage(values.landscapeImageUrl as File),
+          Promise.all(filterFilledCrew(values.actors).map(norm)),
+          Promise.all(values.directors.map(norm)),
+          Promise.all(values.producers.map(norm)),
+          Promise.all(filterFilledCrew(values.writers).map(norm)),
+        ]);
+
+      const payload = {
+        ...restValues,
+        potraitImageUrl,
+        landscapeImageUrl,
+        synopsis: values.synopsis.replace(/\r?\n+/g, " ").replace(/\s{2,}/g, " ").trim(),
+        notes: values.notes?.trim() || "",
+        submissionYear: new Date().getFullYear(),
+        isFeatured: false,
+        genreId: values.genreIds[0],
+        crew: { actors, directors, producers, other: writers },
+      };
+
       const res = await fetch(`${API_BASE}/submissions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json?.success === false) throw new Error(json?.message || "Failed");
@@ -464,7 +488,7 @@ export function SubmitFilmForm() {
                 {!hideActors && (
                   <>
                     <CrewList form={form} fieldName="actors" title="Actors — Lead & Supporting" label="Actor"
-                      defaultEntry={{ fullName: "", role: "Actor in a leading role", imageUrl: "", biography: "", instagram: "" }}
+                      defaultEntry={{ fullName: "", role: "Actor in a leading role", imageUrl: null, biography: "", instagram: "" }}
                       roleInput={{ type: "select", options: ACTOR_ROLES }}
                       error={form.formState.errors.actors?.message} />
 
@@ -473,7 +497,7 @@ export function SubmitFilmForm() {
                 )}
 
                 <CrewList form={form} fieldName="directors" title="Director(s)" label="Director"
-                  defaultEntry={{ fullName: "", role: "Director", imageUrl: "", biography: "", instagram: "" }}
+                  defaultEntry={{ fullName: "", role: "Director", imageUrl: null, biography: "", instagram: "" }}
                   roleInput={{ type: "select", options: DIRECTOR_ROLES }}
                   error={form.formState.errors.directors?.message}
                   onDuplicateEntry={duplicateDirectorAsProducer}
@@ -482,14 +506,14 @@ export function SubmitFilmForm() {
                 <div className="border-t border-[#141210]" />
 
                 <CrewList form={form} fieldName="producers" title="Producer(s)" label="Producer"
-                  defaultEntry={{ fullName: "", role: "Producer", imageUrl: "", biography: "", instagram: "" }}
+                  defaultEntry={{ fullName: "", role: "Producer", imageUrl: null, biography: "", instagram: "" }}
                   roleInput={{ type: "select", options: PRODUCER_ROLES }}
                   error={form.formState.errors.producers?.message} />
 
                 <div className="border-t border-[#141210]" />
 
                 <CrewList form={form} fieldName="writers" title="Other — DOP, Editor, Writer, Music…" label="Credit"
-                  defaultEntry={{ fullName: "", role: "", imageUrl: "", biography: "", instagram: "" }}
+                  defaultEntry={{ fullName: "", role: "", imageUrl: null, biography: "", instagram: "" }}
                   roleInput={{ type: "text", placeholder: "e.g. Writer, DOP, Composer" }}
                   minEntries={0}
                   error={form.formState.errors.writers?.message} />
