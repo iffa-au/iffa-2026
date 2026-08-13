@@ -17,11 +17,20 @@ const personSchema = z.object({
   instagram: z.string().optional(),
 });
 
-/** Content type names (CMS metadata) that do not require an actors panel. */
+/**
+ * Content type names (CMS metadata) that do not require an actors panel.
+ * Includes both the CMS's current (typo'd) values and their corrected
+ * spellings, so this keeps matching if the CMS entry is ever renamed.
+ */
 export const CONTENT_TYPES_WITHOUT_ACTORS = [
   "Documentary",
+  "Documentry",
   "Animated Film",
   "Animation",
+  "Web Series",
+  "Web Series (OTT)",
+  "TV Series",
+  "Short Film",
 ] as const;
 
 export const WATCH_FORMAT_OPTIONS = [
@@ -65,6 +74,9 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       watchFormats: z
         .array(z.string())
         .min(1, "Select at least one watch format"),
+      releaseLinkUrl: z
+        .union([z.string().url("Must be a valid URL"), z.literal("")])
+        .optional(),
       languageId: z.string().min(1, "Language is required"),
       productionHouse: z.string().min(1, "Production house is required"),
       distributor: z.string().optional(),

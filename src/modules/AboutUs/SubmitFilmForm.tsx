@@ -117,7 +117,7 @@ export function SubmitFilmForm() {
     resolver: zodResolver(filmSchema),
     defaultValues: {
       title: "", synopsis: "", releaseDate: "", durationHours: "0", durationMinutes: "0", contentTypeId: "", countryId: "",
-      releaseCountryIds: [], watchFormats: [],
+      releaseCountryIds: [], watchFormats: [], releaseLinkUrl: "",
       languageId: "", productionHouse: "", distributor: "", genreIds: [],
       potraitImageUrl: null, landscapeImageUrl: null, imdbUrl: "", trailerUrl: "",
       actors: [{ ...BLANK_PERSON, role: "Actor in a leading role" }],
@@ -227,6 +227,7 @@ export function SubmitFilmForm() {
           [FIELD_KEYS.EMAIL]: values.contactEmail,
           "IMDb URL": values.imdbUrl,
           "Trailer Download URL": values.trailerUrl,
+          "Release, Broadcast or Exhibition Link": values.releaseLinkUrl?.trim() || "Not provided",
           Notes: values.notes?.trim() || "Not provided",
         },
       });
@@ -426,6 +427,19 @@ export function SubmitFilmForm() {
                     )} />
                 </div>
 
+                <div className="md:col-span-2">
+                  <FormField control={form.control} name="releaseLinkUrl"
+                    render={({ field }: { field: any }) => (
+                      <FormItem>
+                        <FormLabel className={L}>Release, Broadcast or Exhibition Link <span className="text-[#3a3420]">(optional)</span></FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Link to official streaming, cinema, TV, festival, press or private screener" className={I} />
+                        </FormControl>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )} />
+                </div>
+
                 <FormField control={form.control} name="languageId"
                   render={({ field }: { field: any }) => (
                     <FormItem>
@@ -559,7 +573,7 @@ export function SubmitFilmForm() {
                 <FormField control={form.control} name="trailerUrl"
                   render={({ field }: { field: any }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel className={L}>Downloadable Trailer Link <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormLabel className={L}>Downloadable trailer link with english subtitles.<span className="text-[#e6ba35]">*</span></FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="https://drive.google.com/... or direct .mp4 link" className={I} />
                       </FormControl>
