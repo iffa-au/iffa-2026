@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { Loader2 } from "lucide-react";
 import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
+import { FIELD_KEYS } from "@/lib/email/field-keys";
 
 import {
   Form,
@@ -32,6 +33,7 @@ const formSchema = z.object({
 export default function ContactPage() {
   const formRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,14 +54,15 @@ export default function ContactPage() {
         submitterEmail: values.email,
         submitterName: values.fullName,
         fields: {
-          "Full Name": values.fullName,
-          "Phone Number": values.phoneNumber,
-          "City/State": values.address,
-          "Email Address": values.email,
-          Message: values.message,
+          [FIELD_KEYS.FULL_NAME]: values.fullName,
+          [FIELD_KEYS.PHONE_NUMBER]: values.phoneNumber,
+          [FIELD_KEYS.CITY_STATE]: values.address,
+          [FIELD_KEYS.EMAIL]: values.email,
+          [FIELD_KEYS.MESSAGE]: values.message,
         },
       });
-      alert("Message sent successfully! A confirmation email has been sent.");
+
+      setShowSuccessModal(true);
       form.reset();
     } catch (error) {
       alert("Failed to send message, please try again later.");
@@ -211,6 +214,34 @@ export default function ContactPage() {
           </Form>
         </div>
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-xl p-8 max-w-md w-full border border-gray-700 shadow-2xl">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-4">
+                Message Sent!
+              </h3>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                Thank you for contacting IFFA Awards. We have received your message and will
+                respond as soon as possible.
+              </p>
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full bg-[#a98c4a] text-black py-3 px-6 rounded-lg font-semibold hover:bg-[#8b733b] transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

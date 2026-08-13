@@ -111,7 +111,7 @@ const FeaturedMovies = () => {
 
 	useEffect(() => {
 		if (mediaItems.length > 0 && isVisible) {
-			startInterval(5000);
+			startInterval(3000);
 		} else {
 			clearTimer();
 		}
@@ -124,14 +124,14 @@ const FeaturedMovies = () => {
 	};
 
 	const handleMouseLeave = () => {
-		if (isVisible) startInterval(5000);
+		if (isVisible) startInterval(3000);
 	};
 
 	if (!isVisible && !hasFetched) {
 		return (
 			<div
 				ref={containerRef}
-				className="featured-movies relative -ml-[50vw] -mr-[50vw] left-1/2 right-1/2 w-full bg-black min-h-[200px]"
+				className="featured-movies relative w-full max-w-6xl mx-auto bg-black min-h-[200px]"
 			/>
 		);
 	}
@@ -140,7 +140,7 @@ const FeaturedMovies = () => {
 		return (
 			<div
 				ref={containerRef}
-				className="flex h-[400px] items-center justify-center bg-black font-bold tracking-widest text-yellow-500"
+				className="flex h-[400px] max-w-6xl mx-auto items-center justify-center bg-black font-bold tracking-widest text-yellow-500"
 			>
 				LOADING FESTIVAL MEDIA...
 			</div>
@@ -156,7 +156,7 @@ const FeaturedMovies = () => {
 	return (
 		<div
 			ref={containerRef}
-			className="featured-movies relative -ml-[50vw] -mr-[50vw] left-1/2 right-1/2 w-full bg-black"
+			className="featured-movies relative w-full max-w-6xl mx-auto bg-black"
 		>
 			<div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
 				<div className="relative w-full overflow-hidden rounded-sm border border-white/5 bg-zinc-900 shadow-2xl">

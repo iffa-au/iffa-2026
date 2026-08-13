@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
+import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { partnerLogos, partnershipTiers } from "../../data/partner-data";
 
 type FormData = {
@@ -56,13 +57,14 @@ export function PartnerWithUsPage() {
         fields: {
           "Company Name": formData.company_name,
           "Company URL": formData.company_url,
-          "Contact Name": formData.sender_name,
-          "Email Address": formData.sender_email,
-          Phone: formData.phone,
+          [FIELD_KEYS.FULL_NAME]: formData.sender_name,
+          [FIELD_KEYS.EMAIL]: formData.sender_email,
+          [FIELD_KEYS.PHONE_NUMBER]: formData.phone,
           "Interested Tier": formData.interested_tier,
-          Message: formData.message,
+          [FIELD_KEYS.MESSAGE]: formData.message,
         },
       });
+
       setStatus("success");
       setShowSuccessModal(true);
       setFormData(emptyForm);
