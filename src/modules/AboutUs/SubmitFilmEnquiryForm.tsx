@@ -38,12 +38,34 @@ type EnquiryValues = {
 const API_BASE = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL ||
   "https://guh4nzpet5.ap-southeast-2.awsapprunner.com/api/v1";
 
+// Shared visual overrides for this form's fields. Style-only — these are inline
+// className overrides so the shared ui/* base components stay untouched.
+const LABEL_CLASS = "text-xs uppercase tracking-[0.15em] text-[#a9a086] font-mono";
+
+const FIELD_FOCUS = "focus-visible:ring-[#e6ba35]/40 focus-visible:border-[#e6ba35]/50";
+
+const INPUT_CLASS =
+  `bg-[#0e0c08] border-[#2a2417] text-white rounded-lg h-12 px-4 text-base md:text-base placeholder:text-[#8a8168] ${FIELD_FOCUS}`;
+
+const TEXTAREA_CLASS =
+  `bg-[#0e0c08] border-[#2a2417] text-white rounded-lg px-4 py-3 text-base md:text-base placeholder:text-[#8a8168] ${FIELD_FOCUS}`;
+
+// `h-12` alone loses to the base trigger's `data-[size=default]:h-7` attribute
+// selector, so the height has to be set on the same variant.
+const SELECT_TRIGGER_CLASS =
+  `bg-[#0e0c08] border-[#2a2417] text-white rounded-lg h-12 data-[size=default]:h-12 px-4 w-full text-base md:text-base data-placeholder:text-[#8a8168] ${FIELD_FOCUS}`;
+
+// MultiSelectDropdown takes no className, so its trigger is styled from the
+// wrapper. The dropdown panel renders in a portal and is unaffected.
+const MULTI_SELECT_WRAP =
+  "[&_button]:min-h-[48px] [&_button]:bg-[#0e0c08] [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-[#e6ba35]/40 [&_button]:focus-visible:border-[#e6ba35]/50";
+
 function Section({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <section className="relative rounded-2xl border border-[#1e1c14] bg-[#0c0b08] overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
-      <div className="px-7 py-5 border-b border-[#161410]">
-        <h3 className="text-white text-sm font-semibold">{title}</h3>
-        {desc && <p className="text-[#5a5240] text-[11px] mt-1">{desc}</p>}
+    <section className="relative rounded-2xl border border-[#2a2417] bg-[#17140d] overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
+      <div className="px-7 py-5 border-b border-[#2a2417]">
+        <h3 className="text-white text-lg font-semibold">{title}</h3>
+        {desc && <p className="text-[#5a5240] text-[13px] mt-1">{desc}</p>}
       </div>
       <div className="p-7">{children}</div>
     </section>
@@ -152,45 +174,45 @@ export function SubmitFilmEnquiryForm() {
 
   return (
     <main className="w-full">
-      <div className="max-w-3xl mx-auto px-6 pt-12 pb-8">
+      <div className="max-w-5xl mx-auto px-6 pt-12 pb-8">
         <p className="text-[#e6ba35]/50 text-[10px] font-mono tracking-[0.2em] uppercase mb-4">IFFA Awards / Film Enquiry</p>
         <h1 className="text-white text-4xl font-bold tracking-tight mb-2" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Submit a Film Enquiry</h1>
         <p className="text-[#5a5240] text-sm">Fields marked <span className="text-[#e6ba35]">*</span> are required.</p>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 pb-24">
+      <div className="max-w-5xl mx-auto px-6 pb-24">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" noValidate>
             <Section title="Enquiry Details" desc="Provide information about the film enquiry">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <FormField control={form.control} name="name" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Full Name <span className="text-[#e6ba35]">*</span></FormLabel>
-                    <FormControl><Input {...field} placeholder="Your full name" className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11" /></FormControl>
+                    <FormLabel className={LABEL_CLASS}>Full Name <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="Your full name" className={INPUT_CLASS} /></FormControl>
                     <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )} />
 
                 <FormField control={form.control} name="email" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Email <span className="text-[#e6ba35]">*</span></FormLabel>
-                    <FormControl><Input {...field} type="email" placeholder="you@example.com" className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11" /></FormControl>
+                    <FormLabel className={LABEL_CLASS}>Email <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormControl><Input {...field} type="email" placeholder="you@example.com" className={INPUT_CLASS} /></FormControl>
                     <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )} />
 
                 <FormField control={form.control} name="role" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Your Role <span className="text-[#e6ba35]">*</span></FormLabel>
-                    <FormControl><Input {...field} placeholder="Producer / Filmmaker / Sales" className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11" /></FormControl>
+                    <FormLabel className={LABEL_CLASS}>Your Role <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="Producer / Filmmaker / Sales" className={INPUT_CLASS} /></FormControl>
                     <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )} />
 
                 <FormField control={form.control} name="title" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Film Title <span className="text-[#e6ba35]">*</span></FormLabel>
-                    <FormControl><Input {...field} placeholder="Full film title" className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11" /></FormControl>
+                    <FormLabel className={LABEL_CLASS}>Film Title <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="Full film title" className={INPUT_CLASS} /></FormControl>
                     <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )} />
@@ -198,8 +220,8 @@ export function SubmitFilmEnquiryForm() {
                 <div className="md:col-span-2">
                   <FormField control={form.control} name="synopsis" render={({ field }: any) => (
                     <FormItem>
-                      <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Synopsis <span className="text-[#e6ba35]">*</span></FormLabel>
-                      <FormControl><Textarea {...field} rows={5} placeholder="Brief synopsis" className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg" /></FormControl>
+                      <FormLabel className={LABEL_CLASS}>Synopsis <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormControl><Textarea {...field} rows={5} placeholder="Brief synopsis" className={TEXTAREA_CLASS} /></FormControl>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />
@@ -207,32 +229,32 @@ export function SubmitFilmEnquiryForm() {
 
                 <FormField control={form.control} name="productionHouse" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Production House <span className="text-[#e6ba35]">*</span></FormLabel>
-                    <FormControl><Input {...field} placeholder="e.g. A24" className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11" /></FormControl>
+                    <FormLabel className={LABEL_CLASS}>Production House <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. A24" className={INPUT_CLASS} /></FormControl>
                     <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )} />
 
                 <FormField control={form.control} name="distributor" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Distributor <span className="text-[#3a3420]">(optional)</span></FormLabel>
-                    <FormControl><Input {...field} placeholder="e.g. Netflix" className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11" /></FormControl>
+                    <FormLabel className={LABEL_CLASS}>Distributor <span className="text-[#3a3420]">(optional)</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. Netflix" className={INPUT_CLASS} /></FormControl>
                   </FormItem>
                 )} />
 
                 <FormField control={form.control} name="releaseDate" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Release Date <span className="text-[#e6ba35]">*</span></FormLabel>
-                    <FormControl><Input {...field} type="date" className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11" /></FormControl>
+                    <FormLabel className={LABEL_CLASS}>Release Date <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormControl><Input {...field} type="date" className={INPUT_CLASS} /></FormControl>
                     <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )} />
 
                 <FormField control={form.control} name="trailerUrl" render={({ field }: any) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Downloadable Trailer Link <span className="text-[#e6ba35]">*</span></FormLabel>
-                    <FormControl><Input {...field} placeholder="https://drive.google.com/... or direct .mp4 link" className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11" /></FormControl>
-                    <p className="text-[#5a5240] text-[11px] mt-1.5 leading-relaxed">
+                    <FormLabel className={LABEL_CLASS}>Downloadable Trailer Link <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="https://drive.google.com/... or direct .mp4 link" className={INPUT_CLASS} /></FormControl>
+                    <p className="text-[#9a9178] text-[13px] mt-1.5 leading-relaxed">
                       Provide a direct download link. If the trailer is not in English, please include English subtitles.
                     </p>
                     <FormMessage className="text-red-400 text-xs" />
@@ -241,24 +263,24 @@ export function SubmitFilmEnquiryForm() {
 
                 <FormField control={form.control} name="contentTypeId" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Screen Format <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormLabel className={LABEL_CLASS}>Screen Format <span className="text-[#e6ba35]">*</span></FormLabel>
                     <Select value={field.value} onValueChange={field.onChange} disabled={loading}>
                       <FormControl>
-                        <SelectTrigger className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11 w-full">
+                        <SelectTrigger className={SELECT_TRIGGER_CLASS}>
                           <SelectValue placeholder={loading ? "Loading…" : "Select format"} />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-[#0e0d0a] border-[#2a2418] text-white">
+                      <SelectContent className="bg-[#0e0d0a] border-[#2a2417] text-white">
                         {contentTypes.map(ct => <SelectItem key={ct._id} value={ct._id}>{ct.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </FormItem>
                 )} />
 
-                <div className="md:col-span-2">
+                <div className={`md:col-span-2 ${MULTI_SELECT_WRAP}`}>
                   <FormField control={form.control} name="genreIds" render={({ field }: any) => (
                     <FormItem>
-                      <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Genres <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormLabel className={LABEL_CLASS}>Genres <span className="text-[#e6ba35]">*</span></FormLabel>
                       <FormControl>
                         <MultiSelectDropdown
                           options={genres.map(g => ({ value: g._id, label: g.name }))}
@@ -274,14 +296,14 @@ export function SubmitFilmEnquiryForm() {
 
                 <FormField control={form.control} name="countryId" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Country of Origin <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormLabel className={LABEL_CLASS}>Country of Origin <span className="text-[#e6ba35]">*</span></FormLabel>
                     <Select value={field.value} onValueChange={field.onChange} disabled={loading}>
                       <FormControl>
-                        <SelectTrigger className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11 w-full">
+                        <SelectTrigger className={SELECT_TRIGGER_CLASS}>
                           <SelectValue placeholder={loading ? "Loading…" : "Select country"} />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-[#0e0d0a] border-[#2a2418] text-white max-h-60">
+                      <SelectContent className="bg-[#0e0d0a] border-[#2a2417] text-white max-h-60">
                         {countries.map(c => <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
@@ -290,24 +312,24 @@ export function SubmitFilmEnquiryForm() {
 
                 <FormField control={form.control} name="languageId" render={({ field }: any) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Language <span className="text-[#e6ba35]">*</span></FormLabel>
+                    <FormLabel className={LABEL_CLASS}>Language <span className="text-[#e6ba35]">*</span></FormLabel>
                     <Select value={field.value} onValueChange={field.onChange} disabled={loading}>
                       <FormControl>
-                        <SelectTrigger className="bg-[#0a0908] border-[#2a2418] text-white rounded-lg h-11 w-full">
+                        <SelectTrigger className={SELECT_TRIGGER_CLASS}>
                           <SelectValue placeholder={loading ? "Loading…" : "Select language"} />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-[#0e0d0a] border-[#2a2418] text-white max-h-60">
+                      <SelectContent className="bg-[#0e0d0a] border-[#2a2417] text-white max-h-60">
                         {languages.map(l => <SelectItem key={l._id} value={l._id}>{l.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </FormItem>
                 )} />
 
-                <div className="md:col-span-2">
+                <div className={`md:col-span-2 ${MULTI_SELECT_WRAP}`}>
                   <FormField control={form.control} name="releaseCountryIds" render={({ field }: any) => (
                     <FormItem>
-                      <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">Country of Release <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormLabel className={LABEL_CLASS}>Country of Release <span className="text-[#e6ba35]">*</span></FormLabel>
                       <FormControl>
                         <MultiSelectDropdown
                           options={countries.map(c => ({ value: c._id, label: c.name }))}
@@ -321,10 +343,10 @@ export function SubmitFilmEnquiryForm() {
                   )} />
                 </div>
 
-                <div className="md:col-span-2">
+                <div className={`md:col-span-2 ${MULTI_SELECT_WRAP}`}>
                   <FormField control={form.control} name="watchFormats" render={({ field }: any) => (
                     <FormItem>
-                      <FormLabel className="text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono">How can it be watched? <span className="text-[#e6ba35]">*</span></FormLabel>
+                      <FormLabel className={LABEL_CLASS}>How can it be watched? <span className="text-[#e6ba35]">*</span></FormLabel>
                       <FormControl>
                         <MultiSelectDropdown
                           options={WATCH_FORMAT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}

@@ -1,22 +1,41 @@
 "use client";
 
 import { useState } from "react";
+import { Play } from "lucide-react";
+
+import TrailerModal from "./TrailerModal";
+import { getYouTubeEmbedUrl } from "@/modules/events/submissions/lib/submissions";
 
 type Film = {
   posterUrl?: string;
   title?: string;
   directors?: string[];
+  year?: string;
+  genre?: string;
+  // Not yet returned by the submissions API — falls back to a placeholder
+  // until the API response includes this field.
+  duration?: string;
+  cast?: string[];
+  description?: string;
+  trailerUrl?: string;
 };
 
 type MoviesCardProps = {
   film: Film;
 };
 
+const GENRE_PLACEHOLDER = "Genre TBA";
+const DURATION_PLACEHOLDER = "Duration TBA";
+const DESCRIPTION_PLACEHOLDER = "Synopsis coming soon.";
+
 const MoviesCard = ({ film }: MoviesCardProps) => {
-  const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isTrailerOpen, setIsTrailerOpen] = useState(false);
 
   const directors = Array.isArray(film.directors) ? film.directors : [];
+  const cast = Array.isArray(film.cast) ? film.cast : [];
+  const title = film.title || "Untitled";
+  const embedUrl = getYouTubeEmbedUrl(film.trailerUrl);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
@@ -28,51 +47,100 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
     setImageLoaded(true);
   };
 
+  const openTrailer = (e: React.MouseEvent | React.KeyboardEvent) => {
+    // This trigger sits inside the card's own <Link>/<button> wrapper
+    // (rendered by the parent page) that navigates to the synopsis page,
+    // so this must stop the click from bubbling into that navigation.
+    e.preventDefault();
+    e.stopPropagation();
+    setIsTrailerOpen(true);
+  };
+
   return (
-    <div
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="relative mx-auto min-w-0 w-full max-w-[340px] overflow-hidden rounded-xl border border-accent-2 transition-shadow duration-300 hover:shadow-lg hover:shadow-gray-400"
-      style={{ aspectRatio: "2/3" }}
-    >
-      {!imageLoaded && (
-        <div className="absolute inset-0 bg-gray-300 animate-pulse flex items-center justify-center">
-          <div className="text-gray-500">Loading...</div>
-        </div>
-      )}
-
-      <img
-        src={film.posterUrl ?? "/fallbacks/no-poster.svg"}
-        alt={(film.title ?? "Film") + " Poster"}
-        className="h-full w-full object-cover"
-        loading="lazy"
-        decoding="async"
-        onLoad={handleImageLoad}
-        onError={handleImageError}
-        style={{ opacity: imageLoaded ? 1 : 0 }}
-      />
-
+    <>
       <div
-        style={{ opacity: isHovered ? 1 : 0 }}
-        className={`flex flex-col justify-center items-center absolute inset-0 px-6 py-8 bg-black/80 text-white text-center gap-y-6 transition-opacity duration-300 ${!isHovered ? "pointer-events-none" : ""}`}
+        className="group relative mx-auto w-full max-w-[340px] overflow-hidden rounded-xl border border-white/10 bg-zinc-900 text-left shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-yellow-500/40 hover:shadow-2xl hover:shadow-yellow-500/10"
+        style={{ aspectRatio: "2/3" }}
       >
-        <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold leading-tight">
-          {film.title}
-        </h1>
+        {!imageLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-zinc-800">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
+          </div>
+        )}
 
-        <div className="text-sm sm:text-base md:text-lg font-semibold">
-          {directors.length > 0 ? (
-            <div className="space-y-1">
-              {directors.map((director, index) => (
-                <div key={index}>{director}</div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-gray-300">Director Unknown</div>
+        <img
+          src={film.posterUrl || "/fallbacks/no-poster.svg"}
+          alt={`${title} poster`}
+          className="absolute -inset-px object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+          loading="lazy"
+          decoding="async"
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          style={{ opacity: imageLoaded ? 1 : 0 }}
+        />
+
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/80 via-55% to-transparent" />
+
+        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-yellow-500 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black">
+              IFFA
+            </span>
+            {film.year && (
+              <span className="text-xs font-medium text-white/80">
+                {film.year} Selection
+              </span>
+            )}
+          </div>
+
+          <div>
+            <h3 className="line-clamp-2 text-sm font-bold leading-tight text-white sm:text-base">
+              {title}
+            </h3>
+            {directors.length > 0 && (
+              <p className="mt-1 truncate text-xs text-white/60">
+                {directors.join(", ")}
+              </p>
+            )}
+          </div>
+
+          <p className="text-xs text-white/70">
+            {film.genre ?? GENRE_PLACEHOLDER} ·{" "}
+            {film.duration ?? DURATION_PLACEHOLDER}
+          </p>
+
+          {cast.length > 0 && (
+            <p className="truncate text-xs text-white/70">
+              {cast.join(", ")}
+            </p>
           )}
+
+          <p className="line-clamp-2 text-xs leading-relaxed text-white/60">
+            {film.description ?? DESCRIPTION_PLACEHOLDER}
+          </p>
+
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={openTrailer}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") openTrailer(e);
+            }}
+            className="mt-1 inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-full border border-yellow-500 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-yellow-500 transition-all duration-300 hover:scale-105 hover:bg-yellow-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          >
+            <Play className="h-3 w-3 fill-current" />
+            Watch Trailer
+          </span>
         </div>
       </div>
-    </div>
+
+      <TrailerModal
+        isOpen={isTrailerOpen}
+        onClose={() => setIsTrailerOpen(false)}
+        embedUrl={embedUrl}
+        title={title}
+      />
+    </>
   );
 };
 

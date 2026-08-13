@@ -122,7 +122,7 @@ export function MultiSelectDropdown({
       >
         <div className="flex flex-wrap gap-1.5 flex-1">
           {selected.length === 0 ? (
-            <span className="text-[#3d3828] text-sm">{placeholder}</span>
+            <span className="text-[#8a8168] text-sm">{placeholder}</span>
           ) : (
             selected.map((o) => (
               <Badge
