@@ -43,7 +43,11 @@ export function FestivalsPage() {
           {festivalEdition.editionLabel}
         </p>
 
-        <h1 className="mt-4 max-w-4xl text-3xl font-bold leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
+        {/*
+          The title must never wrap. The clamp coefficient (4.3vw) is tuned to the
+          length of `festivalEdition.title` — re-check it if that string changes.
+        */}
+        <h1 className="mt-4 whitespace-nowrap text-[clamp(0.8rem,4.3vw,3.75rem)] font-bold leading-tight tracking-tight text-white">
           {festivalEdition.title}
         </h1>
 
