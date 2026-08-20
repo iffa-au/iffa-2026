@@ -29,6 +29,7 @@ export type SubmissionApiItem = {
   portraitImageUrl?: string;
   landscapeImageUrl?: string;
   directors?: string[];
+  crewDirectors?: string[];
   genre?: string;
   genres?: string[];
   durationHours?: number;
@@ -40,7 +41,17 @@ export type SubmissionApiItem = {
   trailerUrl?: string;
   trailer?: string;
   youtubeUrl?: string;
+  submissionYear?: number;
+  featuredOrder?: number;
 };
+
+export function joinNames(names: string[]): string | undefined {
+  const cleaned = names.map((n) => n.trim()).filter(Boolean);
+  if (cleaned.length === 0) return undefined;
+  if (cleaned.length === 1) return cleaned[0];
+  if (cleaned.length === 2) return `${cleaned[0]} & ${cleaned[1]}`;
+  return `${cleaned.slice(0, -1).join(", ")} & ${cleaned[cleaned.length - 1]}`;
+}
 
 export type FilmCardItem = {
   movieId: string;
@@ -198,6 +209,51 @@ export const fetchSubmissionsForYear = async (
     signal
   );
   return items.map((item) => mapSubmissionFilmListItem(item, year));
+};
+
+export type CarouselFilmItem = {
+  movieId: string;
+  title: string;
+  backdropUrl: string;
+  posterUrl: string;
+  director?: string;
+  year?: number;
+  genres: string[];
+  cast?: string[];
+  description?: string;
+  duration?: string;
+  trailerEmbedUrl: string | null;
+};
+
+const mapSubmissionToCarouselItem = (item: SubmissionApiItem): CarouselFilmItem => {
+  const movieId = coerceMongoIdString(item.id) ?? coerceMongoIdString(item._id) ?? "";
+  const directors = item.crewDirectors?.length ? item.crewDirectors : item.directors ?? [];
+  return {
+    movieId,
+    title: item.title ?? "",
+    backdropUrl: pickImageUrl(item.landscapeImageUrl, item.portraitImageUrl),
+    posterUrl: pickImageUrl(item.portraitImageUrl, item.landscapeImageUrl),
+    director: joinNames(directors),
+    year: item.submissionYear,
+    genres: item.genres ?? [],
+    cast: item.cast,
+    description: item.description ?? item.synopsis ?? item.logline,
+    duration: formatDuration(item.durationHours, item.durationMinutes),
+    trailerEmbedUrl: getYouTubeEmbedUrl(item.trailerUrl ?? item.trailer ?? item.youtubeUrl),
+  };
+};
+
+/**
+ * The admin-curated hero carousel — up to 5 films picked from the CMS
+ * carousel page, already sorted server-side by featuredOrder. Not scoped to
+ * a single year (the CMS picker isn't year-scoped either).
+ */
+export const fetchCarouselFilms = async (
+  signal?: AbortSignal
+): Promise<CarouselFilmItem[]> => {
+  const url = `${getApiBase()}/submissions?featured=true`;
+  const items = await fetchSubmissionsList(url, signal);
+  return items.map(mapSubmissionToCarouselItem);
 };
 
 export type ResolveSubmissionIdParams = {

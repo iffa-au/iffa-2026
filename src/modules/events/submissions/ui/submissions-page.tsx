@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import MoviesCard from "@/modules/home/ui/views/carousel/MoviesCard";
+import { SubmissionsHeroCarousel } from "./submissions-hero-carousel";
 import {
   fetchSubmissionsForYear,
   filmActionKey,
@@ -129,8 +130,9 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-black px-4 py-10 text-white">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-center py-20">
+      <main className="min-h-screen bg-black text-white">
+        <SubmissionsHeroCarousel />
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-20">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
         </div>
       </main>
@@ -139,8 +141,9 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-black px-4 py-10 text-white">
-        <div className="mx-auto w-full max-w-7xl py-20 text-center text-red-400">
+      <main className="min-h-screen bg-black text-white">
+        <SubmissionsHeroCarousel />
+        <div className="mx-auto w-full max-w-7xl px-4 py-20 text-center text-red-400">
           {error}
         </div>
       </main>
@@ -148,8 +151,9 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-black px-4 py-10 text-white">
-      <div className="mx-auto w-full max-w-7xl">
+    <main className="min-h-screen bg-black text-white">
+      <SubmissionsHeroCarousel />
+      <div className="mx-auto w-full max-w-7xl px-4 py-10">
         <div className="mb-12 text-center">
           <h1 className="mb-4 text-4xl font-bold tracking-tight text-accent-4 md:text-6xl">
             {year} Submissions
