@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Calendar, ChevronRight, Clock, Film, Play, Tag } from "lucide-react";
 import {
   formatDuration,
-  getYouTubeEmbedUrl,
+  getTrailerEmbedUrl,
   pickImageUrl,
 } from "@/modules/events/submissions/lib/submissions";
 import TrailerModal from "@/modules/home/ui/views/carousel/TrailerModal";
@@ -219,7 +219,7 @@ export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
       director: joinNames(crew.directors.map((d) => d.name)),
       writers: joinNames(writers.map((w) => w.name)),
       starring: joinNames(crew.actors.map((a) => a.name)),
-      trailerEmbedUrl: getYouTubeEmbedUrl(data.trailerUrl),
+      trailerEmbedUrl: getTrailerEmbedUrl(data.trailerUrl),
     },
     crew,
   };
