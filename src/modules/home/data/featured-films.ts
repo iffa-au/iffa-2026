@@ -26,7 +26,7 @@ export const featuredFilms: FeaturedFilm[] = [
     genre: "Drama",
     runtime: "106 minutes",
     country: "Algeria",
-    posterUrl: `${CF}/iffa/images/THE-ARAB.jpg`,
+    posterUrl: `${CF}/iffa-media-vault/iffa/images/THE-ARAB.jpg`,
     trailerUrl: "https://youtu.be/kk3jGmIcFi0",
   },
   {
@@ -40,7 +40,7 @@ export const featuredFilms: FeaturedFilm[] = [
     genre: "Action / Thriller",
     runtime: "102 minutes",
     country: "United States",
-    posterUrl: `${CF}/iffa/images/high-rollers.jpg`,
+    posterUrl: `${CF}/iffa-media-vault/iffa/images/high-rollers.jpg`,
     trailerUrl: "https://www.youtube.com/watch?v=NhaXDfYundI",
   },
 ];

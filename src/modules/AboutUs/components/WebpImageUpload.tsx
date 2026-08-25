@@ -59,7 +59,9 @@ export async function uploadWebpImage(file: File): Promise<string> {
   const presignRes = await fetchWithRetry(`${API_BASE}/uploads/presign`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contentType: WEBP_CONTENT_TYPE }),
+    // fileName only shapes the stored object's name for readability — the
+    // server sanitises it and appends a unique suffix.
+    body: JSON.stringify({ contentType: WEBP_CONTENT_TYPE, fileName: file.name }),
   });
   const presignJson = await presignRes.json().catch(() => ({}));
   if (!presignRes.ok || !presignJson?.uploadUrl || !presignJson?.key) {
