@@ -1,39 +1,54 @@
-export interface PartnerLogo {
-  name: string;
-  url: string;
-}
+import type { PartnerTier } from "../lib/partners";
 
-export const partnerLogos: PartnerLogo[] = [
-  { name: "Apple TV", url: "/images/Partners/Logos/apple-tv.png" },
-  { name: "Oman Film Society", url: "/images/Partners/Logos/oman-film.png" },
-  { name: "Zee Studios", url: "/images/Partners/Logos/zee-studios.png" },
-  { name: "E Forum", url: "/images/Partners/Logos/e-media.png" },
-  { name: "Anupam Khers Actor Prepares", url: "/images/Partners/Logos/actor-prepares.png" },
-  { name: "Instituto Italiano Di Cultura Di Melbourne", url: "/images/Partners/Logos/italy.png" },
-  { name: "Consulate-General of the Republic of Korea, Melbourne", url: "/images/Partners/Logos/korea.png" },
-  { name: "Embassy of Vietnam", url: "/images/Partners/Logos/vietnam.png" },
-  { name: "RMIT University", url: "/images/Partners/Logos/rmit.png" },
-  { name: "Torrens University Australia", url: "/images/Partners/Logos/torrens.png" },
-  { name: "Creative Production Studios", url: "/images/Partners/Logos/creative.png" },
-  { name: "Universal Entertainment", url: "/images/Partners/Logos/universal.png" },
-  { name: "Fordham PR", url: "/images/Partners/Logos/fordham.png" },
-  { name: "Journal Online", url: "/images/Partners/Logos/journal-online.png" },
-];
-
-export const partnershipTiers = [
+/**
+ * Tier descriptions are marketing copy, so they stay in the codebase.
+ * The partner records themselves (logo, name, website, tier) are managed
+ * from the CMS — see lib/partners.ts.
+ */
+export const partnershipTiers: {
+  tier: PartnerTier;
+  title: string;
+  description: string;
+}[] = [
   {
+    tier: "PRESENTING",
     title: "Presenting Partner",
     description:
       "The Presenting Partner holds the highest distinction at the Annual Excellence Awards. Beyond brand exposure across international media and elite audiences, this partnership is a statement of leadership, prestige, and innovation. It is a strategic investment that drives business impact, opens doors to global networks, and positions the partner as a key influencer in shaping culture, commerce, and creativity on a world stage.",
   },
   {
+    tier: "CULTURAL",
     title: "Cultural Partner",
     description:
       "The Cultural Partner connects the Awards to the wider world of creativity and storytelling. By supporting artistic excellence, heritage, and diversity, they enhance the event's prestige and contribute to Australia's cultural influence globally. This partnership offers high-value visibility and association with a celebration that resonates with audiences, industry leaders, and international stakeholders alike.",
   },
   {
+    tier: "SUPPORTING",
     title: "Supporting Partners",
     description:
       "Supporting Partners form the foundation of the Annual Excellence Awards. Their involvement ensures a world-class event that attracts global attention, generates media coverage, and provides meaningful opportunities for brand alignment with innovation and excellence. Through this partnership, they gain visibility, credibility, and association with an event that elevates both industry and nation on an international scale.",
+  },
+];
+
+export const partnerBenefits = [
+  {
+    title: "Global Visibility",
+    description:
+      "High-impact presence at a marquee event attended by international guests, celebrities, and media, amplified across live and digital platforms.",
+  },
+  {
+    title: "Premium Brand Association",
+    description:
+      "Align your organisation with cinematic excellence, prestige, and cultural influence in front of an elite international audience.",
+  },
+  {
+    title: "Cross-Border Opportunity",
+    description:
+      "Access foreign investment and collaboration opportunities as IFFA unites world cinema, international brands, and influential leaders.",
+  },
+  {
+    title: "Measurable Impact",
+    description:
+      "Partnerships are designed to deliver tangible ROI — strengthening brand recognition and consumer trust while supporting Australia's creative economy.",
   },
 ];

@@ -29,6 +29,7 @@ export type SubmissionApiItem = {
   portraitImageUrl?: string;
   landscapeImageUrl?: string;
   directors?: string[];
+  crewDirectors?: string[];
   genre?: string;
   genres?: string[];
   durationHours?: number;
@@ -40,7 +41,17 @@ export type SubmissionApiItem = {
   trailerUrl?: string;
   trailer?: string;
   youtubeUrl?: string;
+  submissionYear?: number;
+  featuredOrder?: number;
 };
+
+export function joinNames(names: string[]): string | undefined {
+  const cleaned = names.map((n) => n.trim()).filter(Boolean);
+  if (cleaned.length === 0) return undefined;
+  if (cleaned.length === 1) return cleaned[0];
+  if (cleaned.length === 2) return `${cleaned[0]} & ${cleaned[1]}`;
+  return `${cleaned.slice(0, -1).join(", ")} & ${cleaned[cleaned.length - 1]}`;
+}
 
 export type FilmCardItem = {
   movieId: string;
@@ -68,24 +79,60 @@ export const formatDuration = (
   return parts.join(" ");
 };
 
-export const getYouTubeEmbedUrl = (url?: string): string | null => {
+const getYouTubeEmbedUrl = (parsed: URL): string | null => {
+  let videoId: string | null = null;
+
+  if (parsed.hostname.includes("youtu.be")) {
+    videoId = parsed.pathname.slice(1);
+  } else if (parsed.hostname.includes("youtube.com")) {
+    videoId = parsed.pathname.startsWith("/embed/")
+      ? parsed.pathname.split("/embed/")[1]
+      : parsed.searchParams.get("v");
+  }
+
+  return videoId
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`
+    : null;
+};
+
+/**
+ * Drive file ids are opaque, but always a run of url-safe characters long
+ * enough not to collide with the literal path segments around them.
+ */
+const DRIVE_FILE_ID = /^[\w-]{10,}$/;
+
+/**
+ * Google Drive share links come in several shapes — `/file/d/<id>/view`,
+ * the legacy `/open?id=`, and the `/uc?id=` download form. All of them embed
+ * through the same `/file/d/<id>/preview` player.
+ *
+ * The file must be shared "Anyone with the link" — a restricted file renders
+ * a Google sign-in page inside the iframe instead of the video.
+ */
+const getGoogleDriveEmbedUrl = (parsed: URL): string | null => {
+  if (!/(^|\.)(drive|docs)\.google\.com$/.test(parsed.hostname)) return null;
+
+  const segments = parsed.pathname.split("/").filter(Boolean);
+  const afterFileD =
+    segments[0] === "file" && segments[1] === "d" ? segments[2] : undefined;
+  const fileId = afterFileD ?? parsed.searchParams.get("id") ?? undefined;
+
+  return fileId && DRIVE_FILE_ID.test(fileId)
+    ? `https://drive.google.com/file/d/${fileId}/preview`
+    : null;
+};
+
+/**
+ * Resolves whatever the CMS holds in `trailerUrl` into something an <iframe>
+ * can play, or null when the link isn't embeddable (a Dropbox or WeTransfer
+ * download, say) — callers hide their trailer button on null.
+ */
+export const getTrailerEmbedUrl = (url?: string): string | null => {
   if (!url) return null;
 
   try {
     const parsed = new URL(url);
-    let videoId: string | null = null;
-
-    if (parsed.hostname.includes("youtu.be")) {
-      videoId = parsed.pathname.slice(1);
-    } else if (parsed.hostname.includes("youtube.com")) {
-      videoId = parsed.pathname.startsWith("/embed/")
-        ? parsed.pathname.split("/embed/")[1]
-        : parsed.searchParams.get("v");
-    }
-
-    return videoId
-      ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`
-      : null;
+    return getYouTubeEmbedUrl(parsed) ?? getGoogleDriveEmbedUrl(parsed);
   } catch {
     return null;
   }
@@ -198,6 +245,51 @@ export const fetchSubmissionsForYear = async (
     signal
   );
   return items.map((item) => mapSubmissionFilmListItem(item, year));
+};
+
+export type CarouselFilmItem = {
+  movieId: string;
+  title: string;
+  backdropUrl: string;
+  posterUrl: string;
+  director?: string;
+  year?: number;
+  genres: string[];
+  cast?: string[];
+  description?: string;
+  duration?: string;
+  trailerEmbedUrl: string | null;
+};
+
+const mapSubmissionToCarouselItem = (item: SubmissionApiItem): CarouselFilmItem => {
+  const movieId = coerceMongoIdString(item.id) ?? coerceMongoIdString(item._id) ?? "";
+  const directors = item.crewDirectors?.length ? item.crewDirectors : item.directors ?? [];
+  return {
+    movieId,
+    title: item.title ?? "",
+    backdropUrl: pickImageUrl(item.landscapeImageUrl, item.portraitImageUrl),
+    posterUrl: pickImageUrl(item.portraitImageUrl, item.landscapeImageUrl),
+    director: joinNames(directors),
+    year: item.submissionYear,
+    genres: item.genres ?? [],
+    cast: item.cast,
+    description: item.description ?? item.synopsis ?? item.logline,
+    duration: formatDuration(item.durationHours, item.durationMinutes),
+    trailerEmbedUrl: getTrailerEmbedUrl(item.trailerUrl ?? item.trailer ?? item.youtubeUrl),
+  };
+};
+
+/**
+ * The admin-curated hero carousel — up to 5 films picked from the CMS
+ * carousel page, already sorted server-side by featuredOrder. Not scoped to
+ * a single year (the CMS picker isn't year-scoped either).
+ */
+export const fetchCarouselFilms = async (
+  signal?: AbortSignal
+): Promise<CarouselFilmItem[]> => {
+  const url = `${getApiBase()}/submissions?featured=true`;
+  const items = await fetchSubmissionsList(url, signal);
+  return items.map(mapSubmissionToCarouselItem);
 };
 
 export type ResolveSubmissionIdParams = {
