@@ -53,11 +53,11 @@ export default function Home() {
           youtubeUrl="https://www.youtube.com/watch?v=huMtYtMoN24"
         />
       </div>
-            <div className="pt-20 md:pt-24 lg:pt-32">
-        <Carousel year={2026} />
-      </div>
+      {/* Only 2026: the carousel fetches `isFeatured` films, and the CMS
+          picker that sets that flag isn't year-scoped — every featured film
+          is currently 2026, so a 2025 row fetches nothing and renders null. */}
       <div className="pt-20 md:pt-24 lg:pt-32">
-        <Carousel year={2025} />
+        <Carousel year={2026} />
       </div>
 
       <div className="h-0" />
