@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   CheckCircle2, Loader2, AlertCircle,
@@ -31,7 +31,7 @@ import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
 import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { CrewList } from "./components/CrewList";
-import { WebpImageUpload, uploadWebpImage, createSubmissionRef } from "./components/WebpImageUpload";
+import { WebpImageUpload, uploadWebpImage } from "./components/WebpImageUpload";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const API_BASE = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL ||
@@ -110,11 +110,6 @@ function SuccessScreen() {
 // ─── Main form ────────────────────────────────────────────────────────────────
 export function SubmitFilmForm() {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
-  // One ref per form session, shared by every upload so a submission's images
-  // all land in the same S3 folder. A ref rather than state: it must survive
-  // re-renders without causing one, and a retried submit should reuse the
-  // same folder rather than orphan the first attempt's files in another.
-  const submissionRefRef = useRef(createSubmissionRef());
   const { genres, contentTypes, countries, languages, loading } = useSubmissionOptions(API_BASE);
   const filmSchema = useMemo(() => buildFilmSchema(contentTypes), [contentTypes]);
 
@@ -169,25 +164,12 @@ export function SubmitFilmForm() {
     // required it) — nothing has touched S3 yet. Upload them all now, right
     // before the submission is created, so an abandoned form never leaves
     // orphaned files in the bucket.
-    const submissionRef = submissionRefRef.current;
-    const title = values.title.trim();
-
-    // Crew filenames carry the person's role and name so the folder reads
-    // back sensibly. The index disambiguates two credits that slugify the
-    // same — two directors sharing a name, or names with no Latin
-    // characters, which both collapse to the same fragment server-side.
-    const norm = async (p: PersonEntry, index: number) => ({
+    const norm = async (p: PersonEntry) => ({
       fullName: p.fullName.trim(),
       role: p.role.trim(),
-      imageUrl: await uploadWebpImage(p.imageUrl as File, {
-        submissionRef,
-        title,
-        group: "crews",
-        name: `${p.role.trim()}-${p.fullName.trim()}-${index + 1}`,
-      }),
+      imageUrl: await uploadWebpImage(p.imageUrl as File),
       biography: p.biography.trim(),
       instagramUrl: p.instagram?.trim() || "",
-      email: p.email.trim().toLowerCase(),
     });
 
     const {
@@ -203,18 +185,8 @@ export function SubmitFilmForm() {
     try {
       const [potraitImageUrl, landscapeImageUrl, actors, directors, producers, writers] =
         await Promise.all([
-          uploadWebpImage(values.potraitImageUrl as File, {
-            submissionRef,
-            title,
-            group: "banners",
-            name: "portrait",
-          }),
-          uploadWebpImage(values.landscapeImageUrl as File, {
-            submissionRef,
-            title,
-            group: "banners",
-            name: "landscape",
-          }),
+          uploadWebpImage(values.potraitImageUrl as File),
+          uploadWebpImage(values.landscapeImageUrl as File),
           Promise.all(filterFilledCrew(values.actors).map(norm)),
           Promise.all(values.directors.map(norm)),
           Promise.all(values.producers.map(norm)),
@@ -225,9 +197,6 @@ export function SubmitFilmForm() {
         ...restValues,
         potraitImageUrl,
         landscapeImageUrl,
-        // The server rebuilds the asset folder path from this plus the title —
-        // it deliberately doesn't accept the path itself.
-        submissionRef,
         synopsis: values.synopsis.replace(/\r?\n+/g, " ").replace(/\s{2,}/g, " ").trim(),
         notes: values.notes?.trim() || "",
         submissionYear: new Date().getFullYear(),
@@ -533,7 +502,7 @@ export function SubmitFilmForm() {
                 {!hideActors && (
                   <>
                     <CrewList form={form} fieldName="actors" title="Actors — Lead & Supporting" label="Actor"
-                      defaultEntry={{ fullName: "", role: "Actor in a leading role", imageUrl: null, biography: "", instagram: "", email: "" }}
+                      defaultEntry={{ fullName: "", role: "Actor in a leading role", imageUrl: null, biography: "", instagram: "" }}
                       roleInput={{ type: "select", options: ACTOR_ROLES }}
                       error={form.formState.errors.actors?.message} />
 
@@ -542,7 +511,7 @@ export function SubmitFilmForm() {
                 )}
 
                 <CrewList form={form} fieldName="directors" title="Director(s)" label="Director"
-                  defaultEntry={{ fullName: "", role: "Director", imageUrl: null, biography: "", instagram: "", email: "" }}
+                  defaultEntry={{ fullName: "", role: "Director", imageUrl: null, biography: "", instagram: "" }}
                   roleInput={{ type: "select", options: DIRECTOR_ROLES }}
                   error={form.formState.errors.directors?.message}
                   onDuplicateEntry={duplicateDirectorAsProducer}
@@ -551,14 +520,14 @@ export function SubmitFilmForm() {
                 <div className="border-t border-[#141210]" />
 
                 <CrewList form={form} fieldName="producers" title="Producer(s)" label="Producer"
-                  defaultEntry={{ fullName: "", role: "Producer", imageUrl: null, biography: "", instagram: "", email: "" }}
+                  defaultEntry={{ fullName: "", role: "Producer", imageUrl: null, biography: "", instagram: "" }}
                   roleInput={{ type: "select", options: PRODUCER_ROLES }}
                   error={form.formState.errors.producers?.message} />
 
                 <div className="border-t border-[#141210]" />
 
                 <CrewList form={form} fieldName="writers" title="Other — DOP, Editor, Writer, Music…" label="Credit"
-                  defaultEntry={{ fullName: "", role: "", imageUrl: null, biography: "", instagram: "", email: "" }}
+                  defaultEntry={{ fullName: "", role: "", imageUrl: null, biography: "", instagram: "" }}
                   roleInput={{ type: "text", placeholder: "e.g. Writer, DOP, Composer" }}
                   minEntries={0}
                   error={form.formState.errors.writers?.message} />

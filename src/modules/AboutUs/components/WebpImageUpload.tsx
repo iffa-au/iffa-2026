@@ -49,45 +49,17 @@ async function fetchWithRetry(
 }
 
 /**
- * Identifies where a file belongs inside its submission's S3 folder.
- *
- * `submissionRef` is generated once per form session and shared by every
- * upload, so all of a submission's images land together. The server derives
- * the actual key from these — nothing here is a path.
- */
-export type UploadSlot = {
-  submissionRef: string;
-  title: string;
-  group: "banners" | "crews";
-  /** "portrait", "landscape", or a crew credit like "director-sam-raimi-1". */
-  name: string;
-};
-
-/**
- * A submission's images are grouped under one folder named for the film, so
- * the ref has to be stable for the whole form session — regenerating it per
- * upload would scatter one submission across ten folders.
- */
-export const createSubmissionRef = (): string =>
-  Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) =>
-    b.toString(16).padStart(2, "0")
-  ).join("");
-
-/**
  * Uploads a single confirmed webp file to S3 via a presigned PUT and
  * resolves to its public CloudFront URL. Called from SubmitFilmForm's
  * onSubmit — nothing is written to S3 before the whole form is submitted,
  * even though a file may have been "confirmed" in this component's preview
  * modal much earlier in the session.
  */
-export async function uploadWebpImage(
-  file: File,
-  slot: UploadSlot
-): Promise<string> {
+export async function uploadWebpImage(file: File): Promise<string> {
   const presignRes = await fetchWithRetry(`${API_BASE}/uploads/presign`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contentType: WEBP_CONTENT_TYPE, ...slot }),
+    body: JSON.stringify({ contentType: WEBP_CONTENT_TYPE }),
   });
   const presignJson = await presignRes.json().catch(() => ({}));
   if (!presignRes.ok || !presignJson?.uploadUrl || !presignJson?.key) {

@@ -194,22 +194,6 @@ export function CrewList({
 
                 <FormField
                   control={form.control}
-                  name={`${fieldName}.${i}.email` as const}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={L}>
-                        Representative Email Address <span className="text-[#e6ba35]">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input {...field} type="email" placeholder="name@example.com" className={I} />
-                      </FormControl>
-                      <FormMessage className="text-red-400 text-xs" />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name={`${fieldName}.${i}.instagram` as const}
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
