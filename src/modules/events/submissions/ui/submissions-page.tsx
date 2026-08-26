@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 
 import MoviesCard from "@/modules/home/ui/views/carousel/MoviesCard";
 import { SubmissionsHeroCarousel } from "./submissions-hero-carousel";
+import { SubmissionSpotlightCard } from "./submission-spotlight-card";
+import { cn } from "@/lib/utils";
 import {
   fetchSubmissionsForYear,
   filmActionKey,
@@ -24,6 +26,25 @@ const getItemsPerPage = () => {
   return 8;
 };
 
+/** How many wide cards appear together each time the run of posters breaks. */
+const SPOTLIGHT_RUN = 2;
+
+/**
+ * A spotlight pair takes up a whole grid row, so the break has to land on a
+ * row boundary or the grid leaves a hole. 8 fills two rows of the 4-column
+ * grid; 6 fills two rows of the 3-column grid and three of the 2-column one.
+ *
+ * 1280px is where `xl:grid-cols-4` kicks in — this must stay in step with the
+ * grid's own breakpoints, not with getItemsPerPage's.
+ */
+const getSpotlightInterval = () => {
+  if (typeof window === "undefined") return 6;
+  return window.innerWidth >= 1280 ? 8 : 6;
+};
+
+const isSpotlightIndex = (index: number, interval: number) =>
+  index % (interval + SPOTLIGHT_RUN) >= interval;
+
 type SubmissionsPageProps = {
   year: string;
 };
@@ -32,6 +53,7 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(getItemsPerPage);
+  const [spotlightInterval, setSpotlightInterval] = useState(getSpotlightInterval);
   const [films, setFilms] = useState<FilmCardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +63,7 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
     const handleResize = () => {
       const nextItemsPerPage = getItemsPerPage();
       setItemsPerPage(nextItemsPerPage);
+      setSpotlightInterval(getSpotlightInterval());
       setCurrentPage((prevPage) => {
         const nextTotalPages = Math.ceil(films.length / nextItemsPerPage);
         if (nextTotalPages === 0) return 1;
@@ -155,8 +178,8 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
       <SubmissionsHeroCarousel />
       <div className="mx-auto w-full max-w-7xl px-4 py-10">
         <div className="mb-12 text-center">
-          <h1 className="mb-4 text-4xl font-bold tracking-tight text-accent-4 md:text-6xl">
-            {year} Submissions
+          <h1 className="mb-4 text-4xl font-bold tracking-tight text-accent-4 md:text-6xl font">
+           New Submissions 
           </h1>
           <div className="mx-auto mb-6 h-1 w-24 bg-gradient-to-r from-accent-3 to-accent-6" />
           <p className="text-lg text-accent-6">
@@ -166,23 +189,42 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
 
         {currentFilms.length > 0 ? (
           <div className="mb-12 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-            {currentFilms.map((film) => {
+            {currentFilms.map((film, index) => {
               const href = synopsisHrefForFilm(film);
               const key = film.movieId || `${film.title}-${film.posterUrl}`;
               const actionKey = filmActionKey(film);
               const isResolving = resolvingKey === actionKey;
+              const isSpotlight = isSpotlightIndex(index, spotlightInterval);
 
-              const cardClass =
-                "block w-full max-w-[340px] rounded-xl transition-opacity duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a227] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-60";
+              const cardClass = cn(
+                "block w-full max-w-[340px] rounded-xl transition-opacity duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a227] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-60",
+                // Capped and centred while it spans the full grid, so the
+                // frame keeps roughly the same landscape proportion at every
+                // width instead of stretching into a thin letterbox.
+                isSpotlight &&
+                  "h-full max-w-none rounded-2xl sm:max-w-[600px] md:max-w-[680px] xl:max-w-none"
+              );
+
+              const card = isSpotlight ? (
+                <SubmissionSpotlightCard film={film} />
+              ) : (
+                <MoviesCard film={film} />
+              );
 
               return (
                 <div
                   key={key}
-                  className="flex min-w-0 justify-center transition-transform duration-300 hover:z-10 hover:scale-105"
+                  className={cn(
+                    "flex min-w-0 justify-center transition-transform duration-300 hover:z-10 hover:scale-105",
+                    // A spotlight pair fills one row on its own: two half-width
+                    // cards on the 4-column grid, full-width stacked below that.
+                    isSpotlight &&
+                      "col-span-1 h-100 hover:scale-[1.02] sm:col-span-2 sm:h-105 md:col-span-3 md:h-115 xl:col-span-2 xl:h-105"
+                  )}
                 >
                   {href ? (
                     <Link href={href} className={cardClass} aria-label={`Open synopsis: ${film.title}`}>
-                      <MoviesCard film={film} />
+                      {card}
                     </Link>
                   ) : (
                     <button
@@ -192,7 +234,7 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
                       className={cardClass}
                       aria-label={`Open synopsis: ${film.title}`}
                     >
-                      <MoviesCard film={film} />
+                      {card}
                     </button>
                   )}
                 </div>
