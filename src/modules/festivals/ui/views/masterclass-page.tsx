@@ -10,7 +10,7 @@ import {
   masterclassSessions,
   masterclassSpeakers,
 } from "../../data/masterclass-data";
-import { FestivalBreadcrumb } from "../components/festival-breadcrumb";
+import { Breadcrumb } from "@/modules/shared/components/breadcrumb";
 import { LearnTopicCard } from "../components/learn-topic-card";
 import { MasterclassSessionCard } from "../components/masterclass-session-card";
 import { SpeakerCard } from "../components/speaker-card";
@@ -41,7 +41,7 @@ export function MasterclassPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-7xl px-5 pt-12 md:px-8 md:pt-16">
-        <FestivalBreadcrumb
+        <Breadcrumb
           crumbs={[
             { label: "Home", href: "/" },
             { label: "Festivals", href: "/festivals" },

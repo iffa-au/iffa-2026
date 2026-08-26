@@ -6,7 +6,7 @@ import { screeningCountries } from "../../data/screening-data";
 import { countFilmsForCountry, dateRangeForCountry } from "../../lib/screening-utils";
 import { ALL_COUNTRIES, CountryFilterBar } from "../components/country-filter-bar";
 import { CountryOverviewSection } from "../components/country-overview-section";
-import { FestivalBreadcrumb } from "../components/festival-breadcrumb";
+import { Breadcrumb } from "@/modules/shared/components/breadcrumb";
 import { NightRail } from "../components/night-rail";
 import { ScreeningFilmCard } from "../components/screening-film-card";
 
@@ -38,7 +38,7 @@ export function ScreeningPage() {
       </div>
 
       <section className="relative z-10 mx-auto max-w-7xl px-5 pt-12 pb-20 md:px-8 md:pt-16 md:pb-28">
-        <FestivalBreadcrumb
+        <Breadcrumb
           crumbs={[
             { label: "Home", href: "/" },
             { label: "Festivals", href: "/festivals" },

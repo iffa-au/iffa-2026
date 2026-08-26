@@ -1,5 +1,5 @@
 import { programCards } from "../../data/programs-data";
-import { FestivalBreadcrumb } from "../components/festival-breadcrumb";
+import { Breadcrumb } from "@/modules/shared/components/breadcrumb";
 import { ProgramCardItem } from "../components/program-card";
 
 export function ProgramsPage() {
@@ -10,7 +10,7 @@ export function ProgramsPage() {
       </div>
 
       <section className="relative z-10 mx-auto max-w-7xl px-5 pt-12 pb-20 md:px-8 md:pt-16 md:pb-28">
-        <FestivalBreadcrumb
+        <Breadcrumb
           crumbs={[
             { label: "Home", href: "/" },
             { label: "Festivals", href: "/festivals" },

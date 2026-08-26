@@ -7,7 +7,7 @@ export type BreadcrumbCrumb = {
   href?: string;
 };
 
-export function FestivalBreadcrumb({ crumbs }: { crumbs: BreadcrumbCrumb[] }) {
+export function Breadcrumb({ crumbs }: { crumbs: BreadcrumbCrumb[] }) {
   return (
     <nav aria-label="Breadcrumb" className="mb-6">
       <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] uppercase tracking-[0.18em] text-white/50 sm:text-xs">

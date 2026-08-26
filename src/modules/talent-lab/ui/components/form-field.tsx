@@ -1,0 +1,90 @@
+"use client";
+
+import { useId } from "react";
+
+type FormFieldProps = {
+  label: string;
+  /** Marked visibly, not just by a red asterisk convention. */
+  required?: boolean;
+  /** Shown under the control, and wired to the input via `aria-describedby`. */
+  helper?: string;
+  /** Present => the field is invalid. */
+  error?: string;
+  /** Receives the ids to attach to the control. */
+  children: (props: {
+    id: string;
+    "aria-describedby": string | undefined;
+    "aria-invalid": boolean;
+    "aria-required": boolean;
+  }) => React.ReactNode;
+};
+
+/**
+ * Mono label, control, helper text and an explicit error line.
+ *
+ * The render-prop shape exists so the ids are generated once here and handed to
+ * whatever control the caller renders — a `<label htmlFor>` that points at
+ * nothing is the single most common way a form ends up unusable with a screen
+ * reader, and this makes that impossible to get wrong.
+ *
+ * Errors are announced through `role="alert"` and stated in words. A red border
+ * alone tells nobody what is wrong. Optional fields are labelled "optional"
+ * rather than leaving the user to infer it from the absence of an asterisk.
+ */
+export function FormField({
+  label,
+  required = false,
+  helper,
+  error,
+  children,
+}: FormFieldProps) {
+  const id = useId();
+  const helperId = `${id}-helper`;
+  const errorId = `${id}-error`;
+
+  const describedBy =
+    [helper ? helperId : null, error ? errorId : null].filter(Boolean).join(" ") ||
+    undefined;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label
+        htmlFor={id}
+        className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70"
+      >
+        {label}
+        {required ? (
+          <span className="pl-1 text-yellow-400">*</span>
+        ) : (
+          <span className="pl-1.5 normal-case tracking-normal text-white/40">
+            (optional)
+          </span>
+        )}
+      </label>
+
+      {children({
+        id,
+        "aria-describedby": describedBy,
+        "aria-invalid": Boolean(error),
+        "aria-required": required,
+      })}
+
+      {helper && (
+        <p id={helperId} className="text-xs font-light leading-relaxed text-white/50">
+          {helper}
+        </p>
+      )}
+
+      {error && (
+        <p
+          id={errorId}
+          role="alert"
+          className="flex items-start gap-1.5 text-xs leading-relaxed text-[#F5A25A]"
+        >
+          <span aria-hidden="true">!</span>
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
