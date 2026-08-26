@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Film, Play } from "lucide-react";
+import Link from "next/link";
+import { Calendar, ChevronRight, Clock, Film, Play, Tag } from "lucide-react";
 import {
   formatDuration,
-  getYouTubeEmbedUrl,
+  getTrailerEmbedUrl,
   pickImageUrl,
 } from "@/modules/events/submissions/lib/submissions";
 import TrailerModal from "@/modules/home/ui/views/carousel/TrailerModal";
@@ -36,6 +37,7 @@ type SubmissionApiResponse = {
   language?: NamedRef;
   country?: NamedRef;
   productionHouse?: string;
+  submission_year?: number;
 };
 
 export type CrewPerson = {
@@ -57,6 +59,8 @@ export type SynopsisFilm = {
   title: string;
   description: string;
   year?: number;
+  releaseDateFormatted?: string;
+  submissionYear?: number;
   genres: string[];
   posterUrl: string;
   backdropUrl: string;
@@ -66,6 +70,8 @@ export type SynopsisFilm = {
   format?: string;
   productionHouse?: string;
   director?: string;
+  writers?: string;
+  starring?: string;
   trailerEmbedUrl: string | null;
 };
 
@@ -167,9 +173,17 @@ export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
   );
 
   let year: number | undefined;
+  let releaseDateFormatted: string | undefined;
   if (data.releaseDate) {
     const d = new Date(data.releaseDate);
-    if (!Number.isNaN(d.getTime())) year = d.getFullYear();
+    if (!Number.isNaN(d.getTime())) {
+      year = d.getFullYear();
+      releaseDateFormatted = d.toLocaleDateString("en-AU", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    }
   }
 
   const crew = mapCrew(data);
@@ -178,12 +192,22 @@ export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
       ? data.productionHouse.trim()
       : undefined;
 
+  // "Writers" aren't a distinct crew bucket on the submission form — they're
+  // captured under "other" alongside DOP/editor/composer/etc, so the only
+  // way to isolate them is by matching the role text they entered.
+  const writers = [...crew.directors, ...crew.producers, ...crew.actors, ...crew.other].filter(
+    (p) => /writ/i.test(p.role)
+  );
+
   return {
     film: {
       movieId: submissionId,
       title: data.title ?? "",
       description: data.synopsis || data.description || "",
       year,
+      releaseDateFormatted,
+      submissionYear:
+        typeof data.submission_year === "number" ? data.submission_year : undefined,
       genres: normalizeGenres(data),
       posterUrl,
       backdropUrl,
@@ -193,7 +217,9 @@ export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
       format: data.contentType?.name,
       productionHouse,
       director: joinNames(crew.directors.map((d) => d.name)),
-      trailerEmbedUrl: getYouTubeEmbedUrl(data.trailerUrl),
+      writers: joinNames(writers.map((w) => w.name)),
+      starring: joinNames(crew.actors.map((a) => a.name)),
+      trailerEmbedUrl: getTrailerEmbedUrl(data.trailerUrl),
     },
     crew,
   };
@@ -347,12 +373,12 @@ function CrewSection({ crew }: { crew: SynopsisCrew }) {
     <section
       ref={ref}
       className={cn(
-        "relative border-t border-white/[0.06] bg-gradient-to-b from-black to-[#0b0a08] py-20 transition-all duration-700 ease-out sm:py-28",
+        "relative border-t border-white/[0.06] bg-gradient-to-b from-black to-[#0b0a08] py-14 transition-all duration-700 ease-out sm:py-20",
         visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
       )}
     >
       <div className="mx-auto max-w-6xl px-6 sm:px-8">
-        <div className="mb-12 sm:mb-16">
+        <div className="mb-8 sm:mb-10">
           <SectionEyebrow>Crew</SectionEyebrow>
           <h2 className="mt-3 text-3xl font-bold text-white sm:text-4xl" style={{ fontFamily: SERIF }}>
             The People Behind the Film
@@ -399,12 +425,12 @@ function SynopsisSection({ description }: { description: string }) {
     <section
       ref={ref}
       className={cn(
-        "relative border-t border-white/[0.06] bg-black py-20 transition-all duration-700 ease-out sm:py-28",
+        "relative border-t border-white/[0.06] bg-black py-14 transition-all duration-700 ease-out sm:py-20",
         visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
       )}
     >
       <div className="mx-auto max-w-6xl px-6 sm:px-8">
-        <div className="mb-10 sm:mb-14">
+        <div className="mb-8 sm:mb-10">
           <SectionEyebrow>Synopsis</SectionEyebrow>
           <h2 className="mt-3 text-3xl font-bold text-white sm:text-4xl" style={{ fontFamily: SERIF }}>
             The Story
@@ -412,7 +438,7 @@ function SynopsisSection({ description }: { description: string }) {
           <div className="mt-6 h-px w-16 bg-gradient-to-r from-yellow-500 to-transparent" />
         </div>
 
-        <div className="relative mx-auto max-w-3xl">
+        <div className="relative mx-auto max-w-5xl text-justify">
           <span
             aria-hidden="true"
             className="pointer-events-none absolute -left-3 -top-10 select-none text-[8rem] leading-none text-white/[0.05] sm:-left-6 sm:-top-14 sm:text-[10rem]"
@@ -420,7 +446,7 @@ function SynopsisSection({ description }: { description: string }) {
           >
             &ldquo;
           </span>
-          <div className="relative border-l border-white/10 pl-6 sm:pl-10">
+          <div className="relative border-l border-white/10 pl-2 sm:pl-10">
             {paragraphs.length > 0 ? (
               paragraphs.map((para, idx) => (
                 <p
@@ -440,12 +466,32 @@ function SynopsisSection({ description }: { description: string }) {
   );
 }
 
-function MetaField({ label, value }: { label: string; value?: string }) {
+function Breadcrumb({ title, submissionsYear }: { title: string; submissionsYear?: number }) {
+  return (
+    <nav className="flex items-center mt-3 gap-2 text-xs text-white/50 sm:text-sm">
+      <Link href="/" className="transition-colors hover:text-white">
+        Home
+      </Link>
+      <ChevronRight className="h-3 w-3 shrink-0" />
+      {submissionsYear ? (
+        <Link href={`/events/${submissionsYear}/submissions`} className="transition-colors hover:text-white">
+          Submissions
+        </Link>
+      ) : (
+        <span className="text-white/40">Submissions</span>
+      )}
+      <ChevronRight className="h-3 w-3 shrink-0" />
+      <span className="max-w-[10rem] truncate text-white/80 sm:max-w-xs">{title}</span>
+    </nav>
+  );
+}
+
+function HeroDetailField({ label, value }: { label: string; value?: string }) {
   if (!value) return null;
   return (
-    <div>
-      <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-white/40">{label}</p>
-      <p className="mt-1 text-base font-medium text-white sm:text-lg">{value}</p>
+    <div className="min-w-0">
+      <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/40">{label}</p>
+      <p className="mt-1 text-sm font-medium leading-snug text-white sm:text-base">{value}</p>
     </div>
   );
 }
@@ -459,114 +505,142 @@ function HeroSection({
   mounted: boolean;
   onWatchTrailer: () => void;
 }) {
-  const metaFields: Array<{ label: string; value?: string }> = [
-    { label: "Country of Origin", value: film.country },
-    { label: "Release Year", value: film.year ? String(film.year) : undefined },
-    { label: "Duration", value: film.duration },
+  const detailFields: Array<{ label: string; value?: string }> = [
+    { label: "Directed By", value: film.director },
+    { label: "Written By", value: film.writers },
+    { label: "Starring", value: film.starring },
+    { label: "Language", value: film.language },
+    { label: "Country", value: film.country },
     { label: "Format", value: film.format },
-    { label: "Primary Language", value: film.language },
     { label: "Production House", value: film.productionHouse },
   ].filter((f) => f.value);
 
+  // Some submissions have a "landscape" URL that's syntactically valid but
+  // isn't actually a loadable image (a Google Drive/Dropbox/Smash share
+  // link, say) — this steps down to the portrait image, then gives up
+  // cleanly, instead of leaving the hero blank when the primary URL 404s.
+  // Reset via the `key={film.movieId}` on this component at its call site,
+  // not an effect — a prop change here should just remount fresh state.
+  const [backdropStage, setBackdropStage] = useState<0 | 1 | 2>(0);
+  // The blurred layer and the sharp layer both point at the same URL, so a
+  // single broken image fires onError twice (once per <img>) — without this
+  // guard, the second event would advance the stage again and skip straight
+  // past the portrait fallback instead of ever trying it.
+  const failedSrcRef = useRef<string | null>(null);
+
+  const backdropSrc =
+    backdropStage === 0
+      ? film.backdropUrl
+      : backdropStage === 1
+        ? film.posterUrl
+        : null;
+
+  const handleBackdropError = () => {
+    if (failedSrcRef.current === backdropSrc) return;
+    failedSrcRef.current = backdropSrc;
+    setBackdropStage((stage) => {
+      if (stage === 0 && film.posterUrl && film.posterUrl !== film.backdropUrl) return 1;
+      return 2;
+    });
+  };
+
   return (
-    <section className="relative overflow-hidden">
-      {/* Ambient cinematic wash behind the whole hero — not a boxed banner */}
-      <div className="pointer-events-none absolute inset-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={film.backdropUrl}
-          alt=""
-          aria-hidden="true"
-          className="h-full w-full scale-110 object-cover opacity-55 blur-xl"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-        {/* Darkens left-to-right so the metadata column (right, on desktop)
-            stays legible without flattening the backdrop's color entirely. */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/55 to-black/85" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.35)_70%,black_100%)]" />
+    <section className="relative min-h-[420px] overflow-hidden sm:min-h-[480px]">
+      {/* Full-bleed backdrop, sharp (not blurred) — gradient darkens the left
+          side only, so the image itself stays visible on the right. */}
+      <div className="absolute inset-0 bg-black">
+        {backdropSrc && (
+          <>
+            {/* Blurred, cropped copy fills the frame edge-to-edge so there's
+                no empty letterboxing — purely an ambient colour wash behind
+                the sharp layer below, never the only thing showing the image. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={backdropSrc}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full scale-110 object-cover opacity-70 blur-2xl"
+              onError={handleBackdropError}
+            />
+            {/* The actual image, uncropped — object-contain guarantees the full
+                frame (including the top) is always visible, whatever the hero's
+                height ends up being for a given film's content. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={backdropSrc}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-contain"
+              onError={handleBackdropError}
+            />
+          </>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-black/10 sm:via-black/60 sm:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/30" />
         <div
           className="absolute inset-0 opacity-[0.05] mix-blend-overlay"
           style={{ backgroundImage: GRAIN_DATA_URI }}
         />
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-black" />
       </div>
 
-      <div className="relative mx-auto max-w-6xl px-6 py-16 sm:px-8 sm:py-24 lg:py-28">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,340px)_1fr] lg:gap-16">
-          {/* Poster */}
-          <div
-            className={cn(
-              "relative mx-auto w-48 transition-all duration-700 ease-out sm:w-64 lg:mx-0 lg:w-full",
-              mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-            )}
-          >
-            <div className="pointer-events-none absolute -inset-6 -z-10 rounded-full bg-yellow-500/10 blur-3xl" />
-            <div className="overflow-hidden rounded-xl border border-white/10 shadow-2xl shadow-black/60">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={film.posterUrl}
-                alt={`${film.title} poster`}
-                className="aspect-[2/3] w-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/fallbacks/no-poster.svg";
-                }}
-              />
-            </div>
-          </div>
+      <div className="relative z-10 px-6 pb-12 pt-6 sm:px-10 sm:pb-16 sm:pt-8">
+        <Breadcrumb title={film.title} submissionsYear={film.submissionYear ?? film.year} />
 
-          {/* Identity + metadata */}
+        <div className="mx-auto max-w-6xl">
           <div
             className={cn(
-              "text-center transition-all delay-100 duration-700 ease-out lg:text-left",
+              "mt-8 max-w-2xl transition-all duration-700 ease-out sm:mt-12",
               mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
             )}
           >
-            <SectionEyebrow>Film</SectionEyebrow>
+            <span className="inline-flex items-center rounded bg-yellow-500 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-black">
+              {film.submissionYear ? `IFFA ${film.submissionYear} Selection` : "Official Selection"}
+            </span>
+
             <h1
-              className="mt-4 text-4xl font-bold leading-[1.05] text-white sm:text-5xl lg:text-6xl"
+              className="mt-4 text-3xl font-bold leading-[1.05] text-white sm:text-5xl lg:text-6xl"
               style={{ fontFamily: SERIF }}
             >
               {film.title}
             </h1>
 
-            {film.director && (
-              <p className="mt-4 text-base text-white/60 sm:text-lg">
-                Directed by <span className="text-white/90">{film.director}</span>
-              </p>
-            )}
-
-            {metaFields.length > 0 && (
-              <div className="mt-8 grid grid-cols-2 gap-x-8 gap-y-5 border-t border-white/10 pt-8 text-left sm:max-w-lg lg:mx-0">
-                {metaFields.map((f) => (
-                  <MetaField key={f.label} label={f.label} value={f.value} />
-                ))}
-              </div>
-            )}
-
-            {film.genres.length > 0 && (
-              <div className="mt-7 flex flex-wrap justify-center gap-2 lg:justify-start">
-                {film.genres.map((g) => (
-                  <span
-                    key={g}
-                    className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white/70"
-                  >
-                    {g}
-                  </span>
-                ))}
-              </div>
-            )}
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/70 sm:text-base">
+              {film.duration && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-yellow-500" />
+                  {film.duration}
+                </span>
+              )}
+              {film.releaseDateFormatted && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-yellow-500" />
+                  {film.releaseDateFormatted}
+                </span>
+              )}
+              {film.genres.length > 0 && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Tag className="h-4 w-4 text-yellow-500" />
+                  {film.genres.join(", ")}
+                </span>
+              )}
+            </div>
 
             {film.trailerEmbedUrl && (
               <button
                 onClick={onWatchTrailer}
-                className="mt-9 inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-6 py-3 text-sm font-bold uppercase tracking-widest text-black transition-colors hover:bg-yellow-400"
+                className="mt-6 inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-6 py-3 text-sm font-bold uppercase tracking-widest text-black transition-colors hover:bg-yellow-400"
               >
                 <Play className="h-4 w-4 fill-current" />
-                Watch Trailer
+                Trailer
               </button>
+            )}
+
+            {detailFields.length > 0 && (
+              <div className="mt-8 grid grid-cols-2 gap-x-8 gap-y-4 border-t border-white/10 pt-6 sm:grid-cols-3">
+                {detailFields.map((f) => (
+                  <HeroDetailField key={f.label} label={f.label} value={f.value} />
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -683,7 +757,7 @@ export function SynopsisPage({ id }: SynopsisPageProps) {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <HeroSection film={film} mounted={mounted} onWatchTrailer={() => setIsTrailerOpen(true)} />
+      <HeroSection key={film.movieId} film={film} mounted={mounted} onWatchTrailer={() => setIsTrailerOpen(true)} />
       <SynopsisSection description={film.description} />
       <CrewSection crew={crew} />
 
