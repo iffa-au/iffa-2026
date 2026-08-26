@@ -16,9 +16,6 @@ function hrefFor(film: CarouselFilmItem): string | null {
   return synopsisHrefForFilm({
     movieId: film.movieId,
     submissionObjectId: film.movieId,
-    title: film.title,
-    posterUrl: film.posterUrl,
-    directors: [],
   });
 }
 

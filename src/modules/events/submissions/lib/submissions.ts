@@ -59,6 +59,8 @@ export type FilmCardItem = {
   submissionObjectId?: string;
   title: string;
   posterUrl: string;
+  /** Landscape framing, used by the wide spotlight cards on the grid. */
+  backdropUrl: string;
   directors: string[];
   year?: string;
   genre?: string;
@@ -176,13 +178,22 @@ export const mapSubmissionFilmListItem = (
 ): FilmCardItem => {
   const submissionObjectId = pickMongoSubmissionId(item);
   const contentId = pickContentId(item);
+  // `directors` is legacy and comes back empty for anything submitted through
+  // the current form — the names now live on the crew documents. Same
+  // preference the hero carousel mapper uses.
+  const directors = item.crewDirectors?.length
+    ? item.crewDirectors
+    : Array.isArray(item.directors)
+      ? item.directors
+      : [];
   return {
     movieId: submissionObjectId ?? contentId ?? "",
     contentId,
     submissionObjectId,
     title: item.title ?? "",
     posterUrl: pickImageUrl(item.portraitImageUrl, item.landscapeImageUrl),
-    directors: Array.isArray(item.directors) ? item.directors : [],
+    backdropUrl: pickImageUrl(item.landscapeImageUrl, item.portraitImageUrl),
+    directors,
     year,
     genre: item.genre ?? item.genres?.join(" / "),
     duration: formatDuration(item.durationHours, item.durationMinutes),
@@ -192,7 +203,9 @@ export const mapSubmissionFilmListItem = (
   };
 };
 
-export const synopsisHrefForFilm = (film: FilmCardItem): string | null => {
+export const synopsisHrefForFilm = (
+  film: Pick<FilmCardItem, "movieId" | "submissionObjectId">
+): string | null => {
   const id =
     film.submissionObjectId ?? (isObjectId(film.movieId) ? film.movieId : null);
   return id ? `/synopsis/${id}` : null;
