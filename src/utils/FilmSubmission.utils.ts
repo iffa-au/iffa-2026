@@ -15,7 +15,6 @@ const personSchema = z.object({
   imageUrl: requiredWebpFile("Photo is required"),
   biography: z.string().min(10, "Biography must be at least 10 characters"),
   instagram: z.string().optional(),
-  email: z.string().email("A valid representative email is required"),
 });
 
 /**
@@ -96,7 +95,6 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
           imageUrl: z.custom<File | null>(),
           biography: z.string(),
           instagram: z.string().optional(),
-          email: z.string(),
         }),
       ),
       notes: z.string().max(1000, "Notes must be 1000 characters or less").optional(),
@@ -149,7 +147,6 @@ export const BLANK_PERSON: PersonEntry = {
   imageUrl: null,
   biography: "",
   instagram: "",
-  email: "",
 };
 
 export function filterFilledCrew(entries: PersonEntry[]): PersonEntry[] {

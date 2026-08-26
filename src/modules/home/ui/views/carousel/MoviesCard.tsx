@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Play } from "lucide-react";
 
 import TrailerModal from "./TrailerModal";
-import { getTrailerEmbedUrl } from "@/modules/events/submissions/lib/submissions";
+import { getYouTubeEmbedUrl } from "@/modules/events/submissions/lib/submissions";
 
 type Film = {
   posterUrl?: string;
@@ -35,7 +35,7 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
   const directors = Array.isArray(film.directors) ? film.directors : [];
   const cast = Array.isArray(film.cast) ? film.cast : [];
   const title = film.title || "Untitled";
-  const embedUrl = getTrailerEmbedUrl(film.trailerUrl);
+  const embedUrl = getYouTubeEmbedUrl(film.trailerUrl);
 
   const handleImageLoad = () => {
     setImageLoaded(true);

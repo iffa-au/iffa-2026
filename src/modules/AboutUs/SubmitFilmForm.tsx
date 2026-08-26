@@ -170,7 +170,6 @@ export function SubmitFilmForm() {
       imageUrl: await uploadWebpImage(p.imageUrl as File),
       biography: p.biography.trim(),
       instagramUrl: p.instagram?.trim() || "",
-      email: p.email.trim().toLowerCase(),
     });
 
     const {
@@ -503,7 +502,7 @@ export function SubmitFilmForm() {
                 {!hideActors && (
                   <>
                     <CrewList form={form} fieldName="actors" title="Actors — Lead & Supporting" label="Actor"
-                      defaultEntry={{ fullName: "", role: "Actor in a leading role", imageUrl: null, biography: "", instagram: "", email: "" }}
+                      defaultEntry={{ fullName: "", role: "Actor in a leading role", imageUrl: null, biography: "", instagram: "" }}
                       roleInput={{ type: "select", options: ACTOR_ROLES }}
                       error={form.formState.errors.actors?.message} />
 
@@ -512,7 +511,7 @@ export function SubmitFilmForm() {
                 )}
 
                 <CrewList form={form} fieldName="directors" title="Director(s)" label="Director"
-                  defaultEntry={{ fullName: "", role: "Director", imageUrl: null, biography: "", instagram: "", email: "" }}
+                  defaultEntry={{ fullName: "", role: "Director", imageUrl: null, biography: "", instagram: "" }}
                   roleInput={{ type: "select", options: DIRECTOR_ROLES }}
                   error={form.formState.errors.directors?.message}
                   onDuplicateEntry={duplicateDirectorAsProducer}
@@ -521,14 +520,14 @@ export function SubmitFilmForm() {
                 <div className="border-t border-[#141210]" />
 
                 <CrewList form={form} fieldName="producers" title="Producer(s)" label="Producer"
-                  defaultEntry={{ fullName: "", role: "Producer", imageUrl: null, biography: "", instagram: "", email: "" }}
+                  defaultEntry={{ fullName: "", role: "Producer", imageUrl: null, biography: "", instagram: "" }}
                   roleInput={{ type: "select", options: PRODUCER_ROLES }}
                   error={form.formState.errors.producers?.message} />
 
                 <div className="border-t border-[#141210]" />
 
                 <CrewList form={form} fieldName="writers" title="Other — DOP, Editor, Writer, Music…" label="Credit"
-                  defaultEntry={{ fullName: "", role: "", imageUrl: null, biography: "", instagram: "", email: "" }}
+                  defaultEntry={{ fullName: "", role: "", imageUrl: null, biography: "", instagram: "" }}
                   roleInput={{ type: "text", placeholder: "e.g. Writer, DOP, Composer" }}
                   minEntries={0}
                   error={form.formState.errors.writers?.message} />
