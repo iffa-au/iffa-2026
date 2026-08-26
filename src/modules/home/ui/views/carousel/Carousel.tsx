@@ -3,31 +3,27 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import MoviesCard from "./MoviesCard";
-import { pickImageUrl } from "@/modules/events/submissions/lib/submissions";
+import {
+  mapSubmissionFilmListItem,
+  type FilmCardItem,
+  type SubmissionApiItem,
+} from "@/modules/events/submissions/lib/submissions";
 
 type CarouselProps = {
   year: number | string;
 };
 
-type FilmItem = {
-  movieId: string;
-  title: string;
-  posterUrl: string;
-  directors: string[];
-};
-
-type ApiFilmResponse = {
-  id?: string;
-  title?: string;
-  portraitImageUrl?: string;
-  landscapeImageUrl?: string;
-  directors?: string[];
-};
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL ?? "";
 
+/**
+ * How many films the marquee shows. The endpoint returns the year's whole
+ * approved list newest-first (sorted server-side), so taking the head gives
+ * the most recent submissions.
+ */
+const MAX_FILMS = 10;
+
 // Cache to prevent repeated requests across component mounts
-const fetchCache: Record<string, FilmItem[]> = {};
+const fetchCache: Record<string, FilmCardItem[]> = {};
 
 const getCardWidth = (): number => {
   if (window.innerWidth < 640) return 280;
@@ -46,7 +42,7 @@ const Carousel = ({ year }: CarouselProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
-  const [films, setFilms] = useState<FilmItem[]>([]);
+  const [films, setFilms] = useState<FilmCardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -92,7 +88,11 @@ const Carousel = ({ year }: CarouselProps) => {
           return;
         }
 
-        const url = `${API_BASE_URL}/submissions?year=${year}&isFeatured=true`;
+        // Deliberately not `&isFeatured=true`: that flag is the CMS's
+        // hand-picked set of 5 for the submissions-page hero, isn't
+        // year-scoped, and leaves this row empty for any year the admin
+        // hasn't curated.
+        const url = `${API_BASE_URL}/submissions?year=${year}`;
         const res = await fetch(url, { signal: controller.signal });
 
         if (!res.ok) {
@@ -106,14 +106,15 @@ const Carousel = ({ year }: CarouselProps) => {
         }
 
         const data: unknown = await res.json();
-        const items = Array.isArray(data) ? (data as ApiFilmResponse[]) : [];
+        const items = Array.isArray(data) ? (data as SubmissionApiItem[]) : [];
 
-        const mapped: FilmItem[] = items.map((item) => ({
-          movieId: item.id ?? "",
-          title: item.title ?? "",
-          posterUrl: pickImageUrl(item.portraitImageUrl, item.landscapeImageUrl),
-          directors: Array.isArray(item.directors) ? item.directors : [],
-        }));
+        // The shared mapper, not a local one: MoviesCard also renders genre,
+        // duration, cast, synopsis and the trailer, and a mapper that picks
+        // only the poster fields leaves every one of those on its "TBA"
+        // placeholder even though the API returns them.
+        const mapped = items
+          .slice(0, MAX_FILMS)
+          .map((item) => mapSubmissionFilmListItem(item, String(year)));
 
         const duplicatedForScroll = [...mapped, ...mapped, ...mapped];
         // Only cache a real result — caching an empty/misshaped response would
