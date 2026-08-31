@@ -84,3 +84,16 @@ export const STATUS_ORDER: OpportunityStatus[] = [
   "in-progress",
   "completed",
 ];
+
+/**
+ * Whether an application form can actually be submitted for a program in this
+ * state.
+ *
+ * The program detail page uses it to choose which of its two actions is the
+ * primary one. Sending someone to `/apply` for a closed or completed program
+ * would be a dead end dressed as a call to action, so the routing is derived
+ * from the state the user is looking at rather than stored beside it — the same
+ * reasoning as `opportunity-card`'s CTA.
+ */
+export const canApply = (status: OpportunityStatus): boolean =>
+  status === "open" || status === "closing-soon";

@@ -3,6 +3,7 @@ import type {
   Mentor,
   Opportunity,
   Resource,
+  Stream,
   TalentLabEvent,
 } from "./types";
 
@@ -178,3 +179,69 @@ export const toggleValue = (selected: readonly string[], value: string): string[
   selected.includes(value)
     ? selected.filter((entry) => entry !== value)
     : [...selected, value];
+
+/**
+ * The leading "All" chip.
+ *
+ * Every filter group in the design opens with an `All` chip, while the
+ * functions above express "no filter" as an **empty** selection. Rather than
+ * teach `filter-chip-row` about a special case, the two vocabularies are
+ * translated here: `withAllChip` prepends the option, `chipSelection` marks it
+ * pressed while nothing else is, and `toggleChip` clears the group when it is
+ * pressed. A view therefore holds state and renders — it never decides what a
+ * chip means.
+ *
+ * The sentinel is deliberately not a value any real record can hold.
+ */
+export const ALL_CHIP = "__all__";
+
+export const withAllChip = <T extends { value: string; label?: string }>(
+  options: readonly T[]
+): { value: string; label?: string }[] => [
+  { value: ALL_CHIP, label: "All" },
+  ...options,
+];
+
+/** Turns a plain string list into chip options, with the `All` chip in front. */
+export const chipOptions = (
+  values: readonly string[]
+): { value: string; label?: string }[] =>
+  withAllChip(values.map((value) => ({ value })));
+
+/** What `filter-chip-row` should show as pressed for a given selection. */
+export const chipSelection = (selected: readonly string[]): string[] =>
+  selected.length === 0 ? [ALL_CHIP] : [...selected];
+
+/** Applies a chip press: `All` clears the group, anything else toggles. */
+export const toggleChip = (
+  selected: readonly string[],
+  value: string
+): string[] => (value === ALL_CHIP ? [] : toggleValue(selected, value));
+
+// ------------------------------------------------------------ single records
+
+export const streamBySlug = (
+  streams: readonly Stream[],
+  slug: string
+): Stream | undefined => streams.find((stream) => stream.slug === slug);
+
+export const eventBySlug = (
+  events: readonly TalentLabEvent[],
+  slug: string
+): TalentLabEvent | undefined => events.find((event) => event.slug === slug);
+
+/**
+ * The opportunity currently advertising a stream, if there is one.
+ *
+ * `Stream.status` and `Opportunity.status` state the same fact twice (plan
+ * §5.1 puts one on each), and only the opportunity carries the dates. The
+ * program detail page therefore resolves the opportunity first and treats it as
+ * authoritative, falling back to `Stream.status` for the two streams that have
+ * no opportunity of their own. Resolving at the point of consumption removes
+ * the duplication without changing the shape of either record.
+ */
+export const opportunityForStream = (
+  opportunities: readonly Opportunity[],
+  slug: string
+): Opportunity | undefined =>
+  opportunities.find((opportunity) => opportunity.streamSlug === slug);

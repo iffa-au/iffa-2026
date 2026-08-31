@@ -23,6 +23,7 @@ import { CtaBand } from "../components/cta-band";
 import { FaqAccordion } from "../components/faq-accordion";
 import { MentorPreviewCard } from "../components/mentor-preview-card";
 import { OpportunityCard } from "../components/opportunity-card";
+import { PageSection as Section, TINTED } from "../components/page-section";
 import { PlaceholderPanel } from "../components/placeholder-panel";
 import { ResourceList, ResourceRow } from "../components/resource-row";
 import { SectionHeader } from "../components/section-header";
@@ -43,24 +44,6 @@ const previewMentors = mentors.slice(0, 5);
 const previewAlumni = alumni.slice(0, 3);
 const previewResources = resources.slice(0, 4);
 const { upcoming: upcomingEvents } = partitionEvents(events);
-
-/** Shared section shell: the container, padding and rhythm used by every band. */
-function Section({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <section className={`border-t border-white/8 py-16 md:py-24 ${className}`}>
-      <div className="mx-auto max-w-7xl px-5 md:px-8">{children}</div>
-    </section>
-  );
-}
-
-/** A faint top-down wash, used to alternate the bands. */
-const TINTED = "bg-gradient-to-b from-white/[0.02] to-transparent";
 
 export function TalentLabPage() {
   return (

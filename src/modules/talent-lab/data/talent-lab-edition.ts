@@ -200,3 +200,219 @@ export const eligibilityCriteria: string[] = [
   "Working in directing, producing, writing, acting, documentary, crew or technical disciplines.",
   "Able to commit to approximately six weeks of scheduled sessions, mostly outside standard work hours.",
 ];
+
+/**
+ * Copy for the nine content routes.
+ *
+ * Kept here rather than inside each view for the same reason as `sections`
+ * above: a content editor should never have to open a `.tsx` file to change a
+ * sentence, and the "where to edit" table in `talent_lab_progress.md` has to be
+ * able to point at one place per content area.
+ *
+ * The three commitment sentences below are load-bearing and are not decoration:
+ *
+ * - `partners.intro` — no organisation is listed as a partner until an
+ *   agreement is in place. That is a promise made in the source program plan.
+ * - `alumni.intro` — stories are published with consent, and outcomes are not
+ *   guaranteed.
+ * - `mentors.intro` — profiles are published with each person's approval.
+ *
+ * Do not soften, shorten or drop any of the three.
+ */
+export const pageCopy = {
+  opportunities: {
+    title: "Current Opportunities",
+    intro:
+      "Everything open, opening or recently run across the two annual cycles. Expressions of interest stay open all year — you do not need an open program to register.",
+    searchPlaceholder: "Search programs, disciplines…",
+    emptyMessage: "No programs match those filters right now.",
+    emptyHint:
+      "Clear the filters to see everything, or register your interest and we will email you when a matching program opens.",
+    calloutEyebrow: "Open all year",
+    calloutHeading: "Nothing open in your discipline yet?",
+    calloutBody:
+      "Register an expression of interest and you will be contacted first when a matching program opens.",
+  },
+  programs: {
+    title: "Programs & Streams",
+    /** Reads "Ten" — kept beside the 10-entry `streams` array it describes. */
+    intro:
+      "Ten streams run across the two annual cycles. Each stream has its own eligibility, delivery mode and mentor group — open one to see the full program detail, curriculum and dates.",
+  },
+  programDetail: {
+    aboutHeading: "About this program",
+    eligibilityHeading: "Eligibility & disciplines",
+    curriculumHeading: "Curriculum outline",
+    mentorsHeading: "Mentors on this program",
+    resourcesHeading: "Related resources",
+    resourcesNote:
+      "Library items relevant to this stream. Every one is free and needs no application.",
+    partnerRailEyebrow: "Partner organisations",
+    partnerRailNote:
+      "Categories of organisation the Talent Lab works with. No organisation is named until an agreement is in place.",
+    noOpportunityNote:
+      "This stream has no scheduled intake right now. Register your interest and you will be contacted when dates are confirmed.",
+  },
+  mentors: {
+    title: "Mentors",
+    intro:
+      "Profiles are published with each person's approval. Confirmed mentors are engaged for the current cycle; past guests appeared in previous masterclasses; partner contacts represent supporting organisations.",
+    emptyMessage: "No mentors match those filters.",
+    emptyHint: "Try clearing the type or discipline filter to see everyone.",
+  },
+  events: {
+    title: "Events & Masterclasses",
+    intro:
+      "Public masterclasses are open to anyone — no application required. Cohort sessions are listed for reference and are limited to current participants.",
+    upcomingHeading: "Upcoming",
+    pastHeading: "Past sessions",
+    noUpcoming:
+      "No public sessions are scheduled at the moment. New masterclasses are announced each cycle.",
+  },
+  eventDetail: {
+    aboutHeading: "About this session",
+    aboutNote:
+      "The session runs 90 minutes including a 30-minute open Q&A. Live captioning is provided and a recording is added to the resource library within a week.",
+    speakerHeading: "Speaker",
+    speakerNote:
+      "Sessions are delivered live and are not recorded for public release without the speaker's consent.",
+    detailsEyebrow: "Session details",
+    costLabel: "Cost",
+    costValue: "Free",
+    accessEyebrow: "Access",
+    accessNote:
+      "Live captioning is provided. Auslan interpretation can be arranged with five business days' notice — email",
+  },
+  alumni: {
+    title: "Alumni Stories",
+    intro:
+      "Stories are published with each participant's consent and verified before they go up. Outcomes vary — the Talent Lab does not guarantee employment or representation.",
+    emptyMessage: "No alumni stories match those filters yet.",
+    emptyHint: "Clear the filters to see every story we have published.",
+  },
+  resources: {
+    title: "Resource Library",
+    intro:
+      "Guides, templates, recorded masterclasses and funding information — free to use, no application required.",
+    searchPlaceholder: "Search guides, templates, recordings…",
+    inertNote:
+      "The library is being assembled. Every item below is listed with the metadata it will carry; the download and watch actions turn on as each file is published.",
+    emptyMessage: "Nothing matches that search.",
+    emptyHint: "Try a different keyword, or clear the topic filter.",
+  },
+  partners: {
+    title: "Partners",
+    intro:
+      "Only confirmed partners appear here. Placeholders below stand in for organisations still in discussion — no organisation is listed as a partner until an agreement is in place.",
+    placeholderNote: "Placeholder · not confirmed",
+    calloutEyebrow: "Partner with us",
+    calloutHeading: "Support a place, host a session, or fund a stream.",
+    calloutBody:
+      "We work with screen agencies, industry bodies, education providers and businesses to widen access to the Talent Lab.",
+  },
+} as const;
+
+/**
+ * Copy for the two forms.
+ *
+ * Two sentences here are load-bearing and must not be softened, shortened or
+ * dropped:
+ *
+ * - `apply.privateNotice` — the promise printed above the optional demographic
+ *   questions. It is reproduced verbatim from the approved design, and it is a
+ *   commitment about how that data is handled, not reassurance copy.
+ * - `notConnectedNote` on both success screens — the forms validate locally and
+ *   transmit nothing (plan D4). The design's own success copy says "we have
+ *   sent a confirmation to your email" and "a copy has been emailed to you";
+ *   both are false today, so both were replaced. Do not restore that wording
+ *   until a submission destination actually exists — and read the blocking note
+ *   in `talent_lab_progress.md` before building one.
+ */
+export const formCopy = {
+  register: {
+    title: "Register Your Interest",
+    intro:
+      "Open all year. Takes about two minutes — we will contact you when a program matching your discipline opens. This is not an application.",
+    portfolioHelper: "Showreel, IMDb, website or social profile.",
+    programsLegend: "Programs of interest",
+    programsHelper:
+      "Pick as many as you like, or none. This does not commit you to applying.",
+    accessHelper:
+      "Tell us what you need. You do not need to disclose a diagnosis or provide medical information.",
+    mailingListLabel:
+      "Add me to the Talent Lab mailing list for opportunity announcements.",
+    consentLabel:
+      "I have read the privacy policy and consent to IFFA storing my information.",
+    privacyNote:
+      "We never share your details with third parties without your consent.",
+    submitLabel: "Submit expression of interest",
+    successHeading: "Thanks — you're registered",
+    successBody:
+      "You will hear from us when a Talent Lab program matching your discipline opens, and before public announcements.",
+    successPanelTitle: "What happens next",
+    successPanelLines: [
+      "1. Confirmation — as soon as registrations are being received.",
+      "2. Opportunity alerts — when a matching program opens.",
+      "3. Formal application — you apply in the cycle window; registering does not guarantee a place.",
+    ],
+    notConnectedNote:
+      "Nothing was sent. This form is not yet connected to a submission destination, so your answers stayed in this browser and were not transmitted, stored or emailed to anyone. Registration opens properly once a destination is wired up.",
+    resetLabel: "Back to the form",
+  },
+  apply: {
+    title: "Talent Lab Application",
+    intro:
+      "Five short sections. Each one is checked before you move on, so nothing is missed at the end. Your answers stay in this browser as you move between sections.",
+    stepLabels: ["Contact", "Profile", "Project", "Optional", "Consents"],
+    stepHeadings: [
+      "1 · Contact details",
+      "2 · Your profile",
+      "3 · Project & motivation",
+      "4 · Optional & private",
+      "5 · Consents & review",
+    ],
+    programHelper:
+      "Every open and upcoming stream is listed. Check the opportunities page for which are accepting applications right now.",
+    locationPlaceholder: "Bendigo, VIC 3550",
+    biographyHelper:
+      "Up to 200 words. Plain language is fine — we are not assessing your writing style here.",
+    objectiveHelper: "What do you want to be doing in two years?",
+    previousProgramsHelper:
+      "Having done other programs neither helps nor hurts your application.",
+    /**
+     * VERBATIM from the design. This is a promise to the applicant about how
+     * this data is handled. Do not reword it.
+     */
+    privateNotice:
+      "Everything in this section is optional. It is stored securely, seen only by program staff, never used in assessment, and never shown on a public profile.",
+    accessHelper: "No diagnosis or medical information required.",
+    reviewTitle: "Review before submitting",
+    reviewEditLabel: "Go back and edit",
+    consentError:
+      "You need to accept the application terms, the code of conduct and the privacy declaration before submitting. Media consent stays optional.",
+    stepBlockedError:
+      "This section is not finished yet. The fields marked below need an answer before you can continue.",
+    submitLabel: "Submit application",
+    continueLabel: "Save & continue",
+    backLabel: "Back",
+    /**
+     * Prefix for the locally generated reference number on the success screen.
+     * It identifies nothing — no application record exists — and the success
+     * screen says so. Change it when a real numbering scheme arrives.
+     */
+    referencePrefix: "TL-26C2",
+    successHeading: "Application submitted",
+    successBody:
+      "Applications are assessed by an independent panel and every applicant is notified of the outcome — including those who are not selected.",
+    successPanelTitle: "Assessment timeline",
+    successPanelLines: [
+      "Panel assessment — after applications close.",
+      "Shortlist conversations — with applicants taken through to interview.",
+      "All applicants notified — selected or not.",
+      "Program begins — on the dates listed for the stream.",
+    ],
+    notConnectedNote:
+      "Nothing was sent. This form is not yet connected to a submission destination, so your answers — including anything you entered in the optional and private section — stayed in this browser and were not transmitted, stored or emailed to anyone. The reference number above is generated locally and does not identify a real application.",
+    resetLabel: "Back to the form",
+  },
+} as const;

@@ -6,7 +6,14 @@
  * an agreement is signed — the partners page says so explicitly, and this
  * component is built so nothing here can imply otherwise.
  */
-export function PartnerTile({ organisation }: { organisation: string }) {
+export function PartnerTile({
+  organisation,
+  note,
+}: {
+  organisation: string;
+  /** e.g. "Placeholder · not confirmed". Stated on the tile, never implied. */
+  note?: string;
+}) {
   return (
     <div className="flex flex-col items-center gap-3.5 rounded-xl border border-white/10 bg-white/5 p-5 text-center">
       <div
@@ -19,6 +26,12 @@ export function PartnerTile({ organisation }: { organisation: string }) {
       <p className="font-mono text-[9px] uppercase leading-relaxed tracking-[0.14em] text-white/70">
         {organisation}
       </p>
+
+      {note && (
+        <p className="font-mono text-[8.5px] uppercase leading-relaxed tracking-[0.14em] text-white/35">
+          {note}
+        </p>
+      )}
     </div>
   );
 }

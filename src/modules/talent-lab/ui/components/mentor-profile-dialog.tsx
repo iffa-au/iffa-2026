@@ -17,6 +17,19 @@ type MentorProfileDialogProps = {
   mentor: Mentor | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * The card that opened this dialog. Focus goes back to it on close.
+   *
+   * Radix's modal `DialogContent` always restores focus to its `DialogTrigger`
+   * — verified in `@radix-ui/react-dialog/dist/index.mjs`, where
+   * `onCloseAutoFocus` calls `event.preventDefault()` and then
+   * `context.triggerRef.current?.focus()`. This directory opens the dialog from
+   * its own state rather than from a `DialogTrigger`, so that ref is null and
+   * focus would land on `<body>`, dumping a keyboard user back at the top of
+   * the page. Handling `onCloseAutoFocus` ourselves is the supported way to
+   * override it.
+   */
+  triggerRef?: React.RefObject<HTMLElement | null>;
 };
 
 /**
@@ -33,10 +46,18 @@ export function MentorProfileDialog({
   mentor,
   open,
   onOpenChange,
+  triggerRef,
 }: MentorProfileDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent
+        className="max-w-xl"
+        onCloseAutoFocus={(closeEvent) => {
+          if (!triggerRef?.current) return;
+          closeEvent.preventDefault();
+          triggerRef.current.focus();
+        }}
+      >
         {mentor && (
           <>
             <PlaceholderPanel

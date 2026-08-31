@@ -6,8 +6,14 @@ import { PlaceholderPanel } from "./placeholder-panel";
 
 type MentorCardProps = {
   mentor: Mentor;
-  /** Opens the profile dialog. */
-  onSelect: (mentor: Mentor) => void;
+  /**
+   * Opens the profile dialog.
+   *
+   * The card hands over its own element as well as the mentor: the dialog has
+   * to know where to put focus back when it closes, and the card is the only
+   * thing that knows which button was pressed.
+   */
+  onSelect: (mentor: Mentor, trigger: HTMLButtonElement) => void;
 };
 
 /**
@@ -22,7 +28,7 @@ export function MentorCard({ mentor, onSelect }: MentorCardProps) {
   return (
     <button
       type="button"
-      onClick={() => onSelect(mentor)}
+      onClick={(clickEvent) => onSelect(mentor, clickEvent.currentTarget)}
       className="flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 text-left transition-colors hover:border-yellow-400/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
     >
       <PlaceholderPanel

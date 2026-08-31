@@ -10,6 +10,20 @@ type FormFieldProps = {
   helper?: string;
   /** Present => the field is invalid. */
   error?: string;
+  /**
+   * How the label attaches to what it names.
+   *
+   * `"control"` (the default) renders a real `<label htmlFor>` and is correct
+   * for anything that accepts our generated id — every `<input>`, `<select>`
+   * and `<textarea>`.
+   *
+   * `"group"` is for a composite widget that owns its own focusable trigger and
+   * takes no id from us — `multi-select-dropdown` is the only one. There, the
+   * label becomes a `<span>` naming a `role="group"` wrapper via
+   * `aria-labelledby`, so the field still has a real programmatic name instead
+   * of a `<label htmlFor>` pointing at an element that does not exist.
+   */
+  labelling?: "control" | "group";
   /** Receives the ids to attach to the control. */
   children: (props: {
     id: string;
@@ -36,38 +50,64 @@ export function FormField({
   required = false,
   helper,
   error,
+  labelling = "control",
   children,
 }: FormFieldProps) {
   const id = useId();
   const helperId = `${id}-helper`;
   const errorId = `${id}-error`;
+  const labelId = `${id}-label`;
 
   const describedBy =
     [helper ? helperId : null, error ? errorId : null].filter(Boolean).join(" ") ||
     undefined;
 
+  const labelContent = (
+    <>
+      {label}
+      {required ? (
+        <span className="pl-1 text-yellow-400">*</span>
+      ) : (
+        <span className="pl-1.5 normal-case tracking-normal text-white/40">
+          (optional)
+        </span>
+      )}
+    </>
+  );
+
+  const labelClass =
+    "font-mono text-[10px] uppercase tracking-[0.18em] text-white/70";
+
+  const control = children({
+    id,
+    "aria-describedby": describedBy,
+    "aria-invalid": Boolean(error),
+    "aria-required": required,
+  });
+
   return (
     <div className="flex flex-col gap-2">
-      <label
-        htmlFor={id}
-        className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70"
-      >
-        {label}
-        {required ? (
-          <span className="pl-1 text-yellow-400">*</span>
-        ) : (
-          <span className="pl-1.5 normal-case tracking-normal text-white/40">
-            (optional)
-          </span>
-        )}
-      </label>
+      {labelling === "group" ? (
+        <span id={labelId} className={labelClass}>
+          {labelContent}
+        </span>
+      ) : (
+        <label htmlFor={id} className={labelClass}>
+          {labelContent}
+        </label>
+      )}
 
-      {children({
-        id,
-        "aria-describedby": describedBy,
-        "aria-invalid": Boolean(error),
-        "aria-required": required,
-      })}
+      {labelling === "group" ? (
+        <div
+          role="group"
+          aria-labelledby={labelId}
+          aria-describedby={describedBy}
+        >
+          {control}
+        </div>
+      ) : (
+        control
+      )}
 
       {helper && (
         <p id={helperId} className="text-xs font-light leading-relaxed text-white/50">

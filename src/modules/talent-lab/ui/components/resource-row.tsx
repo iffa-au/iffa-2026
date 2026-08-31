@@ -14,7 +14,18 @@ import type { Resource } from "../../lib/types";
  * Populating `href` in `resources-data.ts` swaps in a real `<Link>` with no
  * layout change and no edit here.
  */
-export function ResourceRow({ resource }: { resource: Resource }) {
+export function ResourceRow({
+  resource,
+  showTags = false,
+}: {
+  resource: Resource;
+  /**
+   * Shows the topic tags and career stage under the title. On the library page
+   * they explain what the topic chips are filtering; in the landing-page
+   * preview, where there are no filters, they would be noise.
+   */
+  showTags?: boolean;
+}) {
   const isInert = resource.href === null;
 
   return (
@@ -31,6 +42,22 @@ export function ResourceRow({ resource }: { resource: Resource }) {
         <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-white/45">
           {resource.meta}
         </span>
+
+        {showTags && (
+          <span className="flex flex-wrap gap-1.5 pt-1">
+            {resource.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-sm border border-white/15 px-2 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.12em] text-white/80"
+              >
+                {tag}
+              </span>
+            ))}
+            <span className="rounded-sm border border-yellow-400/35 px-2 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.12em] text-yellow-400">
+              {resource.stage}
+            </span>
+          </span>
+        )}
       </span>
 
       {isInert ? (
