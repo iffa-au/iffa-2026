@@ -1,10 +1,14 @@
 import { opportunities } from "../../data/opportunities-data";
 import { pageCopy } from "../../data/talent-lab-edition";
+import { CalloutBand } from "../components/callout-band";
 import { CohortCard } from "../components/cohort-card";
 import { PageHeader } from "../components/page-header";
 import { PageSection } from "../components/page-section";
 
 const copy = pageCopy.opportunitiesLanding;
+
+/** Shared with the Cohort 1 list — one EOI message, rendered on both pages. */
+const callout = pageCopy.registerCallout;
 
 /**
  * The cohort chooser at `/talent-lab/opportunities`.
@@ -64,6 +68,16 @@ export function OpportunitiesPage() {
             }}
             href={null}
             actionLabel={copy.cohortTwo.actionLabel}
+          />
+        </div>
+
+        <div className="mt-14">
+          <CalloutBand
+            eyebrow={callout.eyebrow}
+            heading={callout.heading}
+            body={callout.body}
+            actionLabel={callout.actionLabel}
+            actionHref="/talent-lab/register"
           />
         </div>
       </PageSection>

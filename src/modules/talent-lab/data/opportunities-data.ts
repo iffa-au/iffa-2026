@@ -3,9 +3,15 @@ import type { Opportunity } from "../lib/types";
 /**
  * PLACEHOLDER CONTENT — pending real data.
  *
- * The eight opportunities from the approved design, verbatim. Between them they
- * exercise all seven status pills, which is what the opportunities page relies
- * on to prove every state renders.
+ * The eight opportunities from the approved design.
+ *
+ * All eight are deliberately set to `status: "open"` with a matching
+ * "Apply now" CTA — Cohort 1 is presented as fully open for applications. The
+ * design's original mix exercised all seven status pills between them; that is
+ * no longer true here, so the seven pill styles in `lib/status.ts` are now
+ * proved only by their own definitions, not by this data. If you restore a
+ * mixed set, change `ctaLabel` in step with `status` — the card renders the two
+ * together and a mismatched pair contradicts itself on screen.
  *
  * `deliveryMode` is an explicit field rather than something parsed out of
  * `modeLabel`: the filter has to read a real value, and "Online + Melbourne
@@ -37,7 +43,7 @@ export const opportunities: Opportunity[] = [
     title: "Producers & Project Development Lab",
     summary:
       "Package a project properly: budgets, finance plans, market strategy and one-to-one sessions with working producers.",
-    status: "closing-soon",
+    status: "open",
     tags: ["Producing", "Development"],
     discipline: "Producing",
     stage: "Early career",
@@ -55,7 +61,7 @@ export const opportunities: Opportunity[] = [
     title: "Actors for Screen Lab",
     summary:
       "Self-tape technique, screen presence and casting-room practice with casting directors and screen acting coaches.",
-    status: "opening-soon",
+    status: "open",
     tags: ["Acting", "Casting"],
     discipline: "Acting",
     stage: "Emerging",
@@ -65,7 +71,7 @@ export const opportunities: Opportunity[] = [
     closesOn: "17 Oct 2026",
     programDates: "Feb – Mar 2027",
     cycle: "Cycle One 2027",
-    ctaLabel: "Notify me",
+    ctaLabel: "Apply now",
   },
   {
     id: "o4",
@@ -73,7 +79,7 @@ export const opportunities: Opportunity[] = [
     title: "Screenwriters Lab",
     summary:
       "Feature and series development with structured table reads, script editors and a closing pitch to commissioners.",
-    status: "eoi",
+    status: "open",
     tags: ["Writing", "Development"],
     discipline: "Writing",
     stage: "Emerging",
@@ -83,7 +89,7 @@ export const opportunities: Opportunity[] = [
     closesOn: "Feb 2027",
     programDates: "Apr – Jun 2027",
     cycle: "Cycle One 2027",
-    ctaLabel: "Register interest",
+    ctaLabel: "Apply now",
   },
   {
     id: "o5",
@@ -91,7 +97,7 @@ export const opportunities: Opportunity[] = [
     title: "Documentary Lab",
     summary:
       "Ethics, access, story structure and impact strategy for first and second documentary projects.",
-    status: "closed",
+    status: "open",
     tags: ["Documentary"],
     discipline: "Documentary",
     stage: "Early career",
@@ -101,7 +107,7 @@ export const opportunities: Opportunity[] = [
     closesOn: "20 Feb 2026",
     programDates: "13 Apr – 22 May 2026",
     cycle: "Cycle One 2026",
-    ctaLabel: "Applications closed",
+    ctaLabel: "Apply now",
   },
   {
     id: "o6",
@@ -109,7 +115,7 @@ export const opportunities: Opportunity[] = [
     title: "International Screen Exchange",
     summary:
       "A cross-border cohort pairing Australian participants with mentors and peers across IFFA's festival network.",
-    status: "in-progress",
+    status: "open",
     tags: ["Directing", "Producing"],
     discipline: "Producing",
     stage: "Early career",
@@ -119,7 +125,7 @@ export const opportunities: Opportunity[] = [
     closesOn: "20 Feb 2026",
     programDates: "13 Apr – 22 May 2026",
     cycle: "Cycle One 2026",
-    ctaLabel: "In progress",
+    ctaLabel: "Apply now",
   },
   {
     id: "o7",
@@ -127,7 +133,7 @@ export const opportunities: Opportunity[] = [
     title: "Regional & Online Talent Lab",
     summary:
       "Built for practitioners outside capital cities — fully online, low bandwidth friendly, with data-cost support available.",
-    status: "eoi",
+    status: "open",
     tags: ["All disciplines"],
     discipline: "Directing",
     stage: "Emerging",
@@ -137,7 +143,7 @@ export const opportunities: Opportunity[] = [
     closesOn: "Rolling",
     programDates: "Both cycles",
     cycle: "Year-round",
-    ctaLabel: "Register interest",
+    ctaLabel: "Apply now",
   },
   {
     id: "o8",
@@ -145,7 +151,7 @@ export const opportunities: Opportunity[] = [
     title: "Women in Screen Leadership",
     summary:
       "Leadership, negotiation and department-head pathways for women and non-binary practitioners moving into senior roles.",
-    status: "completed",
+    status: "open",
     tags: ["Leadership", "Crew"],
     discipline: "Crew",
     stage: "Early career",
@@ -155,6 +161,6 @@ export const opportunities: Opportunity[] = [
     closesOn: "22 Aug 2025",
     programDates: "6 Oct – 14 Nov 2025",
     cycle: "Cycle Two 2025",
-    ctaLabel: "Read outcomes",
+    ctaLabel: "Apply now",
   },
 ];

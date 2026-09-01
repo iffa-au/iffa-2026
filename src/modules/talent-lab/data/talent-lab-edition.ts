@@ -221,6 +221,20 @@ export const eligibilityCriteria: string[] = [
  */
 export const pageCopy = {
   /**
+   * The gold "register your interest" band that closes **both** opportunity
+   * pages — the cohort chooser and the Cohort 1 list.
+   *
+   * One block read from two views rather than the same three sentences written
+   * twice: the EOI promise is a single message, and a copy edit that reached
+   * only one of the two pages would leave them disagreeing.
+   */
+  registerCallout: {
+    eyebrow: "Open all year",
+    heading: "Nothing open in your discipline yet?",
+    body: "Register an expression of interest and you will be contacted first when a matching program opens.",
+    actionLabel: "Register your interest",
+  },
+  /**
    * The cohort chooser at `/talent-lab/opportunities`. Cohort 1's card links to
    * the filterable list below it; cohort 2's is inert until its programs exist.
    *
@@ -262,10 +276,6 @@ export const pageCopy = {
     emptyMessage: "No programs match those filters right now.",
     emptyHint:
       "Clear the filters to see everything, or register your interest and we will email you when a matching program opens.",
-    calloutEyebrow: "Open all year",
-    calloutHeading: "Nothing open in your discipline yet?",
-    calloutBody:
-      "Register an expression of interest and you will be contacted first when a matching program opens.",
   },
   programs: {
     title: "Programs & Streams",

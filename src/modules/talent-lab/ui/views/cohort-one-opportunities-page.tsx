@@ -32,6 +32,9 @@ import { ClearFiltersButton, SearchField } from "../components/search-field";
 
 const copy = pageCopy.opportunities;
 
+/** Shared with the cohort chooser — one EOI message, rendered on both pages. */
+const callout = pageCopy.registerCallout;
+
 /**
  * Chip vocabularies, built once at module scope.
  *
@@ -180,10 +183,10 @@ export function CohortOneOpportunitiesPage() {
 
         <div className="mt-14">
           <CalloutBand
-            eyebrow={copy.calloutEyebrow}
-            heading={copy.calloutHeading}
-            body={copy.calloutBody}
-            actionLabel="Register your interest"
+            eyebrow={callout.eyebrow}
+            heading={callout.heading}
+            body={callout.body}
+            actionLabel={callout.actionLabel}
             actionHref="/talent-lab/register"
           />
         </div>
