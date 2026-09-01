@@ -5,7 +5,7 @@ import { OpportunitiesPage } from "@/modules/talent-lab/ui/views/opportunities-p
 export const metadata: Metadata = {
   title: "Current Opportunities | IFFA Talent Lab",
   description:
-    "Every IFFA Talent Lab program open, opening or recently run across the two annual cycles. Filter by status, discipline, delivery mode and career stage.",
+    "IFFA Talent Lab programs run across two annual cycles. Choose a cohort to see what is open, opening or recently run in it.",
 };
 
 export default function Page() {

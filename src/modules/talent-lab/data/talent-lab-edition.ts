@@ -220,10 +220,44 @@ export const eligibilityCriteria: string[] = [
  * Do not soften, shorten or drop any of the three.
  */
 export const pageCopy = {
-  opportunities: {
-    title: "Current Opportunities",
+  /**
+   * The cohort chooser at `/talent-lab/opportunities`. Cohort 1's card links to
+   * the filterable list below it; cohort 2's is inert until its programs exist.
+   *
+   * `cohortOne.countNoun` / `countSuffix` are assembled around a count derived
+   * from `opportunities-data.ts` — the number itself is never written here.
+   * "listed" rather than "open" because the eight entries span every status
+   * from EOI to completed; only two of them are open.
+   */
+  opportunitiesLanding: {
+    eyebrow: "Current opportunities",
+    title: "Choose a cohort",
     intro:
-      "Everything open, opening or recently run across the two annual cycles. Expressions of interest stay open all year — you do not need an open program to register.",
+      "Talent Lab programs run across two annual cycles. Open a cohort to see what is open, opening or recently run in it. Expressions of interest stay open all year — you do not need an open program to register.",
+    cohortOne: {
+      eyebrow: "Cohort 1",
+      title: "Cohort 1 · Current Programs",
+      description:
+        "Everything open, opening or recently run. Filter by status, discipline, delivery mode and career stage.",
+      actionLabel: "View programs",
+      countNoun: "program",
+      countSuffix: "listed",
+    },
+    cohortTwo: {
+      eyebrow: "Cohort 2",
+      title: "Cohort 2 · Not Yet Announced",
+      description:
+        "The second cohort of the cycle. Its programs, dates and eligibility have not been confirmed, so there is nothing to show yet.",
+      statusLabel: "Coming Soon",
+      actionLabel: "View programs",
+      note: "Coming soon — details to follow",
+    },
+  },
+  opportunities: {
+    eyebrow: "Cohort 1",
+    title: "Cohort 1 · Current Programs",
+    intro:
+      "Everything open, opening or recently run in this cohort. Expressions of interest stay open all year — you do not need an open program to register.",
     searchPlaceholder: "Search programs, disciplines…",
     emptyMessage: "No programs match those filters right now.",
     emptyHint:
