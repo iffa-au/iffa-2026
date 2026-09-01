@@ -1,13 +1,10 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { ScreeningPage } from "@/modules/festivals/ui/views/screening-page";
-
-export const metadata: Metadata = {
-  title: "Screening Schedule | IFFA Festival",
-  description:
-    "Screening times, venues and featured films from Oman, India, Malaysia and Spain across the IFFA festival week in Melbourne, 20-26 August 2026.",
-};
-
+/**
+ * The standalone screening schedule was folded into the festivals themselves:
+ * every screening now belongs to a festival at `/festivals/<slug>`. This route
+ * stays behind only so existing links land somewhere sensible.
+ */
 export default function Page() {
-  return <ScreeningPage />;
+  redirect("/festivals");
 }

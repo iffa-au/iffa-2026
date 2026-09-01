@@ -164,7 +164,7 @@ export function MasterclassPage() {
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/festivals/screening"
+              href="/festivals"
               className="inline-flex items-center justify-center rounded-md border border-yellow-400/60 px-7 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-yellow-400 transition-colors duration-300 hover:bg-yellow-400 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
             >
               Screening Schedule
