@@ -20,9 +20,9 @@ export default function Home() {
       />
 
       <TrailerSection
-        videoUrl="https://dhbdzeb2cbayq.cloudfront.net/iffa/videos/The_Arab/index.m3u8"
-        title="The Arab"
-        youtubeUrl="https://youtu.be/kk3jGmIcFi0"
+        videoUrl="https://dhbdzeb2cbayq.cloudfront.net/iffa/videos/Club_Kid/CLUB_KID.m3u8 "
+        title="Club Kid"
+        youtubeUrl="https://youtu.be/dhj8K_KZsb8"
       />
 
       <TextDivider />
