@@ -43,3 +43,5 @@ next-env.d.ts
 # local agent context files
 AGENT_CONTEXT.md
 CODEBASE_OVERVIEW.md
+docs/FESTIVALS_PLAN.md
+festival_progress.md

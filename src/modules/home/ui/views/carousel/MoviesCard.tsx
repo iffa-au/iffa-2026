@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Play } from "lucide-react";
 
+import { getYouTubeEmbedUrl } from "@/lib/youtube";
 import TrailerModal from "./TrailerModal";
 import { getTrailerEmbedUrl } from "@/modules/events/submissions/lib/submissions";
 
