@@ -43,3 +43,8 @@ next-env.d.ts
 # local agent context files
 AGENT_CONTEXT.md
 CODEBASE_OVERVIEW.md
+docs/FESTIVALS_PLAN.md
+festival_progress.md
+docs/TALENT_LAB_PLAN.md
+docs/talent-lab-design-reference.html
+talent_lab_progress.md
