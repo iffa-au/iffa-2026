@@ -14,6 +14,7 @@ export function Footer() {
     { name: "About Us", path: "/AboutUs" },
     { name: "Contact", path: "/contact" },
     { name: "IFFA Global", path: "/iffa-global" },
+    { name: "Podcast", path: "/podcast" },
     { name: "Partner with us", path: "/partnerwithus" },
     { name: "Education & Training", path: "/education-training" },
     { name: "Filming in Australia", path: "/australia" },
