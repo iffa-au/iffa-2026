@@ -6,6 +6,7 @@ import { useState } from "react"
 import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import PastEventsDropdown from "./dropdown"
+import TalentLabDropdown from "./talent-lab-dropdown"
 import { Button } from "@/components/ui/button"
 
 export default function Header() {
@@ -18,7 +19,17 @@ export default function Header() {
   return (
     <div className={`fixed top-0 left-0 w-full z-50 border-b border-[#252134] backdrop-blur-sm transition-colors ${isHome && !isMobileMenuOpen ? "bg-transparent" : "bg-[#0E0C15]/90"}`}>
       
-      <div className="relative flex items-center justify-between p-5">
+      {/*
+        Below `lg` this is the original flex row with an absolutely centred
+        banner, unchanged.
+
+        From `lg` up — where the desktop nav appears — it becomes a 3-column
+        grid instead. The banner used to be absolutely positioned at every
+        width, so it ignored the nav entirely and overlapped it once the nav
+        grew: measured at 1024-1440px after TALENT LAB was added (and already
+        at 1024-1100px before it). In flow the three columns cannot collide.
+      */}
+      <div className="relative flex items-center justify-between p-5 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-3">
         
         {/* Logo (Left) */}
         <Link href="/" className="block w-[8rem]" onClick={closeMenu}>
@@ -35,7 +46,7 @@ export default function Header() {
         {/* Center Text */}
         <Link
           href="/submit-film-enquiry"
-          className="absolute left-1/2 -translate-x-1/2 text-center px-4 z-10"
+          className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 lg:justify-self-center text-center px-4 z-10"
         >
           <span className="text-[10px] md:text-xs lg:text-sm tracking-[0.2em] uppercase text-yellow-500 whitespace-nowrap hover:text-yellow-400 transition-colors">
             ENTRIES OPEN - IFFA 2026
@@ -44,10 +55,11 @@ export default function Header() {
 
         {/* Right Side Navigation (Desktop) */}
         <div className="hidden lg:flex items-center gap-4 relative z-20">
-          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
-            <Link href="/festivals">FESTIVALS</Link>
-          </Button>
+          <TalentLabDropdown />
           <PastEventsDropdown />
+          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
+            <Link href="/festivals">Festival</Link>
+          </Button>
           <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
             <Link href="/podcast">PODCAST</Link>
           </Button>
@@ -70,12 +82,16 @@ export default function Header() {
           <Button variant="ghost" size="icon" className="absolute top-5 right-5 text-white hover:bg-white/10" onClick={closeMenu}>
             <X className="w-5 h-5" />
           </Button>
-          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-sm">
-            <Link href="/festivals" onClick={closeMenu}>FESTIVALS</Link>
-          </Button>
+          <div className="flex flex-col items-center gap-3 w-full max-w-[280px] py-5 border-y border-white/10">
+            <span className="font-mono text-[10px] tracking-[0.24em] uppercase text-yellow-400">Talent Lab</span>
+            <TalentLabDropdown onNavigate={closeMenu} />
+          </div>
           <div>
             <PastEventsDropdown onNavigate={closeMenu} />
           </div>
+          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-sm">
+            <Link href="/festivals" onClick={closeMenu}>Festival</Link>
+          </Button>
           <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-sm">
             <Link href="/podcast" onClick={closeMenu}>PODCAST</Link>
           </Button>
