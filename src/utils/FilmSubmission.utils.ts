@@ -2,19 +2,36 @@
 import { z } from "zod";
 import { useEffect, useState } from "react";
 
+// Image fields hold the staged File the user confirmed in the upload
+// modal — nothing is written to S3 until the whole form is submitted, at
+// which point SubmitFilmForm uploads each staged file and swaps it for the
+// resulting CloudFront URL before POSTing.
+const requiredWebpFile = (message: string) =>
+  z.custom<File | null>((v) => v instanceof File, { message });
+
 const personSchema = z.object({
   fullName: z.string().min(1, "Name is required"),
   role: z.string().min(1, "Role is required"),
-  imageUrl: z.string().url("Must be a valid URL"),
+  imageUrl: requiredWebpFile("Photo is required"),
   biography: z.string().min(10, "Biography must be at least 10 characters"),
   instagram: z.string().optional(),
+  email: z.string().email("A valid representative email is required"),
 });
 
-/** Content type names (CMS metadata) that do not require an actors panel. */
+/**
+ * Content type names (CMS metadata) that do not require an actors panel.
+ * Includes both the CMS's current (typo'd) values and their corrected
+ * spellings, so this keeps matching if the CMS entry is ever renamed.
+ */
 export const CONTENT_TYPES_WITHOUT_ACTORS = [
   "Documentary",
+  "Documentry",
   "Animated Film",
   "Animation",
+  "Web Series",
+  "Web Series (OTT)",
+  "TV Series",
+  "Short Film",
 ] as const;
 
 export const WATCH_FORMAT_OPTIONS = [
@@ -58,12 +75,15 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       watchFormats: z
         .array(z.string())
         .min(1, "Select at least one watch format"),
+      releaseLinkUrl: z
+        .union([z.string().url("Must be a valid URL"), z.literal("")])
+        .optional(),
       languageId: z.string().min(1, "Language is required"),
       productionHouse: z.string().min(1, "Production house is required"),
       distributor: z.string().optional(),
       genreIds: z.array(z.string()).min(1, "Select at least one genre"),
-      potraitImageUrl: z.string().url("Must be a valid URL"),
-      landscapeImageUrl: z.string().url("Must be a valid URL"),
+      potraitImageUrl: requiredWebpFile("Portrait poster is required"),
+      landscapeImageUrl: requiredWebpFile("Landscape banner is required"),
       imdbUrl: z.string().url("Must be a valid IMDb URL"),
       trailerUrl: z.string().url("Must be a valid download URL"),
       actors: z.array(personSchema),
@@ -73,9 +93,10 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
         z.object({
           fullName: z.string(),
           role: z.string(),
-          imageUrl: z.string(),
+          imageUrl: z.custom<File | null>(),
           biography: z.string(),
           instagram: z.string().optional(),
+          email: z.string(),
         }),
       ),
       notes: z.string().max(1000, "Notes must be 1000 characters or less").optional(),
@@ -125,9 +146,10 @@ export type PersonEntry = z.infer<typeof personSchema>;
 export const BLANK_PERSON: PersonEntry = {
   fullName: "",
   role: "",
-  imageUrl: "",
+  imageUrl: null,
   biography: "",
   instagram: "",
+  email: "",
 };
 
 export function filterFilledCrew(entries: PersonEntry[]): PersonEntry[] {

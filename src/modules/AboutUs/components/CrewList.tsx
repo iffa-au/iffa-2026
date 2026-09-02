@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { FilmValues, PersonEntry } from "@/utils/FilmSubmission.utils";
+import { WebpImageUpload } from "./WebpImageUpload";
 
 const L = "text-[10px] uppercase tracking-[0.15em] text-[#7a7258] font-mono";
 const I = "bg-[#0a0908] border-[#2a2418] text-white placeholder-[#3d3828] focus:border-[#e6ba35]/50 focus-visible:ring-[#e6ba35]/20 focus-visible:ring-1 rounded-lg h-10";
@@ -159,11 +160,12 @@ export function CrewList({
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
                       <FormLabel className={L}>
-                        Photo URL <span className="text-[#e6ba35]">*</span>
+                        Photo <span className="text-[#e6ba35]">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="https://example.com/photo.jpg" className={I} />
+                        <WebpImageUpload value={field.value} onChange={field.onChange} />
                       </FormControl>
+                      <p className="text-[#5a5240] text-[11px] mt-1.5">WEBP only, up to 15MB.</p>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )}
@@ -184,6 +186,22 @@ export function CrewList({
                           rows={3}
                           className={cn(I, "h-auto resize-none leading-relaxed")}
                         />
+                      </FormControl>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`${fieldName}.${i}.email` as const}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={L}>
+                        Representative Email Address <span className="text-[#e6ba35]">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" placeholder="name@example.com" className={I} />
                       </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>

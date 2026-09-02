@@ -58,6 +58,12 @@ export default function Header() {
           <TalentLabDropdown />
           <PastEventsDropdown />
           <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
+            <Link href="/festivals">Festival</Link>
+          </Button>
+          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
+            <Link href="/podcast">PODCAST</Link>
+          </Button>
+          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
             <Link href="/latest-news">LATEST NEWS</Link>
           </Button>
         </div>
@@ -83,6 +89,12 @@ export default function Header() {
           <div>
             <PastEventsDropdown onNavigate={closeMenu} />
           </div>
+          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-sm">
+            <Link href="/festivals" onClick={closeMenu}>Festival</Link>
+          </Button>
+          <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-sm">
+            <Link href="/podcast" onClick={closeMenu}>PODCAST</Link>
+          </Button>
           <Button variant="ghost" asChild className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-sm">
             <Link href="/latest-news" onClick={closeMenu}>LATEST NEWS</Link>
           </Button>
