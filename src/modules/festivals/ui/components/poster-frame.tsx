@@ -6,25 +6,31 @@ import Image from "next/image";
 /**
  * A film poster, or a typographic stand-in when there is no artwork.
  *
- * Almost nothing in the current programme has a real poster yet. A single
- * shared "poster unavailable" plate would repeat down a page whose whole point
- * is artwork, so when `posterUrl` is null — or the URL fails to load — the
- * frame draws a poster from the film's own title instead. Swap `posterUrl` in
- * the data and real artwork takes over with no UI change.
+ * Almost nothing in a programme has a real poster while it is being
+ * announced. A single shared "poster unavailable" plate would repeat down a
+ * page whose whole point is artwork, so when `posterUrl` is null — or the URL
+ * fails to load — the frame sets a poster from the film's own title instead.
+ * Swap `posterUrl` in the CMS and real artwork takes over with no UI change.
  *
  * Type inside the stand-in is sized in `cqw`, so one component covers the
- * 150px card thumbnail and the 260px rail poster without a size prop.
+ * small programme thumbnail and the full-height reel poster without a size
+ * prop.
  */
 
+/**
+ * Ink tints for the stand-in plates. All five are the same warm dark as the
+ * room, pushed a little in different directions, so a row of them reads as a
+ * set of posters rather than as five different error states.
+ */
 const POSTER_TINTS = [
-  "from-[#241f12] via-[#12100b] to-[#0a0908]",
-  "from-[#121d24] via-[#0b1014] to-[#08090a]",
-  "from-[#221420] via-[#130c12] to-[#0a080a]",
-  "from-[#14231b] via-[#0b120e] to-[#080a09]",
-  "from-[#231616] via-[#140c0c] to-[#0a0808]",
+  "from-[#1d1610] via-[#0d0a07] to-[#06080f]",
+  "from-[#101a20] via-[#080d11] to-[#06080f]",
+  "from-[#1c1119] via-[#0d080c] to-[#06080f]",
+  "from-[#111d17] via-[#080f0c] to-[#06080f]",
+  "from-[#1e1412] via-[#0e0908] to-[#06080f]",
 ] as const;
 
-/** Stable per title, so a film keeps the same stand-in across every page. */
+/** Stable per title, so a film keeps the same stand-in everywhere it appears. */
 const tintFor = (seed: string): string => {
   let total = 0;
   for (let index = 0; index < seed.length; index += 1) {
@@ -59,7 +65,7 @@ export function PosterFrame({
 
   return (
     <div
-      className={`@container relative aspect-[2/3] overflow-hidden rounded-lg border border-white/10 bg-zinc-950 ${className}`}
+      className={`@container relative aspect-[2/3] overflow-hidden bg-fest-deep ${className}`}
     >
       {showArtwork ? (
         <Image
@@ -69,36 +75,42 @@ export function PosterFrame({
           sizes={sizes}
           priority={priority}
           onError={() => setFailed(true)}
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+          className="object-cover"
         />
       ) : (
         <div
           role="img"
           aria-label={`${title} — poster artwork to be announced`}
-          className={`flex h-full w-full flex-col justify-between bg-gradient-to-br p-[7cqw] ${tintFor(title)}`}
+          className={`flex h-full w-full flex-col justify-between bg-gradient-to-br p-[8cqw] ${tintFor(title)}`}
         >
           <span
             aria-hidden
-            className="text-[4cqw] font-semibold uppercase tracking-[0.3em] text-yellow-400/70"
+            className="font-fest-display text-[4cqw] font-medium tracking-[0.32em] text-fest-lamp/70"
           >
             IFFA
           </span>
 
           <span
             aria-hidden
-            className="text-[10.5cqw] font-bold uppercase leading-[1.1] tracking-[-0.01em] text-white/85"
+            className="font-fest-display text-[13cqw] font-bold uppercase leading-[0.92] tracking-[-0.005em] text-fest-beam/90"
           >
             {title}
           </span>
 
-          <span aria-hidden className="text-[4.2cqw] uppercase tracking-[0.16em] text-white/40">
-            {country} · {year}
+          <span
+            aria-hidden
+            className="font-fest-text text-[4.2cqw] italic text-fest-beam/45"
+          >
+            {country}
+            {country && year ? ", " : ""}
+            {year || ""}
           </span>
 
-          {/* Ambient wash, so the plates read as artwork rather than as an error. */}
+          {/* A shaft of lamplight across the plate, so an artwork-less film
+              still looks lit rather than looking like a gap. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -right-[20cqw] -top-[20cqw] h-[60cqw] w-[60cqw] rounded-full bg-yellow-400/[0.07] blur-2xl"
+            className="pointer-events-none absolute -right-[25cqw] -top-[30cqw] h-[80cqw] w-[80cqw] rounded-full bg-fest-lamp/[0.09] blur-2xl"
           />
         </div>
       )}
