@@ -1,10 +1,4 @@
-import type {
-  Festival,
-  FestivalPhase,
-  Screening,
-  ScreeningDay,
-  SeatStatus,
-} from "./types";
+import type { Festival, FestivalPhase, Screening, SeatStatus } from "./types";
 
 /**
  * Every label, count and range rendered in the Festival section is derived
@@ -12,7 +6,9 @@ import type {
  * content edit can never leave a headline number or a date range stale.
  *
  * The month helpers that used to live here are gone: IFFA runs one festival a
- * year, so there is no month grouping left to label.
+ * year, so there is no month grouping left to label. The night grouping went
+ * the same way when screenings became sessions — a session can span several
+ * days, so it does not belong to a single night to be grouped under.
  */
 
 const MONTHS_LONG = [
@@ -111,16 +107,21 @@ export const formatRuntime = (minutes: number): string => `${minutes} min`;
 export const monthName = (month: number): string => MONTHS_LONG[month - 1];
 
 /**
- * A festival's dates, collapsed as tightly as they allow:
- *   same month + year -> "14-18 October 2026"
- *   same year         -> "28 October - 2 November 2026"
- *   otherwise         -> "28 December 2026 - 2 January 2027"
+ * Two ISO dates, collapsed as tightly as they allow:
+ *   same day           -> "14 October 2026"
+ *   same month + year  -> "14-18 October 2026"
+ *   same year          -> "28 October - 2 November 2026"
+ *   otherwise          -> "28 December 2026 - 2 January 2027"
+ *
+ * Shared by festivals and screenings: both are a span with the same collapsing
+ * rules, and having written it twice once already, the second copy is where
+ * the two quietly drift apart.
  */
-export const formatFestivalDates = (festival: Festival): string => {
-  const start = parseIsoDate(festival.startDate);
-  const end = parseIsoDate(festival.endDate);
+export const formatDateRange = (startIso: string, endIso: string): string => {
+  const start = parseIsoDate(startIso);
+  const end = parseIsoDate(endIso);
 
-  if (festival.startDate === festival.endDate) return formatFullDate(festival.startDate);
+  if (startIso === endIso) return formatFullDate(startIso);
 
   if (start.year === end.year && start.month === end.month) {
     return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]} ${end.year}`;
@@ -130,8 +131,12 @@ export const formatFestivalDates = (festival: Festival): string => {
     return `${start.day} ${MONTHS_LONG[start.month - 1]} - ${end.day} ${MONTHS_LONG[end.month - 1]} ${end.year}`;
   }
 
-  return `${formatFullDate(festival.startDate)} - ${formatFullDate(festival.endDate)}`;
+  return `${formatFullDate(startIso)} - ${formatFullDate(endIso)}`;
 };
+
+/** A festival's dates, collapsed. */
+export const formatFestivalDates = (festival: Festival): string =>
+  formatDateRange(festival.startDate, festival.endDate);
 
 /** The same range without the year, for use beside a year set as display type. */
 export const formatFestivalDatesShort = (festival: Festival): string => {
@@ -147,13 +152,66 @@ export const formatFestivalDatesShort = (festival: Festival): string => {
   return `${start.day} ${MONTHS_SHORT[start.month - 1]} - ${end.day} ${MONTHS_SHORT[end.month - 1]}`;
 };
 
-/** Number of distinct dates a festival screens on. */
-export const countFestivalDays = (festival: Festival): number =>
-  new Set(festival.screenings.map((screening) => screening.date)).size;
+/**
+ * When a screening runs, written the way a programme would write it.
+ *
+ * A single sitting names its weekday — that is the useful fact for a session
+ * you attend once. A run across days drops the weekday, because "Wed 14 - Sat
+ * 17 October" is already four words longer than the date it is replacing.
+ */
+export const formatScreeningDates = (screening: Screening): string => {
+  if (screening.startDate === screening.endDate) {
+    return formatDayHeading(screening.startDate);
+  }
+
+  const start = parseIsoDate(screening.startDate);
+  const end = parseIsoDate(screening.endDate);
+
+  if (start.month === end.month && start.year === end.year) {
+    return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]}`;
+  }
+  return `${formatShortDate(screening.startDate)} - ${formatShortDate(screening.endDate)}`;
+};
+
+/** Every ISO date a span covers, inclusive of both ends. */
+const datesInRange = (startIso: string, endIso: string): string[] => {
+  const { year, month, day } = parseIsoDate(startIso);
+  const cursor = new Date(Date.UTC(year, month - 1, day));
+  const dates: string[] = [];
+
+  // Bounded rather than a bare while: a mis-entered end date decades out
+  // would otherwise spin here, and no festival runs longer than a year.
+  for (let guard = 0; guard < 366; guard += 1) {
+    const iso = cursor.toISOString().slice(0, 10);
+    if (iso > endIso) break;
+    dates.push(iso);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dates;
+};
+
+/** Number of distinct dates a festival actually screens on. */
+export const countFestivalDays = (festival: Festival): number => {
+  const days = new Set<string>();
+  for (const screening of festival.screenings) {
+    for (const date of datesInRange(screening.startDate, screening.endDate)) {
+      days.add(date);
+    }
+  }
+  return days.size;
+};
+
+/** Every film in a festival, in programme order, across all its screenings. */
+export const festivalFilms = (festival: Festival) =>
+  festival.screenings.flatMap((screening) => screening.films);
+
+/** How many films a festival programmes in total. */
+export const countFestivalFilms = (festival: Festival): number =>
+  festivalFilms(festival).length;
 
 /** Countries represented in a festival, first-seen order, no duplicates, blanks dropped. */
 export const festivalCountries = (festival: Festival): string[] => [
-  ...new Set(festival.screenings.map((screening) => screening.country).filter(Boolean)),
+  ...new Set(festivalFilms(festival).map((film) => film.country).filter(Boolean)),
 ];
 
 /**
@@ -178,7 +236,7 @@ export const melbourneToday = (): string =>
     day: "2-digit",
   }).format(new Date());
 
-/** "7:30 PM" -> 1170, so a day's screenings can be ordered by start time. */
+/** "7:30 PM" -> 1170, so screenings on one day can be ordered by start time. */
 const toMinutes = (time: string): number => {
   const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(time.trim());
   if (!match) return 0;
@@ -190,27 +248,17 @@ const toMinutes = (time: string): number => {
 };
 
 /**
- * The schedule's display shape: one group per date, each ordered by start time.
- * A festival can add or drop a night here with no UI change.
+ * The programme's display order: by opening date, then by start time.
+ *
+ * This replaced `groupScreeningsByDay`. Screenings are the organising unit
+ * now, and a screening that runs Thursday to Saturday cannot be filed under a
+ * single night without either duplicating it or picking one arbitrarily.
  */
-export const groupScreeningsByDay = (festival: Festival): ScreeningDay[] => {
-  const byDate = new Map<string, Screening[]>();
-
-  for (const screening of festival.screenings) {
-    const existing = byDate.get(screening.date);
-    if (existing) existing.push(screening);
-    else byDate.set(screening.date, [screening]);
-  }
-
-  return [...byDate.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, screenings], index) => ({
-      date,
-      /** "01", "02" — the festival's own night numbering, not a calendar date. */
-      index: String(index + 1).padStart(2, "0"),
-      screenings: [...screenings].sort((a, b) => toMinutes(a.time) - toMinutes(b.time)),
-    }));
-};
+export const orderScreenings = (festival: Festival): Screening[] =>
+  [...festival.screenings].sort(
+    (a, b) =>
+      a.startDate.localeCompare(b.startDate) || toMinutes(a.time) - toMinutes(b.time),
+  );
 
 /**
  * Where a screening's own page lives.
@@ -222,6 +270,16 @@ export const groupScreeningsByDay = (festival: Festival): ScreeningDay[] => {
  * shared link.
  */
 export const screeningHref = (id: string): string => `/festivals/screening/${id}`;
+
+/**
+ * Where a film's own page lives.
+ *
+ * Flat rather than nested under its screening: a film can be programmed in two
+ * sessions, and a URL that names one of them makes the other unreachable at
+ * that address. The film is the thing being linked to, so the film owns the
+ * URL.
+ */
+export const filmHref = (id: string): string => `/festivals/film/${id}`;
 
 /**
  * Seat status is never communicated by colour alone — every consumer pairs the

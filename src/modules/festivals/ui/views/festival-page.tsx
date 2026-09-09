@@ -1,5 +1,5 @@
 import type { Festival, FestivalPageSettings, FestivalPhase } from "../../lib/types";
-import { groupScreeningsByDay } from "../../lib/festival-utils";
+import { orderScreenings } from "../../lib/festival-utils";
 import { festivalFontClass } from "../../lib/festival-fonts";
 import { ArchiveBand } from "../components/archive-band";
 import { AwardPanel } from "../components/award-panel";
@@ -19,7 +19,7 @@ import { FestivalStatement } from "../components/festival-statement";
  *
  *   hero        the room, and the year
  *   statement   what this festival is
- *   programme   every film, one section per night    <- the page inverts here
+ *   programme   every session, one section each      <- the page inverts here
  *   award       what is being judged
  *   closing     venues and the invitation
  *   archive     previous editions
@@ -44,7 +44,7 @@ export function FestivalPage({
   settings: FestivalPageSettings;
   phase: FestivalPhase;
 }) {
-  const days = festival ? groupScreeningsByDay(festival) : [];
+  const screenings = festival ? orderScreenings(festival) : [];
 
   // One note for every phase. The programme does not announce that a festival
   // has finished — see the matching note in opening-countdown.tsx.
@@ -56,9 +56,9 @@ export function FestivalPage({
 
       <FestivalStatement festival={festival} settings={settings} />
 
-      {days.length > 0 ? (
+      {screenings.length > 0 ? (
         <ProgrammeSection
-          days={days}
+          screenings={screenings}
           heading={settings.scheduleHeading}
           intro={settings.scheduleIntro}
           note={programmeNote}

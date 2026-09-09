@@ -18,7 +18,7 @@ export function ArchiveBand({ festivals }: { festivals: Festival[] }) {
     <section className="relative bg-fest-deep py-16 md:py-20">
       <div className="mx-auto max-w-[1400px] px-5 md:px-10">
         <h2 className="font-fest-text text-base italic text-fest-beam/50">
-          Previous editions
+          Upcoming Festivals
         </h2>
 
         <ul className="mt-6 flex flex-col border-t border-fest-beam/12">
@@ -44,6 +44,7 @@ export function ArchiveBand({ festivals }: { festivals: Festival[] }) {
                       {festival.screenings.length}{" "}
                       {festival.screenings.length === 1 ? "film" : "films"} over{" "}
                       {countFestivalDays(festival)}{" "}
+
                       {countFestivalDays(festival) === 1 ? "night" : "nights"}
                     </>
                   )}

@@ -3,6 +3,7 @@ import { isValidMediaUrl } from "@/modules/events/submissions/lib/submissions";
 import type {
   Festival,
   FestivalPageSettings,
+  Film,
   LinkedCta,
   Screening,
   SeatStatus,
@@ -31,7 +32,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const apiBase = () =>
   API_BASE_URL.endsWith("/") ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
 
-type ApiScreening = {
+type ApiFilm = {
   _id?: string;
   title?: string;
   posterUrl?: string;
@@ -41,10 +42,32 @@ type ApiScreening = {
   runtimeMinutes?: number;
   synopsis?: string;
   trailerUrl?: string;
-  date?: string;
+};
+
+type ApiScreening = {
+  _id?: string;
+  title?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
   time?: string;
   venue?: string;
   seatStatus?: string;
+  films?: ApiFilm[];
+
+  /**
+   * Pre-restructure fields, still accepted. A screening used to be a film, so
+   * a row carried the film's own metadata and a single `date`. See
+   * `legacyScreening` below for why these are read rather than ignored.
+   */
+  date?: string;
+  posterUrl?: string;
+  country?: string;
+  year?: number;
+  genre?: string;
+  runtimeMinutes?: number;
+  synopsis?: string;
+  trailerUrl?: string;
 };
 
 type ApiFestival = {
@@ -181,14 +204,23 @@ const slugify = (value: string): string =>
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Screening ids double as the `#anchor` a programme row deep-links to, so they
- * are derived from the title rather than taken from Mongo: saving a festival
+ * Ids double as the `#anchor` a programme row deep-links to, so they are
+ * derived from the title rather than taken from Mongo: saving a festival
  * rewrites the embedded array and issues fresh subdocument _ids, which would
- * silently break every shared link. A numeric suffix disambiguates a film that
- * screens twice in one festival.
+ * silently break every shared link. A numeric suffix disambiguates a repeated
+ * title.
+ *
+ * Screenings and films are minted from separate `seen` sets. They live under
+ * different URL prefixes, so a session called "Shorts" and a film called
+ * "Shorts" do not collide and neither should have to wear a "-2".
  */
-const screeningId = (title: string, index: number, seen: Set<string>): string => {
-  const base = slugify(title) || `screening-${index + 1}`;
+const mintId = (
+  title: string,
+  index: number,
+  seen: Set<string>,
+  prefix: string,
+): string => {
+  const base = slugify(title) || `${prefix}-${index + 1}`;
   if (!seen.has(base)) {
     seen.add(base);
     return base;
@@ -200,22 +232,17 @@ const screeningId = (title: string, index: number, seen: Set<string>): string =>
   return unique;
 };
 
-const mapScreening = (
-  raw: ApiScreening,
-  index: number,
-  seen: Set<string>,
-): Screening | null => {
+const mapFilm = (raw: ApiFilm, index: number, seen: Set<string>): Film | null => {
   const title = String(raw.title ?? "").trim();
-  const date = String(raw.date ?? "").trim();
-  // A screening with no title or no date cannot be placed on the schedule at
-  // all, so it is dropped rather than rendered as an undated blank.
-  if (!title || !ISO_DATE.test(date)) return null;
+  // A film with no title cannot be listed or linked to, so it is dropped
+  // rather than rendered as an untitled row.
+  if (!title) return null;
 
   const poster = String(raw.posterUrl ?? "").trim();
   const trailer = String(raw.trailerUrl ?? "").trim();
 
   return {
-    id: screeningId(title, index, seen),
+    id: mintId(title, index, seen, "film"),
     title,
     // isValidMediaUrl guards against CMS data entry putting a bare domain in an
     // image field, which the browser would resolve against the current route.
@@ -227,10 +254,81 @@ const mapScreening = (
     runtimeMinutes: Number(raw.runtimeMinutes) || 0,
     synopsis: String(raw.synopsis ?? "").trim(),
     trailerUrl: trailer || undefined,
-    date,
+  };
+};
+
+/**
+ * Reads a pre-restructure screening — one that IS a film — as a session of one.
+ *
+ * The alternative was to drop rows without a `films` array, which would empty
+ * the programme for as long as the frontend was deployed ahead of the backend
+ * migration. Since the two repos deploy separately and the backfill is a
+ * manual step, that window is real. A one-film session is exactly what the old
+ * row meant, so nothing is invented here.
+ */
+const legacyScreening = (raw: ApiScreening): ApiScreening | null => {
+  const date = String(raw.date ?? "").trim();
+  if (!ISO_DATE.test(date)) return null;
+
+  return {
+    title: raw.title,
+    description: "",
+    startDate: date,
+    endDate: date,
+    time: raw.time,
+    venue: raw.venue,
+    seatStatus: raw.seatStatus,
+    films: [
+      {
+        title: raw.title,
+        posterUrl: raw.posterUrl,
+        country: raw.country,
+        year: raw.year,
+        genre: raw.genre,
+        runtimeMinutes: raw.runtimeMinutes,
+        synopsis: raw.synopsis,
+        trailerUrl: raw.trailerUrl,
+      },
+    ],
+  };
+};
+
+const mapScreening = (
+  input: ApiScreening,
+  index: number,
+  seenScreenings: Set<string>,
+  seenFilms: Set<string>,
+): Screening | null => {
+  // `films` present is what marks a row as the new shape. An empty array is
+  // still the new shape — a session announced before its lineup is confirmed.
+  const raw = Array.isArray(input.films) ? input : legacyScreening(input);
+  if (!raw) return null;
+
+  const title = String(raw.title ?? "").trim();
+  const startDate = String(raw.startDate ?? "").trim();
+  // A screening with no title or no opening date cannot be placed on the
+  // programme at all, so it is dropped rather than rendered as an undated blank.
+  if (!title || !ISO_DATE.test(startDate)) return null;
+
+  // A missing or malformed end date means a single sitting, which is the
+  // common case — not an error worth dropping the session over. An end that
+  // precedes the start is treated the same way: the start is the date staff
+  // are most likely to have got right.
+  const rawEnd = String(raw.endDate ?? "").trim();
+  const endDate = ISO_DATE.test(rawEnd) && rawEnd >= startDate ? rawEnd : startDate;
+
+  return {
+    id: mintId(title, index, seenScreenings, "screening"),
+    title,
+    description: String(raw.description ?? "").trim(),
+    startDate,
+    endDate,
     time: String(raw.time ?? "").trim(),
     venue: String(raw.venue ?? "").trim(),
     seatStatus: toSeatStatus(raw.seatStatus),
+    films: (raw.films ?? [])
+      .map((film, filmIndex) => mapFilm(film, filmIndex, seenFilms))
+      .filter((film): film is Film => film !== null),
   };
 };
 
@@ -246,7 +344,8 @@ const mapFestival = (raw: ApiFestival): Festival | null => {
     return null;
   }
 
-  const seen = new Set<string>();
+  const seenScreenings = new Set<string>();
+  const seenFilms = new Set<string>();
   const hero = String(raw.heroImageUrl ?? "").trim();
 
   return {
@@ -263,7 +362,9 @@ const mapFestival = (raw: ApiFestival): Festival | null => {
     startDate,
     endDate,
     screenings: (raw.screenings ?? [])
-      .map((screening, index) => mapScreening(screening, index, seen))
+      .map((screening, index) =>
+        mapScreening(screening, index, seenScreenings, seenFilms),
+      )
       .filter((screening): screening is Screening => screening !== null),
   };
 };
@@ -457,9 +558,9 @@ export const fetchFestivalsPageData = async (): Promise<FestivalsPageData> => {
  * Finds one screening, and the festival it belongs to, by screening id.
  *
  * The current festival is searched first: ids are minted per festival from the
- * film title, so the same film screening in two different years produces the
- * same id, and "the one that is on now" is the one a bare link means. The
- * archive is only reached when the current programme has no match.
+ * title, so the same session name in two different years produces the same id,
+ * and "the one that is on now" is the one a bare link means. The archive is
+ * only reached when the current programme has no match.
  */
 export const findScreening = (
   data: FestivalsPageData,
@@ -469,6 +570,29 @@ export const findScreening = (
     if (!festival) continue;
     const screening = festival.screenings.find((entry) => entry.id === id);
     if (screening) return { screening, festival };
+  }
+  return null;
+};
+
+/**
+ * Finds one film, with the screening that programmes it and the festival it
+ * belongs to.
+ *
+ * Searched in the same order and for the same reason as `findScreening`. A
+ * film programmed in two sessions of one festival resolves to the first — the
+ * film's page is about the film, and the screening it names is context rather
+ * than the subject, so either answer is correct and the first is stable.
+ */
+export const findFilm = (
+  data: FestivalsPageData,
+  id: string,
+): { film: Film; screening: Screening; festival: Festival } | null => {
+  for (const festival of [data.festival, ...data.archive]) {
+    if (!festival) continue;
+    for (const screening of festival.screenings) {
+      const film = screening.films.find((entry) => entry.id === id);
+      if (film) return { film, screening, festival };
+    }
   }
   return null;
 };
