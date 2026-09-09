@@ -1,71 +1,60 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { fetchFestivalsPageData } from "@/modules/festivals/lib/festival-api";
 import {
-  findFestival,
-  formatFestivalDates,
-} from "@/modules/festivals/lib/festival-utils";
-import { FestivalDetailPage } from "@/modules/festivals/ui/views/festival-detail-page";
+  fetchFestivalsPageData,
+  findFestivalBySlug,
+} from "@/modules/festivals/lib/festival-api";
+import { formatFestivalDates } from "@/modules/festivals/lib/festival-utils";
+import { FestivalArchivePage } from "@/modules/festivals/ui/views/festival-archive-page";
 
 /**
+ * A past festival, at the URL it had while it was the current one.
+ *
+ * IFFA runs one festival a year, so `/festivals` is the festival — there is no
+ * detail page to click through to any more. This route survives for the links
+ * that were shared before that was true: the current festival's slug redirects
+ * to `/festivals`, and anything older renders its archive recap.
+ *
  * `[festival]` sits alongside the static `programs/` and `screening/` segments.
  * Next resolves static segments first, so those routes are unaffected — but a
  * new static child of `/festivals` will always win over a festival slug of the
  * same name.
  */
-/**
- * Must be a literal: Next statically analyses segment config exports at build
- * time and rejects an imported constant ("Invalid segment configuration
- * export"). Keep in step with FESTIVAL_REVALIDATE_SECONDS in festival-api.ts,
- * which the fetch itself uses.
- */
-export const revalidate = 300;
-
-/**
- * A festival published after the last build still has to render. Without this,
- * its URL would 404 until someone redeployed the site.
- */
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  // Returns [] if the API is unreachable rather than throwing: a cold backend
-  // must not be able to fail an Amplify build. Those pages then render on
-  // demand instead of being prerendered.
-  const { months } = await fetchFestivalsPageData();
-  return months.flatMap((month) =>
-    month.festivals.map((festival) => ({ festival: festival.slug }))
-  );
-}
+/** Rendered per request, for the reason set out in festival-api.ts. */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/festivals/[festival]">): Promise<Metadata> {
   const { festival: slug } = await params;
-  const { months } = await fetchFestivalsPageData();
-  const festival = findFestival(months, slug);
+  const data = await fetchFestivalsPageData();
+  const festival = findFestivalBySlug(data, slug);
 
-  if (!festival) return { title: "Festival | IFFA" };
+  if (!festival) return { title: "Festival not found | IFFA" };
 
   return {
-    title: `${festival.name} | IFFA Festivals`,
+    title: `${festival.name} ${festival.year} | IFFA`,
     description:
       festival.description ||
-      `${festival.name} — ${formatFestivalDates(festival)} in ${festival.city}.`,
+      `${festival.name}, ${formatFestivalDates(festival)} in ${festival.city}.`,
   };
 }
 
 export default async function Page({ params }: PageProps<"/festivals/[festival]">) {
   const { festival: slug } = await params;
 
-  // One fetch for the whole schedule, shared with generateMetadata through the
-  // request cache. The detail page needs its neighbours and its month anyway,
-  // so fetching the festival alone would cost a second round trip and risk the
-  // two views disagreeing.
-  const { months } = await fetchFestivalsPageData();
-  const festival = findFestival(months, slug);
+  // One fetch for the whole record, shared with generateMetadata through the
+  // request cache. It is also what decides whether this slug is the current
+  // festival, which is the only way to know whether to redirect.
+  const data = await fetchFestivalsPageData();
+  const match = findFestivalBySlug(data, slug);
 
-  if (!festival) notFound();
+  if (!match) notFound();
 
-  return <FestivalDetailPage festival={festival} months={months} />;
+  // The current festival lives at /festivals now. Redirecting rather than
+  // rendering it twice keeps one canonical URL for the page people link to.
+  if (match.slug === data.festival?.slug) redirect("/festivals");
+
+  return <FestivalArchivePage festival={match} settings={data.settings} />;
 }

@@ -6,8 +6,33 @@ import { useEffect, useState } from "react";
 // modal — nothing is written to S3 until the whole form is submitted, at
 // which point SubmitFilmForm uploads each staged file and swaps it for the
 // resulting CloudFront URL before POSTing.
+// `abort: false` is load-bearing. A failing `z.custom` defaults to aborting
+// the *whole object's* parse, which silently skips every `.superRefine`
+// check below it — so while any image was missing (i.e. on every fresh
+// form), the runtime, "at least one actor" and writer-completeness rules
+// never ran at all, and only appeared once the posters were attached.
 const requiredWebpFile = (message: string) =>
-  z.custom<File | null>((v) => v instanceof File, { message });
+  z.custom<File | null>((v) => v instanceof File, { message, abort: false });
+
+/**
+ * URL fields that tolerate surrounding whitespace. Filmmakers routinely
+ * paste a link with a trailing space or newline, and a bare
+ * `z.string().url()` rejects that with a "must be a valid URL" message that
+ * reads like a lie next to a link they can see is fine.
+ */
+const isUrl = (v: string) => z.string().url().safeParse(v).success;
+
+const trimmedUrl = (message: string) =>
+  z
+    .string()
+    .transform((v) => v.trim())
+    .refine(isUrl, { message });
+
+const optionalTrimmedUrl = (message: string) =>
+  z
+    .string()
+    .transform((v) => v.trim())
+    .refine((v) => v === "" || isUrl(v), { message });
 
 const personSchema = z.object({
   fullName: z.string().min(1, "Name is required"),
@@ -59,14 +84,19 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       // Digit-only strings (not numbers) so the field type matches what a
       // controlled <input> naturally holds — see sanitizeDurationInput in
       // SubmitFilmForm.tsx, which guarantees only digits ever land here.
+      //
+      // Empty is allowed by the field rules and rejected by the superRefine
+      // below instead. The inputs start blank rather than pre-filled with
+      // "0" so an untouched runtime reads as untouched: filmmakers were
+      // leaving a pre-filled "0 h 0 min" alone because it looks answered.
       durationHours: z
         .string()
-        .regex(/^\d+$/, "Must be a whole number")
-        .refine((v) => Number(v) <= 10, "Please enter a realistic runtime"),
+        .regex(/^\d*$/, "Numbers only")
+        .refine((v) => v === "" || Number(v) <= 10, "Please enter a realistic runtime"),
       durationMinutes: z
         .string()
-        .regex(/^\d+$/, "Must be a whole number")
-        .refine((v) => Number(v) <= 59, "Must be between 0 and 59"),
+        .regex(/^\d*$/, "Numbers only")
+        .refine((v) => v === "" || Number(v) <= 59, "Must be between 0 and 59"),
       contentTypeId: z.string().min(1, "Content type is required"),
       countryId: z.string().min(1, "Country is required"),
       releaseCountryIds: z
@@ -75,17 +105,21 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       watchFormats: z
         .array(z.string())
         .min(1, "Select at least one watch format"),
-      releaseLinkUrl: z
-        .union([z.string().url("Must be a valid URL"), z.literal("")])
-        .optional(),
+      releaseLinkUrl: optionalTrimmedUrl("Must be a valid URL").optional(),
       languageId: z.string().min(1, "Language is required"),
       productionHouse: z.string().min(1, "Production house is required"),
       distributor: z.string().optional(),
       genreIds: z.array(z.string()).min(1, "Select at least one genre"),
       potraitImageUrl: requiredWebpFile("Portrait poster is required"),
       landscapeImageUrl: requiredWebpFile("Landscape banner is required"),
-      imdbUrl: z.string().url("Must be a valid IMDb URL"),
-      trailerUrl: z.string().url("Must be a valid download URL"),
+      imdbUrl: trimmedUrl("Must be a valid IMDb URL"),
+      trailerUrl: trimmedUrl("Must be a valid download URL"),
+      // Filmmakers often share a trailer from a password-protected folder.
+      // Asking up front beats a reviewer hitting the wall and emailing back:
+      // the password is required only when they say the link has one, and is
+      // surfaced beside the URL in the CMS review screens.
+      trailerHasPassword: z.boolean(),
+      trailerPassword: z.string(),
       actors: z.array(personSchema),
       directors: z.array(personSchema).min(1, "At least one director required"),
       producers: z.array(personSchema).min(1, "At least one producer required"),
@@ -101,16 +135,34 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       ),
       notes: z.string().max(1000, "Notes must be 1000 characters or less").optional(),
       contactEmail: z.string().email("Must be a valid email"),
-      agreeRights: z.literal(true, {
+      // `z.boolean().refine(...)`, not `z.literal(true)`: a failing literal
+      // aborts the whole object parse and takes every `.superRefine` check
+      // below down with it. Since this box starts unticked, that suppressed
+      // the runtime and crew rules on every fresh form. A refine reports the
+      // same message without aborting.
+      agreeRights: z.boolean().refine((v) => v === true, {
         message: "You must confirm this declaration",
       }),
     })
     .superRefine((data, ctx) => {
-      if (Number(data.durationHours) === 0 && Number(data.durationMinutes) === 0) {
+      // A blank box and a "0" box both mean "no runtime given". The issue is
+      // attached to the hours field because the form renders one shared
+      // message under the whole hr/min row, reading that path first.
+      const hours = data.durationHours === "" ? 0 : Number(data.durationHours);
+      const minutes = data.durationMinutes === "" ? 0 : Number(data.durationMinutes);
+      if (hours === 0 && minutes === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ["durationMinutes"],
-          message: "Duration is required",
+          path: ["durationHours"],
+          message: "Enter the film's runtime — it can't be 0 h 0 min",
+        });
+      }
+
+      if (data.trailerHasPassword && !data.trailerPassword.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["trailerPassword"],
+          message: "Enter the password for the trailer link",
         });
       }
 

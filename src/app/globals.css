@@ -1,8 +1,46 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+
+/**
+ * Festival page palette — "the reel".
+ *
+ * Scoped by name rather than by selector: Tailwind v4 generates utilities from
+ * @theme globally, so the `fest-` prefix is what marks these as belonging to
+ * the Festival section and keeps them out of the way of the rest of the site.
+ *
+ * The idea is a cool room lit by a warm lamp. `room`/`deep` are genuinely blue
+ * rather than a tinted grey, so the amber reads as light falling into a dark
+ * auditorium instead of as a colour sitting on black. `stock` and `ink` are the
+ * printed programme the page inverts to at the schedule.
+ */
+@theme {
+  --color-fest-room: #06080f;
+  --color-fest-deep: #03040a;
+  --color-fest-lamp: #ffb02e;
+  --color-fest-beam: #fff3d9;
+  --color-fest-stock: #e9e3d3;
+  --color-fest-ink: #17120b;
+  --color-fest-curtain: #7b2231;
+}
+
+/**
+ * The two faces are `inline` and the colours above are not, and the difference
+ * is load-bearing.
+ *
+ * A non-inline @theme declares its variables on :root, so any var() inside a
+ * value is substituted *there*. `--font-big-shoulders` is declared by next/font
+ * further down the tree, on the Festival page's own wrapper, so at :root it is
+ * undefined — which makes the whole declaration invalid at computed-value time
+ * and silently leaves the page in the site's body font. `inline` puts the
+ * value straight into the utility instead, where the variable exists.
+ */
+@theme inline {
+  --font-fest-display: var(--font-big-shoulders), "Arial Narrow", sans-serif;
+  --font-fest-text: var(--font-newsreader), Georgia, "Times New Roman", serif;
+}
 
 @theme inline {
   --color-background: var(--background);

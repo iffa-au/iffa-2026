@@ -1,14 +1,28 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { RotateCw } from "lucide-react";
 
 /**
  * The furniture the podcast pages share: section headings, the shapes shown
- * while CMS-Hub is answering, and the page as it looks before the first
- * episode is published.
+ * while CMS-Hub is answering, and the notices that stand in for content.
  *
  * The loading shapes are skeletons rather than a spinner on purpose — they
  * hold the exact geometry of what replaces them, so the page settles into
  * place instead of jumping when the data lands.
+ *
+ * Three outcomes, three different objects, because they are three different
+ * situations and flattening them into one component is what made the old page
+ * announce a working, empty archive as a failure:
+ *
+ *   loading  — skeletons (below)
+ *   empty    — `PodcastComingSoon`, an editorial moment in its own file
+ *   error    — `PodcastLoadError`, the only one of the three that admits
+ *              something went wrong, and the only one that offers a retry
+ *
+ * `PodcastNotice` remains for the episode pages, where "this slug does not
+ * resolve" really is a plain notice with a way back.
  */
 
 export const SERIF = "var(--font-playfair), 'Playfair Display', Georgia, serif";
@@ -92,18 +106,57 @@ export function PodcastHeroSkeleton() {
 }
 
 /**
- * Shown when CMS-Hub has nothing published, and when it could not be reached.
- * Deliberately the same shape in both cases — a visitor can do nothing about
- * either, and a stack trace in the middle of an editorial page helps no one.
- * The distinction that matters (an error) is still surfaced in `message`.
+ * The page could not reach CMS-Hub.
+ *
+ * Separate from the empty state on purpose. An empty archive is a normal
+ * editorial condition and gets the illustrated "between episodes" treatment;
+ * this is the one case where something is genuinely wrong, and the honest
+ * thing is to say so plainly and hand back the one action that can fix it.
+ *
+ * The retry re-runs the fetch in place rather than reloading the document —
+ * a transient network failure should cost a click, not the whole page.
  */
-export function PodcastEmptyState({
-  title = "No podcasts yet",
-  message = "New conversations and stories are coming soon.",
+export function PodcastLoadError({ onRetry }: { onRetry?: () => void }) {
+  return (
+    <div className="mx-auto max-w-md px-6 py-24 text-center sm:py-32">
+      <div className="mx-auto mb-8 h-px w-16 bg-gradient-to-r from-transparent via-yellow-500/60 to-transparent" />
+      <h2
+        className="text-2xl font-bold text-white sm:text-3xl"
+        style={{ fontFamily: SERIF }}
+      >
+        We can&rsquo;t reach the episodes right now
+      </h2>
+      <p className="mt-4 text-sm leading-relaxed text-white/50">
+        This is on our side, not yours. Try again in a moment.
+      </p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="group mt-8 inline-flex items-center gap-2 rounded-md border border-white/20 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition-colors hover:border-yellow-500 hover:text-yellow-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        >
+          <RotateCw className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-180 motion-reduce:transition-none motion-reduce:group-hover:rotate-0" />
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A plain centred notice with an optional way onward.
+ *
+ * Used by the episode pages, where a slug that does not resolve is exactly
+ * what it looks like. The landing page no longer routes any state through
+ * here — it has a dedicated component for each.
+ */
+export function PodcastNotice({
+  title,
+  message,
   action,
 }: {
-  title?: string;
-  message?: string;
+  title: string;
+  message: string;
   /** A way onward, for the states a visitor can actually act on. */
   action?: { label: string; href: string };
 }) {
