@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   fetchPodcasts,
@@ -15,33 +15,51 @@ import { PodcastBackdrop } from "../components/podcast-backdrop";
 import { PodcastCard } from "../components/podcast-card";
 import {
   Eyebrow,
-  PodcastEmptyState,
   PodcastGridSkeleton,
   PodcastHeroSkeleton,
+  PodcastLoadError,
   SectionHeading,
   SERIF,
 } from "../components/podcast-chrome";
+import { PodcastComingSoon } from "../components/podcast-coming-soon";
 import { PodcastPlayer } from "../components/podcast-player";
 
 /**
  * The Podcast landing page.
  *
- * Introduction, then a playable hero, then the recent conversations, then the
+ * A masthead, then a playable hero, then the recent conversations, then the
  * back catalogue. The hero is whichever episode is starred in CMS-Hub, falling
  * back to the newest published one when nothing is; everything else follows in
  * publish order. No ordering is maintained here.
  *
  * The hero holds the only player on the page. The rest are posters that link
  * to an episode's own page, which is where a second player is worth its weight.
+ *
+ * Three outcomes are kept strictly apart. A request still in flight shows
+ * skeletons; a request that came back with nothing shows the illustrated
+ * "between episodes" state; a request that actually failed shows an error with
+ * a retry. Collapsing the last two — which the page used to do — tells a
+ * visitor the site is broken on the day before the first episode ships.
  */
 
 const RECENT_COUNT = 3;
+
+/** The breadth of the show, said structurally rather than in a longer sentence. */
+const ON_THE_SHOW = [
+  "Conversations & interviews",
+  "Creative journeys",
+  "Cinema & culture",
+  "Emerging voices",
+];
 
 export function PodcastPage() {
   const scope = useRef<HTMLDivElement>(null);
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  // Bumped by the retry button; the effect below keys off it, so retrying is
+  // the same code path as the first load rather than a second copy of it.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -49,20 +67,27 @@ export function PodcastPage() {
     const load = async () => {
       try {
         setLoading(true);
-        setError(null);
+        setFailed(false);
         setPodcasts(await fetchPodcasts(controller.signal));
       } catch (e) {
-        if (e instanceof Error && e.name !== "AbortError") {
-          setError("We could not load the podcast right now.");
-        }
+        // An aborted request is this effect cleaning up after itself, not a
+        // failure — treating it as one would flash an error on every unmount.
+        if (e instanceof Error && e.name !== "AbortError") setFailed(true);
       } finally {
-        setLoading(false);
+        // Only the live request may clear the loading flag. On a retry, React
+        // aborts the previous request before running this effect again, and
+        // that rejection settles a microtask *later* — after the new attempt
+        // has already set the flag. Unguarded, it would switch the skeletons
+        // off while the replacement request is still in the air.
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     void load();
     return () => controller.abort();
-  }, []);
+  }, [attempt]);
+
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   // The hero is a choice made in the CMS, not a position in the list, so the
   // rest is everything *except* it rather than everything after it — a
@@ -73,11 +98,23 @@ export function PodcastPage() {
   const recent = rest.slice(0, RECENT_COUNT);
   const archive = rest.slice(RECENT_COUNT);
 
-  usePodcastMotion(scope, !loading && !!featured);
+  // The entrance sequence covers the featured hero *and* the between-episodes
+  // state — both carry `data-enter` markers. Only a failed load has nothing to
+  // animate in.
+  usePodcastMotion(scope, !loading && !failed);
 
   return (
     <div ref={scope} className="min-h-screen bg-black text-white">
-      {/* ------------------------------ introduction ----------------------------- */}
+      {/* -------------------------------- masthead ------------------------------- */}
+      {/* Two columns rather than a stacked title and paragraph: the headline
+          states what the show is, and the column beside it states how wide it
+          reaches. Saying the range structurally keeps the positioning from
+          living inside one sentence that has to be rewritten every time the
+          show covers something new.
+
+          The top padding is generous by necessity as well as by taste — the
+          fixed header is taller than the 88px the shared layout reserves for
+          it, so a short pt- here would tuck the eyebrow under the nav. */}
       <section className="relative overflow-hidden">
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-72"
@@ -87,20 +124,42 @@ export function PodcastPage() {
               "radial-gradient(70% 100% at 50% 0%, rgba(234,179,8,0.10) 0%, transparent 70%)",
           }}
         />
-        <div className="relative mx-auto max-w-7xl px-6 pb-8 pt-12 sm:pt-14">
-          <Eyebrow>Podcast</Eyebrow>
-          <h1
-            className="mt-4 max-w-3xl text-4xl leading-[1.05] font-bold text-white sm:text-5xl lg:text-6xl"
-            style={{ fontFamily: SERIF }}
-          >
-            Stories Behind the Screen
-          </h1>
-          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-white/55 sm:text-base">
-            Conversations, perspectives and stories from the filmmakers, artists and
-            voices shaping cinema — recorded with the people who make the work, and
-            played here in full.
-          </p>
-          <div className="mt-8 h-px w-full bg-gradient-to-r from-yellow-500/40 via-white/10 to-transparent" />
+        <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-16 sm:pt-20 lg:pt-24">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-7">
+              <Eyebrow>Podcast</Eyebrow>
+              <h1
+                className="mt-4 text-4xl leading-[1.05] font-bold text-white sm:text-5xl lg:text-6xl"
+                style={{ fontFamily: SERIF }}
+              >
+                Conversations worth listening to.
+              </h1>
+              <p className="mt-6 max-w-xl text-sm leading-relaxed text-white/60 sm:text-base">
+                Ideas, journeys and stories from the people shaping cinema,
+                creativity and culture — recorded in full and played here.
+              </p>
+            </div>
+
+            <div className="lg:col-span-4 lg:col-start-9">
+              <span className="text-[11px] font-bold uppercase tracking-[0.35em] text-white/35">
+                On the show
+              </span>
+              {/* Hairline rows, the same density the archive uses. Not
+                  numbered: these are the range of the show, not a sequence. */}
+              <ul className="mt-5 border-t border-white/10">
+                {ON_THE_SHOW.map((strand) => (
+                  <li
+                    key={strand}
+                    className="border-b border-white/10 py-3 text-sm text-white/55"
+                  >
+                    {strand}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-12 h-px w-full bg-gradient-to-r from-yellow-500/40 via-white/10 to-transparent" />
         </div>
       </section>
 
@@ -109,10 +168,10 @@ export function PodcastPage() {
         <section className="mx-auto max-w-6xl px-6 py-10 lg:py-14">
           <PodcastHeroSkeleton />
         </section>
-      ) : error ? (
-        <PodcastEmptyState title="Podcast unavailable" message={error} />
+      ) : failed ? (
+        <PodcastLoadError onRetry={retry} />
       ) : !featured ? (
-        <PodcastEmptyState />
+        <PodcastComingSoon />
       ) : (
         <FeaturedHero podcast={featured} />
       )}

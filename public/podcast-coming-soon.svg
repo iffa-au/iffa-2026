@@ -1,0 +1,308 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" width="100%" class="pcast" role="img" aria-labelledby="pcTitle pcDesc" preserveAspectRatio="xMidYMid meet">
+  <title id="pcTitle">Podcast coming soon</title>
+  <desc id="pcDesc">A podcast host wearing headphones sits relaxed at a studio desk, hands resting on the surface, looking toward a microphone that hangs from a boom arm. A laptop, a small mixer, a studio light and acoustic panels fill the room; sound rings pulse softly at the microphone while the host waits for the first episode.</desc>
+
+  <defs>
+    <radialGradient id="pcGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="var(--pc-accent)" stop-opacity=".34"/>
+      <stop offset="55%" stop-color="var(--pc-accent)" stop-opacity=".10"/>
+      <stop offset="100%" stop-color="var(--pc-accent)" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <style>
+    /* ============================== palette ==============================
+       Tuned for the site's black ground and gold accent. Declared with
+       :where() so they carry zero specificity — a page can retune the
+       illustration by setting these on .pcast, with no !important.
+       --pc-ink is separate from --pc-navy on purpose: the figure reads
+       light on black, but eyes, brows, mouth and collar must stay dark. */
+    :where(.pcast){
+      --pc-navy:#F0EADC;    /* mic, headphones, light housing, laptop     */
+      --pc-navy-2:#CFC7B4;  /* torso, arms, mic grille, laptop base       */
+      --pc-ink:#241F18;     /* eyes, brows, mouth, collar                 */
+      --pc-hair:#1B1710;
+      --pc-accent:#EAB308;  /* IFFA gold, used sparingly                  */
+      --pc-accent-2:#FDE047;
+      --pc-blue:#9A9182;
+      --pc-blue-soft:rgba(255,255,255,.10); /* panels, desk, diffuser     */
+      --pc-halo:transparent;
+      --pc-skin:#E8C9A8;
+      --pc-skin-2:#C39B72;
+      --pc-white:#FFFFFF;
+      display:block;
+    }
+
+
+    .pcast .f-navy{fill:var(--pc-navy)}
+    .pcast .f-navy2{fill:var(--pc-navy-2)}
+    .pcast .f-ink{fill:var(--pc-ink)}
+    .pcast .f-hair{fill:var(--pc-hair)}
+    .pcast .f-accent{fill:var(--pc-accent)}
+    .pcast .f-accent2{fill:var(--pc-accent-2)}
+    .pcast .f-blue{fill:var(--pc-blue)}
+    .pcast .f-soft{fill:var(--pc-blue-soft)}
+    .pcast .f-halo{fill:var(--pc-halo)}
+    .pcast .f-skin{fill:var(--pc-skin)}
+    .pcast .f-skin2{fill:var(--pc-skin-2)}
+    .pcast .s-navy{stroke:var(--pc-navy);fill:none}
+    .pcast .s-navy2{stroke:var(--pc-navy-2);fill:none}
+    .pcast .s-ink{stroke:var(--pc-ink);fill:none}
+    .pcast .s-accent{stroke:var(--pc-accent);fill:none}
+    .pcast .s-skin2{stroke:var(--pc-skin-2);fill:none}
+    .pcast .s-white{stroke:var(--pc-white);fill:none}
+    .pcast .cap{stroke-linecap:round;stroke-linejoin:round}
+
+    /* ===================== motion: one 6s master loop =====================
+       Every sub-loop is an exact divisor of 6s (6 / 3 / 2 / 1.5), so the
+       whole scene re-syncs on each cycle and never drifts. Only transform
+       and opacity animate — no layout, no paint of new geometry. */
+    .pcast .breathe{
+      transform-box:view-box;transform-origin:340px 400px;
+      animation:pc-breathe 6s ease-in-out infinite;
+    }
+    @keyframes pc-breathe{
+      0%,100%{transform:translateY(0) scale(1)}
+      50%{transform:translateY(-2.5px) scale(1.012)}
+    }
+
+    /* the head turns toward the mic, then settles back */
+    .pcast .head{
+      transform-box:view-box;transform-origin:340px 292px;
+      animation:pc-head 6s ease-in-out infinite;
+    }
+    @keyframes pc-head{
+      0%,100%{transform:rotate(0deg) translate(0,0)}
+      30%{transform:rotate(2.2deg) translate(2px,-1px)}
+      62%{transform:rotate(-1deg) translate(-1px,-2px)}
+    }
+
+    .pcast .eye{
+      transform-box:fill-box;transform-origin:50% 50%;
+      animation:pc-blink 6s ease-in-out infinite;
+    }
+    @keyframes pc-blink{
+      0%,88%,100%{transform:scaleY(1)}
+      91%{transform:scaleY(.1)}
+      94%{transform:scaleY(1)}
+    }
+
+    .pcast .tap{
+      transform-box:view-box;transform-origin:390px 392px;
+      animation:pc-tap 3s ease-in-out infinite;
+    }
+    @keyframes pc-tap{
+      0%,58%,100%{transform:rotate(0deg)}
+      68%{transform:rotate(-6deg)}
+      80%{transform:rotate(.5deg)}
+      88%{transform:rotate(-2deg)}
+    }
+
+    .pcast .cable{
+      transform-box:view-box;transform-origin:381px 280px;
+      animation:pc-sway 6s ease-in-out infinite;
+    }
+    @keyframes pc-sway{
+      0%,100%{transform:rotate(0deg)}
+      50%{transform:rotate(2deg)}
+    }
+
+    /* one ring leaves the capsule every second; each lives three */
+    .pcast .ring{
+      transform-box:fill-box;transform-origin:100% 50%;
+      animation:pc-ring 3s cubic-bezier(.3,.6,.35,1) infinite;
+      opacity:0;
+    }
+    .pcast .ring-2{animation-delay:1s}
+    .pcast .ring-3{animation-delay:2s}
+    @keyframes pc-ring{
+      0%{opacity:0;transform:scale(.7)}
+      25%{opacity:.8}
+      100%{opacity:0;transform:scale(1.1)}
+    }
+
+    /* standby, not recording: a slow fade rather than a hard blink */
+    .pcast .led{animation:pc-led 3s ease-in-out infinite}
+    @keyframes pc-led{
+      0%,100%{opacity:.95}
+      50%{opacity:.25}
+    }
+
+    .pcast .dot{
+      transform-box:fill-box;transform-origin:50% 50%;
+      animation:pc-dot 1.5s ease-in-out infinite;
+    }
+    .pcast .dot-2{animation-delay:.15s}
+    .pcast .dot-3{animation-delay:.3s}
+    @keyframes pc-dot{
+      0%,100%{transform:translateY(0) scale(.8);opacity:.3}
+      35%{transform:translateY(-5px) scale(1);opacity:1}
+    }
+
+    .pcast .meter{
+      transform-box:fill-box;transform-origin:50% 100%;
+      animation:pc-meter 2s ease-in-out infinite;
+    }
+    .pcast .meter-2{animation-delay:.25s}
+    .pcast .meter-3{animation-delay:.5s}
+    .pcast .meter-4{animation-delay:.75s}
+    @keyframes pc-meter{
+      0%,100%{transform:scaleY(.35)}
+      40%{transform:scaleY(1)}
+      70%{transform:scaleY(.6)}
+    }
+
+    .pcast .glow{animation:pc-glow 6s ease-in-out infinite}
+    @keyframes pc-glow{
+      0%,100%{opacity:.7}
+      50%{opacity:1}
+    }
+
+    .pcast .panel-a{animation:pc-panel 6s ease-in-out infinite}
+    .pcast .panel-b{animation:pc-panel 6s ease-in-out infinite;animation-delay:3s}
+    @keyframes pc-panel{
+      0%,100%{opacity:.4}
+      50%{opacity:.85}
+    }
+
+    .pcast .logo{
+      transform-box:fill-box;transform-origin:50% 50%;
+      animation:pc-logo 3s ease-in-out infinite;
+    }
+    @keyframes pc-logo{
+      0%,100%{opacity:.5;transform:scale(.92)}
+      50%{opacity:1;transform:scale(1)}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .pcast *{animation:none !important}
+      .pcast .ring{opacity:.45}
+    }
+  </style>
+
+  <!-- ===================== room: panels and halo ===================== -->
+  <g id="pc-room" aria-hidden="true">
+    <circle class="f-halo" cx="340" cy="300" r="178" opacity=".3"/>
+    <g id="pc-panels">
+      <rect class="f-soft" x="236" y="62" width="54" height="54" rx="14" opacity=".6"/>
+      <rect class="f-soft panel-a" x="302" y="62" width="54" height="54" rx="14"/>
+      <rect class="f-accent" x="368" y="62" width="54" height="54" rx="14" opacity=".14"/>
+      <rect class="f-soft" x="434" y="62" width="54" height="54" rx="14" opacity=".6"/>
+      <rect class="f-soft" x="236" y="128" width="54" height="54" rx="14" opacity=".45"/>
+      <rect class="f-soft" x="302" y="128" width="54" height="54" rx="14" opacity=".55"/>
+      <rect class="f-soft" x="368" y="128" width="54" height="54" rx="14" opacity=".55"/>
+      <rect class="f-soft panel-b" x="434" y="128" width="54" height="54" rx="14"/>
+    </g>
+  </g>
+
+  <!-- ============= waiting dots: the "stay tuned" cue ============= -->
+  <g id="pc-waiting" aria-hidden="true">
+    <circle class="dot f-accent" cx="556" cy="150" r="6.5"/>
+    <circle class="dot dot-2 f-accent" cx="580" cy="150" r="6.5"/>
+    <circle class="dot dot-3 f-accent" cx="604" cy="150" r="6.5"/>
+  </g>
+
+  <!-- ==================== studio light ==================== -->
+  <g id="pc-light" aria-hidden="true">
+    <ellipse class="glow" cx="176" cy="244" rx="132" ry="104" fill="url(#pcGlow)"/>
+    <path class="s-navy cap" d="M132 268V404" stroke-width="6"/>
+    <g transform="rotate(14 132 240)">
+      <rect class="f-navy" x="98" y="212" width="68" height="56" rx="16"/>
+      <rect class="f-soft" x="106" y="220" width="52" height="40" rx="10"/>
+      <rect class="f-accent" x="106" y="220" width="52" height="40" rx="10" opacity=".16"/>
+    </g>
+  </g>
+
+  <!-- ==================== boom arm ==================== -->
+  <g id="pc-boom" aria-hidden="true">
+    <path class="s-navy cap" d="M714 118L634 196L518 258" stroke-width="7"/>
+    <circle class="f-blue" cx="634" cy="196" r="6"/>
+  </g>
+
+  <rect id="pc-chair" class="f-blue" x="242" y="318" width="196" height="98" rx="30" opacity=".4" aria-hidden="true"/>
+
+  <!-- ==================== host ==================== -->
+  <g id="pc-host">
+    <g class="breathe">
+      <path id="pc-torso" class="f-navy2" d="M268 402V372a72 62 0 0 1 144 0v30z"/>
+      <rect class="f-skin2" x="326" y="268" width="28" height="54" rx="14"/>
+      <path class="f-ink" d="M322 314l18 30 18-30z"/>
+
+      <g class="head">
+        <rect class="f-skin" x="302" y="196" width="76" height="92" rx="36"/>
+        <path class="f-hair" d="M302 234a38 38 0 0 1 76 0q-38 12-76 0z"/>
+        <path class="s-ink cap" d="M318 243q7-4 13 0" stroke-width="2.6" opacity=".45"/>
+        <path class="s-ink cap" d="M349 243q7-4 13 0" stroke-width="2.6" opacity=".45"/>
+        <rect class="eye f-ink" x="321.5" y="250" width="7" height="11" rx="3.5"/>
+        <rect class="eye f-ink" x="351.5" y="250" width="7" height="11" rx="3.5"/>
+        <path class="s-skin2 cap" d="M341 262q5 7-3 9" stroke-width="2.4" opacity=".8"/>
+        <ellipse class="f-accent" cx="314" cy="268" rx="7" ry="4" opacity=".15"/>
+        <ellipse class="f-accent" cx="366" cy="268" rx="7" ry="4" opacity=".15"/>
+        <path class="s-ink cap" d="M331 275q9 8 18 0" stroke-width="3.2"/>
+        <g id="pc-headphones">
+          <path class="s-navy cap" d="M296 252a46 58 0 0 1 88 0" stroke-width="11"/>
+          <rect class="f-navy" x="286" y="238" width="26" height="42" rx="13"/>
+          <rect class="f-navy" x="368" y="238" width="26" height="42" rx="13"/>
+          <rect class="f-accent" x="292" y="245" width="14" height="28" rx="7" opacity=".85"/>
+          <rect class="f-accent" x="374" y="245" width="14" height="28" rx="7" opacity=".85"/>
+        </g>
+      </g>
+      <path class="cable s-navy cap" d="M381 280c10 26 8 50 0 70" stroke-width="4" opacity=".9"/>
+    </g>
+  </g>
+
+  <!-- ==================== desk ==================== -->
+  <g id="pc-desk" aria-hidden="true">
+    <ellipse class="f-navy" cx="360" cy="438" rx="248" ry="12" opacity=".05"/>
+    <rect class="f-soft" x="56" y="400" width="608" height="16" rx="8"/>
+    <rect class="f-navy" x="56" y="409" width="608" height="7" rx="3.5" opacity=".07"/>
+  </g>
+
+  <!-- ==================== desk gear ==================== -->
+  <g id="pc-gear" aria-hidden="true">
+    <g id="pc-laptop">
+      <rect class="f-navy" x="176" y="330" width="92" height="62" rx="9" transform="rotate(-4 222 361)"/>
+      <circle class="logo f-accent" cx="221" cy="358" r="7"/>
+      <rect class="f-navy2" x="158" y="390" width="126" height="12" rx="6"/>
+    </g>
+    <g id="pc-mixer">
+      <rect class="f-navy" x="536" y="376" width="112" height="26" rx="9"/>
+      <rect class="f-navy2" x="536" y="376" width="112" height="7" rx="3.5"/>
+      <circle class="f-blue" cx="552" cy="392" r="5"/>
+      <circle class="f-blue" cx="568" cy="392" r="5"/>
+      <circle class="f-accent" cx="584" cy="392" r="5" opacity=".9"/>
+      <rect class="meter f-accent2" x="600" y="382" width="5" height="14" rx="2.5"/>
+      <rect class="meter meter-2 f-accent2" x="608" y="382" width="5" height="14" rx="2.5"/>
+      <rect class="meter meter-3 f-accent2" x="616" y="382" width="5" height="14" rx="2.5"/>
+      <rect class="meter meter-4 f-accent2" x="624" y="382" width="5" height="14" rx="2.5"/>
+    </g>
+  </g>
+
+  <!-- ==================== arms and hands ==================== -->
+  <g id="pc-arms" class="breathe">
+    <path class="s-navy2 cap" d="M292 352c-14 20-14 34-4 42" stroke-width="26"/>
+    <path class="s-navy2 cap" d="M390 352c14 16 18 30 10 38" stroke-width="26"/>
+    <ellipse class="f-skin" cx="286" cy="392" rx="16" ry="10.5"/>
+    <g class="tap">
+      <ellipse class="f-skin" cx="403" cy="390" rx="16.5" ry="10.5"/>
+      <path class="s-skin2 cap" d="M400 395h11M402 386h9" stroke-width="2" opacity=".65"/>
+    </g>
+  </g>
+
+  <!-- ==================== microphone and sound rings ==================== -->
+  <g id="pc-mic-assembly" aria-hidden="true">
+    <g id="pc-rings" transform="translate(470,304)">
+      <path class="ring s-accent cap" d="M-6-22A30 30 0 0 0-6 22" stroke-width="3.5"/>
+      <path class="ring ring-2 s-accent cap" d="M-14-32A44 44 0 0 0-14 32" stroke-width="3.5"/>
+      <path class="ring ring-3 s-accent cap" d="M-22-42A58 58 0 0 0-22 42" stroke-width="3.5"/>
+    </g>
+    <g id="pc-mic" transform="translate(496,318) rotate(20)">
+      <rect class="f-navy2" x="-7" y="-64" width="14" height="18" rx="6"/>
+      <rect class="f-navy" x="-22" y="-52" width="44" height="82" rx="22"/>
+      <path class="f-navy2" d="M-22-8v-22a22 22 0 0 1 44 0v22z"/>
+      <path class="s-white cap" d="M-12-38h24M-12-28h24M-12-18h24" stroke-width="2" opacity=".22"/>
+      <rect class="f-blue" x="-22" y="-8" width="44" height="5" opacity=".45"/>
+      <circle class="led f-accent2" cx="0" cy="14" r="4"/>
+    </g>
+  </g>
+</svg>

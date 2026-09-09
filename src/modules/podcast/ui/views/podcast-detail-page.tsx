@@ -17,7 +17,7 @@ import { PodcastBackdrop } from "../components/podcast-backdrop";
 import { PodcastCard } from "../components/podcast-card";
 import {
   Eyebrow,
-  PodcastEmptyState,
+  PodcastNotice,
   SectionHeading,
   SERIF,
 } from "../components/podcast-chrome";
@@ -93,11 +93,12 @@ export function PodcastDetailPage({ slug }: PodcastDetailPageProps) {
         <div className="mx-auto max-w-7xl px-6 pt-10">
           <BackLink />
         </div>
-        <PodcastEmptyState
-          title={error ? "Episode unavailable" : "Episode not found"}
+        <PodcastNotice
+          title={error ? "We can\u2019t reach this episode right now" : "We can\u2019t find this episode"}
           message={
-            error ??
-            "This conversation may have moved, or is no longer published."
+            error
+              ? "This is on our side, not yours. Try again in a moment."
+              : "This conversation may have moved, or is no longer published."
           }
           action={{ label: "All episodes", href: "/podcast" }}
         />
