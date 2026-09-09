@@ -2,13 +2,13 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 
 import type { Festival, FestivalPageSettings, FestivalPhase } from "../../lib/types";
 import { formatFestivalDatesShort } from "../../lib/festival-utils";
+import { FestivalButton } from "./festival-button";
 import { OpeningCountdown } from "./opening-countdown";
 import { FilmGrain } from "./film-grain";
 
@@ -261,20 +261,22 @@ export function ProjectionHero({
 
         <div className="mt-11 flex flex-col gap-3 sm:flex-row sm:items-center">
           {hero.primaryCta.label && (
-            <Link
+            <FestivalButton
               href={hero.primaryCta.href || "#programme"}
-              className="hero-line inline-flex items-center justify-center bg-fest-lamp px-9 py-4 font-fest-display text-sm font-bold uppercase tracking-[0.16em] text-fest-ink transition-colors duration-300 hover:bg-fest-beam focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-fest-lamp"
+              className="hero-line"
+              withArrow
             >
               {hero.primaryCta.label}
-            </Link>
+            </FestivalButton>
           )}
           {hero.secondaryCta.label && (
-            <Link
+            <FestivalButton
+              variant="secondary"
               href={hero.secondaryCta.href || "/"}
-              className="hero-line inline-flex items-center justify-center border border-fest-beam/25 px-9 py-4 font-fest-display text-sm font-bold uppercase tracking-[0.16em] text-fest-beam transition-colors duration-300 hover:border-fest-lamp hover:text-fest-lamp focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-fest-lamp"
+              className="hero-line"
             >
               {hero.secondaryCta.label}
-            </Link>
+            </FestivalButton>
           )}
         </div>
       </div>

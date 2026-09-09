@@ -1,15 +1,16 @@
 import Image from "next/image";
-import Link from "next/link";
 
 import type { Festival, FestivalPageSettings } from "../../lib/types";
 import {
   countFestivalDays,
+  countFestivalFilms,
   festivalCountries,
   formatFestivalDates,
-  groupScreeningsByDay,
+  orderScreenings,
 } from "../../lib/festival-utils";
 import { festivalFontClass } from "../../lib/festival-fonts";
 import { FestivalBreadcrumb } from "../components/festival-breadcrumb";
+import { FestivalButton } from "../components/festival-button";
 import { ProgrammeSection } from "../components/programme-section";
 
 /**
@@ -31,15 +32,22 @@ export function FestivalArchivePage({
   festival: Festival;
   settings: FestivalPageSettings;
 }) {
-  const days = groupScreeningsByDay(festival);
+  const screenings = orderScreenings(festival);
   const countries = festivalCountries(festival);
   const nights = countFestivalDays(festival);
+  // Counted across every session rather than off `screenings.length`, which
+  // stopped being a film count the moment a session could hold several.
+  const films = countFestivalFilms(festival);
 
   const facts = [
     { label: "Dates", value: formatFestivalDates(festival) },
     {
-      label: festival.screenings.length === 1 ? "Film" : "Films",
-      value: String(festival.screenings.length),
+      label: films === 1 ? "Film" : "Films",
+      value: String(films),
+    },
+    {
+      label: screenings.length === 1 ? "Screening" : "Screenings",
+      value: String(screenings.length),
     },
     { label: nights === 1 ? "Night" : "Nights", value: String(nights) },
     { label: "City", value: festival.city || settings.city },
@@ -127,11 +135,11 @@ export function FestivalArchivePage({
       </section>
 
       <div className="mt-16 md:mt-24">
-        {days.length > 0 ? (
+        {screenings.length > 0 ? (
           <ProgrammeSection
-            days={days}
+            screenings={screenings}
             heading="The programme, as it ran"
-            intro={`Every film that screened at ${festival.name}, night by night.`}
+            intro={`Every session that screened at ${festival.name}, in programme order.`}
             note="This festival has closed. Times and venues are how it ran."
           />
         ) : (
@@ -150,12 +158,9 @@ export function FestivalArchivePage({
       </div>
 
       <section className="mx-auto max-w-[1400px] px-5 py-16 md:px-10 md:py-24">
-        <Link
-          href="/festivals"
-          className="inline-flex items-center border border-fest-beam/25 px-9 py-4 font-fest-display text-sm font-bold uppercase tracking-[0.16em] text-fest-beam transition-colors duration-300 hover:border-fest-lamp hover:text-fest-lamp focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-fest-lamp"
-        >
+        <FestivalButton variant="secondary" href="/festivals" withArrow>
           This year&rsquo;s festival
-        </Link>
+        </FestivalButton>
       </section>
     </div>
   );

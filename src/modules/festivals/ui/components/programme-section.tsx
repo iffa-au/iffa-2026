@@ -5,39 +5,40 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 
-import type { ScreeningDay } from "../../lib/types";
-import { formatDayHeading } from "../../lib/festival-utils";
-import { ScreeningCard } from "./screening-card";
+import type { Screening } from "../../lib/types";
+import { ScreeningBlock } from "./screening-block";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 /**
- * The programme, one section per night.
+ * The programme, one section per screening.
  *
  * This is where the page inverts: everything around it is a dark auditorium,
  * and the schedule is paper. The flip does the work an "Our Schedule" label
  * would otherwise do — you know you have arrived at the booklet because it
  * looks like the booklet.
  *
- * A horizontal reel of the same films used to sit above this. It was cut: it
- * showed exactly the programme shown here, so a visitor scrolled past every
- * film twice. Nights are the organising unit, they come straight from the
- * screening dates, and a festival can add or drop one with no change here.
+ * Sections used to be nights. They are now screenings, because a screening
+ * gained a date range and stopped belonging to a single one: a strand running
+ * Thursday to Saturday had to be either duplicated under three nights or filed
+ * under one of them arbitrarily. Sessions are also what a reader is actually
+ * choosing between — you book a session, not an evening.
  *
- * Each night's heading slides in as the section arrives — one move, and it
- * runs on the heading only. The films themselves are a list, and a list that
- * animates in piece by piece is slower to read than one that is simply there.
+ * Each session's heading slides in as it arrives — one move, and it runs on
+ * the heading only. The films themselves are a list, and a list that animates
+ * in piece by piece is slower to read than one that is simply there.
  */
 export function ProgrammeSection({
-  days,
+  screenings,
   heading,
   intro,
   note,
 }: {
-  days: ScreeningDay[];
+  /** In programme order — `orderScreenings` has already sorted these. */
+  screenings: Screening[];
   heading: string;
   intro: string;
-  /** Booking status, said once for the whole programme rather than per film. */
+  /** Booking status, said once for the whole programme rather than per session. */
   note: string;
 }) {
   const root = useRef<HTMLElement>(null);
@@ -47,7 +48,7 @@ export function ProgrammeSection({
       const media = gsap.matchMedia();
 
       media.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.utils.toArray<HTMLElement>(".night-heading").forEach((node) => {
+        gsap.utils.toArray<HTMLElement>(".screening-heading").forEach((node) => {
           gsap.from(node, {
             opacity: 0,
             x: -28,
@@ -57,7 +58,7 @@ export function ProgrammeSection({
           });
         });
 
-        gsap.utils.toArray<HTMLElement>(".night-rule").forEach((node) => {
+        gsap.utils.toArray<HTMLElement>(".screening-rule").forEach((node) => {
           gsap.from(node, {
             scaleX: 0,
             transformOrigin: "left center",
@@ -105,30 +106,12 @@ export function ProgrammeSection({
         </div>
 
         <div className="mt-16 flex flex-col gap-16 md:mt-24 md:gap-24">
-          {days.map((day) => (
-            <section key={day.date} id={`night-${day.index}`} className="scroll-mt-[140px]">
-              <header className="night-heading flex flex-wrap items-baseline gap-x-6 gap-y-2 pb-4">
-                {/* Nights genuinely are a sequence, so they are numbered. */}
-                <span className="font-fest-display text-[clamp(2.25rem,5vw,3.5rem)] font-extrabold leading-[0.8] tracking-[-0.01em]">
-                  {day.index}
-                </span>
-                <h3 className="font-fest-text text-[clamp(1.15rem,2.4vw,1.6rem)] italic leading-tight">
-                  {formatDayHeading(day.date)}
-                </h3>
-                <span className="ml-auto font-fest-text text-base italic text-fest-ink/55">
-                  {day.screenings.length}{" "}
-                  {day.screenings.length === 1 ? "film" : "films"}
-                </span>
-              </header>
-
-              <div className="night-rule h-0.5 w-full origin-left bg-fest-ink" />
-
-              <div className="grid gap-x-12 lg:grid-cols-2">
-                {day.screenings.map((screening) => (
-                  <ScreeningCard key={screening.id} screening={screening} />
-                ))}
-              </div>
-            </section>
+          {screenings.map((screening, index) => (
+            <ScreeningBlock
+              key={screening.id}
+              screening={screening}
+              index={String(index + 1).padStart(2, "0")}
+            />
           ))}
         </div>
       </div>

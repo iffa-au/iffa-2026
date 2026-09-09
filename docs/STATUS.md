@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-09-04
+Updated: 2026-09-09
 
 Current state of work across `iffa-2026` and `../cms-hub`. Keep this short —
 delete finished items rather than accumulating a changelog. Git already has
@@ -16,16 +16,8 @@ the history.
   venues, CTA, archive — and there is no separate festival detail page.
   `/festivals/<slug>` survives for links shared earlier: the current
   festival's slug 307s to `/festivals`, a past one renders an archive recap,
-  anything else 404s. Each film has its own page at
-  `/festivals/screening/<id>`, keyed on the title slug rather than a Mongo
-  subdocument id, which is rewritten on every save. The page has its own
-  palette and two of its own faces (Big Shoulders, Newsreader), loaded on the
-  route rather than site-wide.
-
-  The programme is one section per night, with the previous card layout. A
-  horizontal poster reel above it was cut — it carried exactly the same films,
-  so every visitor scrolled the schedule twice. When nothing is published the
-  section becomes an animated title card instead of an empty panel.
+  anything else 404s. The page has its own palette and two of its own faces
+  (Big Shoulders, Newsreader), loaded on the route rather than site-wide.
 
   New CMS field: `about.imageUrl` / `about.imageKey`, a wide banner between the
   About text and the stats. `edition` is gone from the festival everywhere —
@@ -41,6 +33,47 @@ the history.
 
   **Before the backend deploys, run the backfill** — see the note below. It has
   not been run yet.
+
+- **Screenings became sessions** (branch `page/festivals`, cms-hub
+  `chore/festival`). A screening used to BE a film: one row carrying both the
+  film's metadata and the time it played. A session that programmed more than
+  one title had to be entered as N screenings sharing a time and a venue, with
+  nothing tying them together and nowhere to put the block's own name.
+
+  The hierarchy is now `Festival -> Screening (session) -> Film`. A screening
+  has a title, a description, a **start and end date**, a time, a venue and a
+  seat status; the films it programmes hang underneath and carry only what is
+  true of the film itself. All of it is editable in cms-hub — the festival
+  editor nests a films list inside each screening, with add/reorder/remove at
+  both levels.
+
+  Because a screening can now span days, the programme no longer groups by
+  night. `groupScreeningsByDay` is gone; `orderScreenings` sorts sessions by
+  opening date then time, and the programme renders one section per session.
+
+  Routes: `/festivals/screening/<id>` is now the **session** page (billing on
+  the dark ground, lineup on paper, reusing the programme's film card), and
+  films moved to a new `/festivals/film/<id>`. Film URLs are flat rather than
+  nested under a session, because a film can be programmed twice and a URL
+  naming one session makes the other unreachable.
+
+  **Deploy order is free.** `festival-api.ts` reads a pre-migration row (one
+  with `date` and no `films`) as a session of one, so the public site renders
+  correctly against an un-migrated database — verified against production,
+  which is still serving the old shape. The migration is what makes the CMS
+  editable again, not what keeps the site up. The CMS editor reads both shapes
+  too, and writes the new one.
+
+  **Before the backend deploys, run the screening migration** — see below.
+
+- **Festival buttons** (branch `page/festivals`). Every CTA in the section
+  carried its own copy of the same class string — six of them, already drifted
+  on the focus ring. They now go through `ui/components/festival-button.tsx`:
+  four variants, two sizes, an optional arrow, and a beam that crosses the face
+  on hover and focus rather than a flat colour swap. Two of the variants
+  (`ink`, `inkSolid`) are for the cream programme sections, which had no button
+  style at all — amber on cream is the one pairing in this palette that fails
+  contrast.
 
 ## Run before the next backend deploy
 
@@ -59,6 +92,29 @@ model before the backfill fails the index build on boot and every write after
 it errors. The dry run is safe and reports any year already holding two
 festivals — it refuses to write in that case, because which one to move is an
 editorial call.
+
+`cms-hub/backend/scripts/migrate-screenings-to-sessions.ts` converts embedded
+screenings from the old "a screening is a film" shape to sessions holding
+films:
+
+```bash
+cd ../cms-hub/backend
+npx tsx scripts/migrate-screenings-to-sessions.ts            # dry run, writes nothing
+npx tsx scripts/migrate-screenings-to-sessions.ts --confirm  # writes
+```
+
+Also writes to the production database. Each old row becomes a session of one
+film carrying the same title; same-date rows are **not** merged, because they
+had their own times and venues and merging them would lose both — combining
+them is a programming call for staff, in the CMS, afterwards. Idempotent: a
+screening that already has a `films` array is skipped, so a re-run after a
+partial failure only touches what is left. `posterKey` is carried across
+deliberately — it is what the cascade delete walks, and dropping it would
+orphan every uploaded poster in S3 on the next save.
+
+Until this runs, the public site is fine (the API layer reads the old shape)
+but the CMS cannot save a festival without the editor rewriting its programme
+into the new shape — which is what opening and saving one does.
 
 - **prod-aws release** — main merged into `prod-aws`, `package-lock.json`
   removed, `pnpm-lock.yaml` synced. Verified `pnpm install --frozen-lockfile`

@@ -3,12 +3,18 @@
  *
  * IFFA runs ONE festival a year. The hierarchy is:
  *
- *   Festival (one per year) -> Screening
+ *   Festival (one per year) -> Screening (a session) -> Film
  *
- * This replaced a Month -> Festival -> Screening model from when the plan was
- * two festivals a month. Months are gone entirely: with a single annual
- * festival there is nothing for a month to group, and the year is already
- * carried by the festival itself.
+ * A screening used to BE a film — one row carrying both the film's metadata
+ * and the time it played. That collapsed the moment a session programmed more
+ * than one title: a shorts block of six films had to be entered as six
+ * screenings sharing a time and a venue, with nothing tying them together and
+ * nowhere to put the block's own name or blurb.
+ *
+ * So a screening is now the session — what a ticket admits you to — and the
+ * films it programmes hang underneath it. Time, venue and seat status belong
+ * to the session, because that is what they describe; a film carries only
+ * what is true of the film wherever it plays.
  *
  * The public site shows exactly one festival — the current or next one — and
  * files the rest as an archive. `festival-api.ts` decides which is which.
@@ -16,7 +22,18 @@
 
 export type SeatStatus = "available" | "limited" | "sold-out";
 
-export type Screening = {
+/**
+ * One film in a screening.
+ *
+ * Deliberately carries nothing about when or where it plays: the same film can
+ * appear in two screenings, and duplicating a time onto it is how the two
+ * copies start disagreeing.
+ */
+export type Film = {
+  /**
+   * URL segment: /festivals/film/<id>. Minted from the title in
+   * `festival-api.ts`, not taken from Mongo — see the note there.
+   */
   id: string;
   title: string;
   /**
@@ -33,12 +50,32 @@ export type Screening = {
   synopsis: string;
   /** Raw YouTube URL. `undefined` means no trailer is available. */
   trailerUrl?: string;
-  /** ISO date of this screening, e.g. "2026-10-14". */
-  date: string;
-  /** Display-ready local time, e.g. "7:30 PM". */
+};
+
+/**
+ * One session on the programme: a named block of films at a time and place.
+ *
+ * `startDate` and `endDate` are usually the same day — most sessions run once.
+ * A strand that repeats across several days (a shorts programme on rotation,
+ * an exhibition) sets a real range, which is why the programme cannot group by
+ * night any more: a screening does not necessarily belong to one.
+ */
+export type Screening = {
+  /** URL segment: /festivals/screening/<id>. Minted from the title. */
+  id: string;
+  title: string;
+  /** A short blurb for the session as a whole. May be empty. */
+  description: string;
+  /** ISO date the session opens, e.g. "2026-10-14". */
+  startDate: string;
+  /** ISO date it closes. Equal to `startDate` for a single sitting. */
+  endDate: string;
+  /** Display-ready local start time, e.g. "7:30 PM". May be empty. */
   time: string;
   venue: string;
   seatStatus: SeatStatus;
+  /** In programme order, as entered in the CMS. */
+  films: Film[];
 };
 
 export type Festival = {
@@ -61,16 +98,6 @@ export type Festival = {
   /** ISO dates. Derived labels come from `festival-utils`, never hardcoded. */
   startDate: string;
   endDate: string;
-  screenings: Screening[];
-};
-
-/** One day of a festival's schedule, as `groupScreeningsByDay` returns it. */
-export type ScreeningDay = {
-  /** ISO date, e.g. "2026-10-14". */
-  date: string;
-  /** The festival's own day numbering — "01", "02". A genuine sequence. */
-  index: string;
-  /** Ordered by start time. */
   screenings: Screening[];
 };
 

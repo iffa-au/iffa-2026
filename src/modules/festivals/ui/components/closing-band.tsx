@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef } from "react";
-import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 
 import type { Festival, FestivalPageSettings } from "../../lib/types";
 import { formatFestivalDates } from "../../lib/festival-utils";
+import { FestivalButton } from "./festival-button";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -121,20 +121,17 @@ export function ClosingBand({
 
           <div className="mt-11 flex flex-col gap-3 sm:flex-row sm:items-center">
             {cta.primaryCta.label && (
-              <Link
-                href={cta.primaryCta.href || "/contact"}
-                className="inline-flex items-center justify-center bg-fest-lamp px-9 py-4 font-fest-display text-sm font-bold uppercase tracking-[0.16em] text-fest-ink transition-colors duration-300 hover:bg-fest-beam focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-fest-lamp"
-              >
+              <FestivalButton href={cta.primaryCta.href || "/contact"} withArrow>
                 {cta.primaryCta.label}
-              </Link>
+              </FestivalButton>
             )}
             {cta.secondaryCta.label && (
-              <Link
+              <FestivalButton
+                variant="secondary"
                 href={cta.secondaryCta.href || "/contact"}
-                className="inline-flex items-center justify-center border border-fest-beam/25 px-9 py-4 font-fest-display text-sm font-bold uppercase tracking-[0.16em] text-fest-beam transition-colors duration-300 hover:border-fest-lamp hover:text-fest-lamp focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-fest-lamp"
               >
                 {cta.secondaryCta.label}
-              </Link>
+              </FestivalButton>
             )}
           </div>
         </div>
