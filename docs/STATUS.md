@@ -21,6 +21,14 @@ the history.
 - **S3 CORS** — remove the trailing slash from the
   `https://main.dyxfgriwrgezw.amplifyapp.com/` origin entry. Partner logo
   uploads from the live CMS fail until this is done.
+- **S3 CORS — `POST` in `AllowedMethods`** (new, required by the 5MB upload
+  limit). Submission image uploads moved from a presigned PUT to a presigned
+  POST, because only POST can carry the `content-length-range` policy that
+  makes the size cap enforceable server-side. The bucket CORS rule currently
+  allows PUT; **until POST is added, every image upload on the public
+  submission form fails at the browser preflight.** Deploy the backend and
+  the site together — the new frontend cannot upload via an old backend
+  (it needs the `fields` in the presign response), and vice versa.
 - **IAM `iffa-cms-hub-instance-role`** — needs `s3:PutObject` and
   `s3:DeleteObject` on `arn:aws:s3:::iffa-media-vault/*` for partner logo
   replacement and future image cleanup. Bucket versioning recommended.
