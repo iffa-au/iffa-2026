@@ -1,29 +1,39 @@
 import type { Metadata } from "next";
 
 import { fetchFestivalsPageData } from "@/modules/festivals/lib/festival-api";
-import { FestivalsPage } from "@/modules/festivals/ui/views/festivals-page";
+import { festivalPhase } from "@/modules/festivals/lib/festival-utils";
+import { FestivalPage } from "@/modules/festivals/ui/views/festival-page";
 
 /**
- * Content comes from cms-hub, so the page is regenerated rather than rebuilt:
- * a festival published in the CMS appears here within the revalidate window,
- * with no deploy. Metadata and prerendering are preserved, which a client-side
- * fetch would have cost.
+ * Content comes from cms-hub, so the page renders per request: a festival
+ * published in the CMS appears here immediately, with no deploy. Metadata and
+ * server rendering are preserved, which a client-side fetch would have cost.
+ *
+ * ISR was tried first and cannot work on this deployment — see the note in
+ * festival-api.ts.
  */
-/**
- * Must be a literal: Next statically analyses segment config exports at build
- * time and rejects an imported constant ("Invalid segment configuration
- * export"). Keep in step with FESTIVAL_REVALIDATE_SECONDS in festival-api.ts,
- * which the fetch itself uses.
- */
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Festivals | IFFA",
+  title: "Festival | IFFA",
   description:
-    "Upcoming IFFA festivals in Melbourne — two festivals a month, with the full screening schedule, films, times and venues for each.",
+    "The International Film Festival of Australia — one festival a year in Melbourne. The full programme, night by night.",
 };
 
 export default async function Page() {
-  const { months, settings } = await fetchFestivalsPageData();
-  return <FestivalsPage months={months} settings={settings} />;
+  const { festival, archive, settings, today } = await fetchFestivalsPageData();
+
+  // Decided here, from Melbourne's date, and passed down. Every component that
+  // needs to know whether the festival is coming, running or over reads the
+  // same answer, so the countdown and the programme's wording cannot disagree.
+  const phase = festival ? festivalPhase(festival, today) : "upcoming";
+
+  return (
+    <FestivalPage
+      festival={festival}
+      archive={archive}
+      settings={settings}
+      phase={phase}
+    />
+  );
 }

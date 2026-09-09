@@ -1,15 +1,18 @@
 import type {
   Festival,
-  FestivalMonth,
+  FestivalPhase,
   Screening,
   ScreeningDay,
   SeatStatus,
 } from "./types";
 
 /**
- * Every label, count and range rendered in the Festivals section is derived
+ * Every label, count and range rendered in the Festival section is derived
  * from the schedule data through these helpers rather than hardcoded, so a
  * content edit can never leave a headline number or a date range stale.
+ *
+ * The month helpers that used to live here are gone: IFFA runs one festival a
+ * year, so there is no month grouping left to label.
  */
 
 const MONTHS_LONG = [
@@ -55,9 +58,9 @@ const WEEKDAYS_LONG = [
 const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 /**
- * Parses "2026-08-07" without going through `new Date(string)`.
+ * Parses "2026-10-14" without going through `new Date(string)`.
  *
- * `new Date("2026-08-07")` is parsed as UTC midnight and then rendered in the
+ * `new Date("2026-10-14")` is parsed as UTC midnight and then rendered in the
  * viewer's timezone, which shifts the date backwards for anyone west of UTC and
  * produces a server/client hydration mismatch. Splitting the string, and using
  * only `Date.UTC` + `getUTCDay` for the weekday, keeps formatting identical
@@ -73,47 +76,44 @@ const weekdayIndex = (iso: string): number => {
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 };
 
-/** "2026-08-07" -> "Friday, 7 August" */
+/** "2026-10-14" -> "Wednesday, 14 October" */
 export const formatDayHeading = (iso: string): string => {
   const { month, day } = parseIsoDate(iso);
   return `${WEEKDAYS_LONG[weekdayIndex(iso)]}, ${day} ${MONTHS_LONG[month - 1]}`;
 };
 
-/** "2026-08-07" -> "Fri 7 Aug" */
+/** "2026-10-14" -> "Wed 14 Oct" */
 export const formatShortDate = (iso: string): string => {
   const { month, day } = parseIsoDate(iso);
   return `${WEEKDAYS_SHORT[weekdayIndex(iso)]} ${day} ${MONTHS_SHORT[month - 1]}`;
 };
 
-/** "2026-08-07" -> "7 August 2026" */
+/** "2026-10-14" -> "14 October 2026" */
 export const formatFullDate = (iso: string): string => {
   const { year, month, day } = parseIsoDate(iso);
   return `${day} ${MONTHS_LONG[month - 1]} ${year}`;
 };
 
+/** "2026-10-14" -> { day: "14", month: "Oct", weekday: "Wed" } */
+export const splitDateParts = (iso: string) => {
+  const { month, day } = parseIsoDate(iso);
+  return {
+    day: String(day).padStart(2, "0"),
+    month: MONTHS_SHORT[month - 1],
+    weekday: WEEKDAYS_SHORT[weekdayIndex(iso)],
+  };
+};
+
 /** 106 -> "106 min" */
 export const formatRuntime = (minutes: number): string => `${minutes} min`;
 
-/** 1-12 -> "August" */
+/** 1-12 -> "October" */
 export const monthName = (month: number): string => MONTHS_LONG[month - 1];
-
-/** A month's own label, e.g. "August 2026". */
-export const monthLabel = (month: FestivalMonth): string =>
-  `${monthName(month.month)} ${month.year}`;
-
-/**
- * The DOM id of a month's section, e.g. "month-2026-08".
- *
- * Prefixed on purpose: an id may not start with a digit in a CSS selector, so
- * a bare "2026-08" would throw in `querySelector` even though `getElementById`
- * accepts it. Both the section and the month nav go through this.
- */
-export const monthSectionId = (month: FestivalMonth): string => `month-${month.id}`;
 
 /**
  * A festival's dates, collapsed as tightly as they allow:
- *   same month + year -> "7-9 August 2026"
- *   same year         -> "28 August - 2 September 2026"
+ *   same month + year -> "14-18 October 2026"
+ *   same year         -> "28 October - 2 November 2026"
  *   otherwise         -> "28 December 2026 - 2 January 2027"
  */
 export const formatFestivalDates = (festival: Festival): string => {
@@ -133,38 +133,50 @@ export const formatFestivalDates = (festival: Festival): string => {
   return `${formatFullDate(festival.startDate)} - ${formatFullDate(festival.endDate)}`;
 };
 
-/**
- * Every festival across the given months, in programme order.
- *
- * These helpers take the schedule as an argument rather than importing it: the
- * data now arrives from cms-hub per request, so there is no module-level
- * schedule to reach for.
- */
-export const allFestivals = (months: FestivalMonth[]): Festival[] =>
-  months.flatMap((month) => month.festivals);
+/** The same range without the year, for use beside a year set as display type. */
+export const formatFestivalDatesShort = (festival: Festival): string => {
+  const start = parseIsoDate(festival.startDate);
+  const end = parseIsoDate(festival.endDate);
 
-/** Only the months that actually have a published programme. */
-export const announcedMonths = (months: FestivalMonth[]): FestivalMonth[] =>
-  months.filter((month) => month.status === "announced");
-
-export const countScreeningsInMonth = (month: FestivalMonth): number =>
-  month.festivals.reduce((total, festival) => total + festival.screenings.length, 0);
+  if (festival.startDate === festival.endDate) {
+    return `${start.day} ${MONTHS_LONG[start.month - 1]}`;
+  }
+  if (start.month === end.month) {
+    return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]}`;
+  }
+  return `${start.day} ${MONTHS_SHORT[start.month - 1]} - ${end.day} ${MONTHS_SHORT[end.month - 1]}`;
+};
 
 /** Number of distinct dates a festival screens on. */
 export const countFestivalDays = (festival: Festival): number =>
   new Set(festival.screenings.map((screening) => screening.date)).size;
 
-/** Countries represented in a festival, first-seen order, no duplicates. */
+/** Countries represented in a festival, first-seen order, no duplicates, blanks dropped. */
 export const festivalCountries = (festival: Festival): string[] => [
-  ...new Set(festival.screenings.map((screening) => screening.country)),
+  ...new Set(festival.screenings.map((screening) => screening.country).filter(Boolean)),
 ];
 
-/** Every country across the whole schedule. */
-export const allCountries = (months: FestivalMonth[]): string[] => [
-  ...new Set(
-    allFestivals(months).flatMap((festival) => festivalCountries(festival))
-  ),
-];
+/**
+ * Where a festival sits relative to a given day, as an ISO date string.
+ *
+ * Takes `today` rather than reading the clock so the caller decides — the page
+ * computes it once on the server and passes the answer down, which is what
+ * stops the server and the client from disagreeing about what day it is.
+ */
+export const festivalPhase = (festival: Festival, todayIso: string): FestivalPhase => {
+  if (todayIso < festival.startDate) return "upcoming";
+  if (todayIso > festival.endDate) return "past";
+  return "running";
+};
+
+/** Today in Melbourne, as an ISO date — the festival's own timezone, not the server's. */
+export const melbourneToday = (): string =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Australia/Melbourne",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 
 /** "7:30 PM" -> 1170, so a day's screenings can be ordered by start time. */
 const toMinutes = (time: string): number => {
@@ -179,7 +191,7 @@ const toMinutes = (time: string): number => {
 
 /**
  * The schedule's display shape: one group per date, each ordered by start time.
- * A festival can add or drop a day here with no UI change.
+ * A festival can add or drop a night here with no UI change.
  */
 export const groupScreeningsByDay = (festival: Festival): ScreeningDay[] => {
   const byDate = new Map<string, Screening[]>();
@@ -194,38 +206,22 @@ export const groupScreeningsByDay = (festival: Festival): ScreeningDay[] => {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, screenings], index) => ({
       date,
-      /** "01", "02" — the festival's own day numbering, not a calendar date. */
+      /** "01", "02" — the festival's own night numbering, not a calendar date. */
       index: String(index + 1).padStart(2, "0"),
       screenings: [...screenings].sort((a, b) => toMinutes(a.time) - toMinutes(b.time)),
     }));
 };
 
-export const findFestival = (
-  months: FestivalMonth[],
-  slug: string
-): Festival | undefined =>
-  allFestivals(months).find((festival) => festival.slug === slug);
-
-/** The month a festival belongs to — used for the detail page's eyebrow. */
-export const monthOfFestival = (
-  months: FestivalMonth[],
-  slug: string
-): FestivalMonth | undefined =>
-  months.find((month) => month.festivals.some((festival) => festival.slug === slug));
-
-/** Previous / next festival in programme order, for the detail page footer. */
-export const festivalNeighbours = (
-  months: FestivalMonth[],
-  slug: string
-): { previous: Festival | null; next: Festival | null } => {
-  const festivals = allFestivals(months);
-  const index = festivals.findIndex((festival) => festival.slug === slug);
-
-  return {
-    previous: index > 0 ? festivals[index - 1] : null,
-    next: index >= 0 && index < festivals.length - 1 ? festivals[index + 1] : null,
-  };
-};
+/**
+ * Where a screening's own page lives.
+ *
+ * `/festivals/screening/<id>` reuses the segment the old standalone schedule
+ * had, which is now a redirect stub. The id is the title slug minted in
+ * `festival-api.ts` rather than a Mongo subdocument id — saving a festival
+ * rewrites the embedded array and issues fresh ids, which would break every
+ * shared link.
+ */
+export const screeningHref = (id: string): string => `/festivals/screening/${id}`;
 
 /**
  * Seat status is never communicated by colour alone — every consumer pairs the
@@ -235,10 +231,4 @@ export const SEAT_STATUS_LABEL: Record<SeatStatus, string> = {
   available: "Seats available",
   limited: "Seats limited",
   "sold-out": "Sold out",
-};
-
-export const SEAT_STATUS_CLASSES: Record<SeatStatus, string> = {
-  available: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-  limited: "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  "sold-out": "border-white/15 bg-white/5 text-white/45",
 };
