@@ -9,7 +9,12 @@ const API_BASE = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL ||
   "https://guh4nzpet5.ap-southeast-2.awsapprunner.com/api/v1";
 const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL ?? "";
 const WEBP_CONTENT_TYPE = "image/webp";
-const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // keep in sync with backend MAX_UPLOAD_BYTES
+// 5MB. A poster or banner exported as WEBP at normal quality lands around
+// 1-3MB and a crew headshot well under 1MB, so this is generous for real
+// artwork while still catching an accidental lossless or 6000px export.
+// Keep in sync with backend MAX_UPLOAD_BYTES.
+const MAX_UPLOAD_MB = 5;
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
 
 const buildCloudFrontUrl = (key: string) => {
   const normalizedBase = CLOUDFRONT_URL.endsWith("/")
@@ -87,19 +92,49 @@ export async function uploadWebpImage(
   const presignRes = await fetchWithRetry(`${API_BASE}/uploads/presign`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contentType: WEBP_CONTENT_TYPE, ...slot }),
+    body: JSON.stringify({
+      contentType: WEBP_CONTENT_TYPE,
+      // Lets the server refuse an oversized file before issuing a URL. It is
+      // not what enforces the limit — the policy's content-length-range is,
+      // and S3 applies that to the real body regardless of what's sent here.
+      contentLength: file.size,
+      ...slot,
+    }),
   });
   const presignJson = await presignRes.json().catch(() => ({}));
   if (!presignRes.ok || !presignJson?.uploadUrl || !presignJson?.key) {
     throw new Error(presignJson?.message || "Could not start upload");
   }
 
-  const putRes = await fetchWithRetry(presignJson.uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": WEBP_CONTENT_TYPE },
-    body: file,
+  // Presigned POST, not PUT: the signed policy carries the size limit, so
+  // the fields have to travel with the file as multipart form data. Order
+  // matters — S3 reads the policy fields and ignores anything after `file`.
+  const formData = new FormData();
+  for (const [name, value] of Object.entries(presignJson.fields ?? {})) {
+    formData.append(name, String(value));
+  }
+  formData.append("file", file);
+
+  // Content-Type is deliberately not set: the browser must add its own
+  // multipart boundary to the header.
+  const uploadRes = await fetchWithRetry(presignJson.uploadUrl, {
+    method: "POST",
+    body: formData,
   });
-  if (!putRes.ok) throw new Error("Upload to storage failed");
+  if (!uploadRes.ok) {
+    // S3 answers an over-limit body with 400 EntityTooLarge once the policy
+    // is violated, which is worth naming rather than reporting as a generic
+    // failure — it's the one case a filmmaker can actually act on.
+    if (uploadRes.status === 400) {
+      const body = await uploadRes.text().catch(() => "");
+      if (body.includes("EntityTooLarge")) {
+        throw new Error(
+          `"${file.name}" is larger than the ${MAX_UPLOAD_MB}MB limit. Re-export it and try again.`
+        );
+      }
+    }
+    throw new Error("Upload to storage failed");
+  }
 
   return buildCloudFrontUrl(presignJson.key);
 }
@@ -154,7 +189,12 @@ export function WebpImageUpload({ value, onChange, className }: WebpImageUploadP
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      setError("Image is too large (max 15MB).");
+      // Says what to do, not just what went wrong: at this limit the usual
+      // cause is a lossless or oversized export, which re-saving fixes.
+      setError(
+        `Image is ${(file.size / 1024 / 1024).toFixed(1)}MB — the limit is ${MAX_UPLOAD_MB}MB. ` +
+          "Re-export it as WEBP at around 80–90% quality and try again."
+      );
       return;
     }
 

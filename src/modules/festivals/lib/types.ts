@@ -1,24 +1,39 @@
 /**
  * Festivals section data model.
  *
- * The hierarchy the Festivals page is built around is:
+ * IFFA runs ONE festival a year. The hierarchy is:
  *
- *   Month -> Festival -> Screening
+ *   Festival (one per year) -> Screening (a session) -> Film
  *
- * IFFA runs two festivals a month; each festival programmes a handful of
- * screenings across a weekend. A `Screening` is deliberately one film at one
- * date/time/venue — that is what a screening actually is, and it keeps the
- * schedule groupable by day without a second level of showtimes.
+ * A screening used to BE a film — one row carrying both the film's metadata
+ * and the time it played. That collapsed the moment a session programmed more
+ * than one title: a shorts block of six films had to be entered as six
+ * screenings sharing a time and a venue, with nothing tying them together and
+ * nowhere to put the block's own name or blurb.
  *
- * These types are API-shaped: `cms-hub` has no festival / screening model yet,
- * so the section is driven by static typed data in `src/modules/festivals/data/`.
- * When a CMS endpoint eventually exists it can return these same shapes and the
- * UI will not need to change.
+ * So a screening is now the session — what a ticket admits you to — and the
+ * films it programmes hang underneath it. Time, venue and seat status belong
+ * to the session, because that is what they describe; a film carries only
+ * what is true of the film wherever it plays.
+ *
+ * The public site shows exactly one festival — the current or next one — and
+ * files the rest as an archive. `festival-api.ts` decides which is which.
  */
 
 export type SeatStatus = "available" | "limited" | "sold-out";
 
-export type Screening = {
+/**
+ * One film in a screening.
+ *
+ * Deliberately carries nothing about when or where it plays: the same film can
+ * appear in two screenings, and duplicating a time onto it is how the two
+ * copies start disagreeing.
+ */
+export type Film = {
+  /**
+   * URL segment: /festivals/film/<id>. Minted from the title in
+   * `festival-api.ts`, not taken from Mongo — see the note there.
+   */
   id: string;
   title: string;
   /**
@@ -35,23 +50,47 @@ export type Screening = {
   synopsis: string;
   /** Raw YouTube URL. `undefined` means no trailer is available. */
   trailerUrl?: string;
-  /** ISO date of this screening, e.g. "2026-08-07". */
-  date: string;
-  /** Display-ready local time, e.g. "7:30 PM". */
+};
+
+/**
+ * One session on the programme: a named block of films at a time and place.
+ *
+ * `startDate` and `endDate` are usually the same day — most sessions run once.
+ * A strand that repeats across several days (a shorts programme on rotation,
+ * an exhibition) sets a real range, which is why the programme cannot group by
+ * night any more: a screening does not necessarily belong to one.
+ */
+export type Screening = {
+  /** URL segment: /festivals/screening/<id>. Minted from the title. */
+  id: string;
+  title: string;
+  /** A short blurb for the session as a whole. May be empty. */
+  description: string;
+  /** ISO date the session opens, e.g. "2026-10-14". */
+  startDate: string;
+  /** ISO date it closes. Equal to `startDate` for a single sitting. */
+  endDate: string;
+  /** Display-ready local start time, e.g. "7:30 PM". May be empty. */
   time: string;
   venue: string;
   seatStatus: SeatStatus;
+  /** In programme order, as entered in the CMS. */
+  films: Film[];
 };
 
 export type Festival = {
   /** URL segment: /festivals/<slug>. */
   slug: string;
-  /** Position within its month, shown as an index: "01", "02". */
-  edition: string;
+  /**
+   * The festival year, derived from `startDate` rather than read from the API.
+   * One festival owns a year outright, so this is the festival's identity —
+   * "IFFA 2026" — and what the archive is keyed on.
+   */
+  year: number;
   name: string;
   /** One line, shown under the festival name. */
   tagline: string;
-  /** Two or three sentences, shown on the card and the detail hero. */
+  /** Two or three sentences, shown in the opening section. */
   description: string;
   /** Landscape artwork. Must be a real, reachable asset. */
   heroImage: string;
@@ -62,33 +101,15 @@ export type Festival = {
   screenings: Screening[];
 };
 
-/** One day of a festival's schedule, as `groupScreeningsByDay` returns it. */
-export type ScreeningDay = {
-  /** ISO date, e.g. "2026-08-07". */
-  date: string;
-  /** The festival's own day numbering — "01", "02" — not a calendar date. */
-  index: string;
-  /** Ordered by start time. */
-  screenings: Screening[];
-};
+/**
+ * Where a festival sits relative to today.
+ *
+ * Drives the countdown: `upcoming` counts down to opening night, `running`
+ * says which night is on, `past` sends the viewer to the archive.
+ */
+export type FestivalPhase = "upcoming" | "running" | "past";
 
-export type FestivalMonth = {
-  /** "2026-08". The DOM id it scrolls to comes from `monthSectionId`. */
-  id: string;
-  /** 1-12. */
-  month: number;
-  year: number;
-  /**
-   * `coming-soon` months render a locked panel. Never put unannounced
-   * festivals in one to "hide" them — the array must genuinely be empty.
-   */
-  status: "announced" | "coming-soon";
-  festivals: Festival[];
-  /** Shown inside the coming-soon panel. */
-  note?: string;
-};
-
-/** Venue on the Festivals page's closing band. */
+/** Venue on the festival's venue band. */
 export type FestivalVenue = {
   name: string;
   suburb: string;
@@ -106,20 +127,25 @@ export type FestivalStat = {
 };
 
 /**
- * Everything on the Festivals page that is not a festival: the hero, the
- * intro, the award spotlight, the closing call to action, the venue list.
+ * Everything on the Festival page that is not the festival itself: the hero,
+ * the intro, the award spotlight, the closing call to action, the venue list.
  *
  * Edited in cms-hub. `festival-api.ts` carries a full set of defaults, so the
  * page renders complete and correct before staff have saved anything — and
  * also when the API is unreachable.
  */
 export type FestivalPageSettings = {
-  seriesLabel: string;
   city: string;
   country: string;
   planTitle: string;
   planBody: string;
-  scheduleEyebrow: string;
+  /**
+   * `seriesLabel` and `scheduleEyebrow` are deliberately absent. Both still
+   * exist on the settings document in cms-hub and neither is rendered:
+   * seriesLabel was already unused, and scheduleEyebrow was the tracked-out
+   * caps label above the schedule, which the paper inversion replaced. Their
+   * inputs are gone from the CMS so nobody edits a field that does nothing.
+   */
   scheduleHeading: string;
   scheduleIntro: string;
   venues: FestivalVenue[];
@@ -136,6 +162,8 @@ export type FestivalPageSettings = {
     heading: string;
     /** One paragraph per entry. */
     body: string[];
+    /** Wide banner above the stats. Empty renders the section without one. */
+    imageUrl: string;
     stats: FestivalStat[];
   };
   award: {
