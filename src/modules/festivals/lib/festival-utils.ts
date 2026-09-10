@@ -1,4 +1,4 @@
-import type { Festival, FestivalPhase, Screening, SeatStatus } from "./types";
+import type { Festival, FestivalPhase, Film, Screening, SeatStatus } from "./types";
 
 /**
  * Every label, count and range rendered in the Festival section is derived
@@ -100,8 +100,17 @@ export const splitDateParts = (iso: string) => {
   };
 };
 
-/** 106 -> "106 min" */
-export const formatRuntime = (minutes: number): string => `${minutes} min`;
+/**
+ * 106, 0 -> "106 min"; 3, 40 -> "3 min 40 sec"; 0, 40 -> "40 sec".
+ *
+ * Returns "" when nothing is known, so callers can fall back with `||` rather
+ * than testing the two halves themselves — a short with only seconds entered
+ * still has a runtime worth printing.
+ */
+export const formatRuntime = (minutes: number, seconds = 0): string =>
+  [minutes ? `${minutes} min` : "", seconds ? `${seconds} sec` : ""]
+    .filter(Boolean)
+    .join(" ");
 
 /** 1-12 -> "October" */
 export const monthName = (month: number): string => MONTHS_LONG[month - 1];
@@ -171,6 +180,48 @@ export const formatScreeningDates = (screening: Screening): string => {
     return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]}`;
   }
   return `${formatShortDate(screening.startDate)} - ${formatShortDate(screening.endDate)}`;
+};
+
+/**
+ * The same span, compressed hard for the sticky programme index.
+ *
+ * The index prints every session at once on one line, so a weekday name that
+ * is useful in a section heading is eight characters that push the next
+ * session off the strip. "Wed 14 Oct" is enough to place a session in a
+ * festival that runs a fortnight at most.
+ */
+export const formatScreeningDatesShort = (screening: Screening): string => {
+  if (screening.startDate === screening.endDate) {
+    return formatShortDate(screening.startDate);
+  }
+
+  const start = parseIsoDate(screening.startDate);
+  const end = parseIsoDate(screening.endDate);
+
+  if (start.month === end.month && start.year === end.year) {
+    return `${start.day}-${end.day} ${MONTHS_SHORT[end.month - 1]}`;
+  }
+  return `${start.day} ${MONTHS_SHORT[start.month - 1]} - ${end.day} ${MONTHS_SHORT[end.month - 1]}`;
+};
+
+/**
+ * When a film plays, written for a programme tile: "Wed 16 Oct, 7:45 PM".
+ *
+ * The film answers if it can and the session answers if it cannot, half by
+ * half — a film given its own start time but no date of its own is a real
+ * case, and it should get its own time beside the session's dates rather than
+ * losing both to the fallback.
+ *
+ * The session's half is the compressed range, so a film with no date of its
+ * own inside a strand that runs three days reads "14-16 Oct" — vague, but
+ * true, which is the honest answer when nobody has said which day it is on.
+ */
+export const filmScreeningWhen = (film: Film, screening: Screening): string => {
+  const date = film.startDate
+    ? formatShortDate(film.startDate)
+    : formatScreeningDatesShort(screening);
+
+  return [date, film.startTime || screening.time].filter(Boolean).join(", ");
 };
 
 /** Every ISO date a span covers, inclusive of both ends. */

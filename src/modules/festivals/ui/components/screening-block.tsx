@@ -3,13 +3,14 @@ import Link from "next/link";
 import type { Screening, SeatStatus } from "../../lib/types";
 import {
   SEAT_STATUS_LABEL,
+  filmScreeningWhen,
   formatScreeningDates,
   screeningHref,
 } from "../../lib/festival-utils";
-import { FilmCard } from "./film-card";
+import { FilmTile } from "./film-tile";
 
 /**
- * One session on the programme: its own heading, then its lineup.
+ * One session on the programme: its own heading, then its running order.
  *
  * The heading carries everything that is true of the session — when it runs,
  * at what time, where, and whether there are seats — so that none of it has to
@@ -21,6 +22,13 @@ import { FilmCard } from "./film-card";
  * The number is the sequence position, not a date — a session that runs across
  * three days has no single date to number by, which is exactly why nights
  * stopped working as the organising unit.
+ *
+ * The lineup is a grid of poster tiles, five across at the widest breakpoint
+ * and two on a phone. It used to be a column of wide `FilmCard` rows, which
+ * put a session of twenty shorts — two and a half screens of poster, meta and
+ * synopsis — between the reader and the next day of the festival. Same
+ * posters, a fifth of the height, because the tiles are read across as well as
+ * down and carry three facts each instead of six. See `film-tile.tsx`.
  */
 
 /**
@@ -34,6 +42,18 @@ const SEAT_STATUS_CLASSES: Record<SeatStatus, string> = {
   "sold-out": "text-fest-curtain",
 };
 
+/**
+ * How many films a session prints on the programme before it stops.
+ *
+ * Twenty is four full rows at the widest breakpoint — enough that a normal
+ * session, however large, is shown whole. It is a ceiling on the outlier: a
+ * rotating exhibition or an all-day marathon with forty titles would otherwise
+ * be a session nobody scrolls past, which is the problem this treatment exists
+ * to fix. Everything above the ceiling is on the session's own page, which is
+ * the full record anyway.
+ */
+const LINEUP_LIMIT = 20;
+
 export function ScreeningBlock({
   screening,
   index,
@@ -43,9 +63,12 @@ export function ScreeningBlock({
   index: string;
 }) {
   const facts = [formatScreeningDates(screening), screening.venue].filter(Boolean);
+  const shown = screening.films.slice(0, LINEUP_LIMIT);
+  const hidden = screening.films.length - shown.length;
+
 
   return (
-    <section id={screening.id} className="scroll-mt-[140px]">
+    <section id={screening.id} className="scroll-mt-[200px]">
       <header className="screening-heading">
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
           <span className="font-fest-display text-[clamp(2.25rem,5vw,3.5rem)] font-extrabold leading-[0.8] tracking-[-0.01em]">
@@ -93,14 +116,31 @@ export function ScreeningBlock({
         )}
       </header>
 
-      <div className="screening-rule mt-5 h-0.5 w-full origin-left bg-fest-ink" />
+      <div className="mt-5 h-0.5 w-full bg-fest-ink" />
 
-      {screening.films.length > 0 ? (
-        <div className="grid gap-x-12 lg:grid-cols-2">
-          {screening.films.map((film) => (
-            <FilmCard key={film.id} film={film} />
-          ))}
-        </div>
+      {shown.length > 0 ? (
+        <>
+          <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-9 md:grid-cols-3 md:gap-x-6 lg:grid-cols-4 xl:grid-cols-5">
+            {shown.map((film) => (
+              <FilmTile
+                key={film.id}
+                film={film}
+                // The film's own date and time once cms-hub carries them, the
+                // session's until then. See the note on `Film.startDate`.
+                when={filmScreeningWhen(film, screening)}
+              />
+            ))}
+          </div>
+
+          {hidden > 0 && (
+            <Link
+              href={screeningHref(screening.id)}
+              className="mt-8 inline-block font-fest-text text-[0.9375rem] italic text-fest-ink/70 underline decoration-fest-ink/30 decoration-1 underline-offset-4 transition-colors duration-300 hover:text-fest-ink hover:decoration-fest-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-fest-ink"
+            >
+              {hidden} more {hidden === 1 ? "film" : "films"} in this session
+            </Link>
+          )}
+        </>
       ) : (
         // A session announced before its lineup is confirmed. Says so rather
         // than rendering a heading above nothing.

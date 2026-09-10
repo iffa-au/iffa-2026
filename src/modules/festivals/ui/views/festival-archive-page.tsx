@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import type { Festival, FestivalPageSettings } from "../../lib/types";
+import type { Festival } from "../../lib/types";
 import {
   countFestivalDays,
   countFestivalFilms,
@@ -25,13 +25,7 @@ import { ProgrammeSection } from "../components/programme-section";
  * This route exists so links shared while a festival was current keep working
  * after it stops being the festival the site is about.
  */
-export function FestivalArchivePage({
-  festival,
-  settings,
-}: {
-  festival: Festival;
-  settings: FestivalPageSettings;
-}) {
+export function FestivalArchivePage({ festival }: { festival: Festival }) {
   const screenings = orderScreenings(festival);
   const countries = festivalCountries(festival);
   const nights = countFestivalDays(festival);
@@ -50,7 +44,7 @@ export function FestivalArchivePage({
       value: String(screenings.length),
     },
     { label: nights === 1 ? "Night" : "Nights", value: String(nights) },
-    { label: "City", value: festival.city || settings.city },
+    ...(festival.city ? [{ label: "City", value: festival.city }] : []),
   ];
 
   return (
@@ -140,7 +134,6 @@ export function FestivalArchivePage({
             screenings={screenings}
             heading="The programme, as it ran"
             intro={`Every session that screened at ${festival.name}, in programme order.`}
-            note="This festival has closed. Times and venues are how it ran."
           />
         ) : (
           <section className="bg-fest-stock py-20 text-fest-ink md:py-24">
