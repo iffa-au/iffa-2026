@@ -10,6 +10,7 @@ import type { Festival, Film, Screening, SeatStatus } from "../../lib/types";
 import {
   SEAT_STATUS_LABEL,
   filmHref,
+  formatDayHeading,
   formatRuntime,
   formatScreeningDates,
   screeningHref,
@@ -24,8 +25,10 @@ import { PosterFrame } from "../components/poster-frame";
  *
  * This was the screening page, back when a screening was a film. It now sits
  * a level lower and the facts panel says so: the session is named and linked
- * rather than being implied, because the film's time and venue are properties
- * of the session it plays in, and that session is a thing a reader can book.
+ * rather than being implied, because the film's venue is a property of the
+ * session it plays in, and that session is a thing a reader can book. Its date
+ * and time can now be the film's own — see `Film.startDate` — and the panel
+ * prefers them, falling back to the session's.
  *
  * The page stays on the dark ground rather than the programme's paper: this is
  * the film, not the booklet, and the poster is the largest thing on it.
@@ -60,12 +63,22 @@ export function FilmPage({
 
   const facts = [
     { label: "Screening", value: screening.title, href: screeningHref(screening.id) },
-    { label: "Dates", value: formatScreeningDates(screening) },
-    { label: "Time", value: screening.time || "To be confirmed" },
+    // This film's own date and time where cms-hub has them, the session's
+    // where it does not. The session's are a range and a door time that can
+    // cover several days and a dozen films, so a film that knows its own slot
+    // has to say so here of all places — the reader is on this page precisely
+    // because this is the film they are trying to catch.
+    {
+      label: film.startDate ? "Date" : "Dates",
+      value: film.startDate
+        ? formatDayHeading(film.startDate)
+        : formatScreeningDates(screening),
+    },
+    { label: "Time", value: film.startTime || screening.time || "To be confirmed" },
     { label: "Venue", value: screening.venue || "To be confirmed" },
     {
       label: "Running time",
-      value: film.runtimeMinutes ? formatRuntime(film.runtimeMinutes) : "—",
+      value: formatRuntime(film.runtimeMinutes, film.runtimeSeconds) || "—",
     },
     { label: "Country", value: film.country || "—" },
     { label: "Year", value: film.year ? String(film.year) : "—" },
@@ -188,7 +201,7 @@ export function FilmPage({
                     {other.title}
                   </span>
                   <span className="font-fest-text text-sm italic text-fest-beam/45">
-                    {[other.country, other.runtimeMinutes ? formatRuntime(other.runtimeMinutes) : null]
+                    {[other.country, formatRuntime(other.runtimeMinutes, other.runtimeSeconds) || null]
                       .filter(Boolean)
                       .join(", ")}
                   </span>

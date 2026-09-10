@@ -7,22 +7,34 @@ import { ClosingBand } from "../components/closing-band";
 import { ProgrammeSection } from "../components/programme-section";
 import { ProgrammeWaiting } from "../components/programme-waiting";
 import { ProjectionHero } from "../components/projection-hero";
-import { FestivalStatement } from "../components/festival-statement";
 
 /**
  * The Festival page.
  *
  * IFFA runs one festival a year, so this is the whole section: there is no
  * index of festivals to browse and no separate detail page to click through to.
- * The order is the shape of an evening out — what it is, what it looks like,
- * what is on when, what it is for, and how to come.
+ * The order is the shape of an evening out — what it looks like, what is on
+ * when, what it is for, and how to come.
  *
  *   hero        the room, and the year
- *   statement   what this festival is
  *   programme   every session, one section each      <- the page inverts here
  *   award       what is being judged
- *   closing     venues and the invitation
+ *   closing     the invitation
  *   archive     previous editions
+ *
+ * A statement section used to sit between the hero and the programme: this
+ * year's description with counted-up facts beside it, then a standing "what
+ * IFFA is" essay, a banner and three stats. The hero already names the year,
+ * the dates and the city, and the programme below it is the real answer to
+ * what the festival is, so the section was three screens of restatement that
+ * pushed the schedule under the fold. It is gone along with the `about`
+ * settings it read — schema, CMS inputs and stored field.
+ *
+ * A venue band used to close the page, above the invitation. It is gone —
+ * every venue it listed is already on the screening that happens there. See
+ * the note in `closing-band.tsx`. The booking line that sat under the
+ * programme heading went with it — it was the same `planBody` setting — and
+ * the slot it printed in has since been removed from `ProgrammeSection`.
  *
  * A horizontal reel of posters used to sit above the programme. It carried
  * exactly the films the programme carries, so every visitor scrolled past the
@@ -46,22 +58,15 @@ export function FestivalPage({
 }) {
   const screenings = festival ? orderScreenings(festival) : [];
 
-  // One note for every phase. The programme does not announce that a festival
-  // has finished — see the matching note in opening-countdown.tsx.
-  const programmeNote = settings.planBody;
-
   return (
     <div className={`${festivalFontClass} relative bg-fest-room`}>
       <ProjectionHero festival={festival} settings={settings} phase={phase} />
-
-      <FestivalStatement festival={festival} settings={settings} />
 
       {screenings.length > 0 ? (
         <ProgrammeSection
           screenings={screenings}
           heading={settings.scheduleHeading}
           intro={settings.scheduleIntro}
-          note={programmeNote}
         />
       ) : (
         <ProgrammeWaiting festival={festival} />
