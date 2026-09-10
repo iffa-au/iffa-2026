@@ -17,6 +17,12 @@ import { PosterFrame } from "./poster-frame";
  * the card scannable — a reader going down a lineup is comparing titles and
  * countries, not re-reading a time they already have.
  *
+ * The programme no longer renders these. It lays out `FilmTile` in a grid,
+ * because twenty of these rows is two and a half screens between one day of
+ * the festival and the next. The card is now the session page's treatment
+ * only, which is where a lineup is the content rather than the evidence for a
+ * choice — and it is why country still has a home on the way to a film.
+ *
  * The whole card is one link to the film's own page, which is why nothing here
  * is interactive on its own: a play button inside a link is two targets in one
  * place, and the card would swallow the click either way.
@@ -25,12 +31,12 @@ import { PosterFrame } from "./poster-frame";
  * printed programme, and eight identical bordered boxes would flatten a
  * lineup into eight equal blocks.
  */
-export function FilmCard({ film }: { film: Film }) {
+export function FilmCard({ film, when = "" }: { film: Film; when?: string }) {
   const meta = [
     film.country,
     film.year || null,
     film.genre,
-    film.runtimeMinutes ? formatRuntime(film.runtimeMinutes) : null,
+    formatRuntime(film.runtimeMinutes, film.runtimeSeconds) || null,
   ].filter(Boolean);
 
   return (
@@ -56,6 +62,17 @@ export function FilmCard({ film }: { film: Film }) {
           {meta.length > 0 && (
             <p className="mt-2 font-fest-text text-[0.9375rem] italic text-fest-ink/65">
               {meta.join(", ")}
+            </p>
+          )}
+
+          {/* Only when this film has a slot of its own. The session prints its
+              own date and door time once in its header, and repeating them
+              down a lineup of twenty is the redundancy the restructure
+              removed — but "plays 7:45 PM" is not that, it is the one fact
+              that differs between two shorts in the same block. */}
+          {when && (
+            <p className="mt-1 font-fest-text text-[0.9375rem] text-fest-ink/70">
+              {when}
             </p>
           )}
 

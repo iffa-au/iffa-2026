@@ -56,5 +56,5 @@ export default async function Page({ params }: PageProps<"/festivals/[festival]"
   // rendering it twice keeps one canonical URL for the page people link to.
   if (match.slug === data.festival?.slug) redirect("/festivals");
 
-  return <FestivalArchivePage festival={match} settings={data.settings} />;
+  return <FestivalArchivePage festival={match} />;
 }

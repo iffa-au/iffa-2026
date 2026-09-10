@@ -12,11 +12,17 @@ import { FestivalButton } from "./festival-button";
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 /**
- * Where it happens, and the invitation to come.
+ * The invitation to come.
  *
- * Venues and the closing call to action are one band rather than two sections:
- * they answer the same question — "so, can I go?" — and splitting them put a
- * section break between an address and the button you press after reading it.
+ * A venue band used to sit above the call to action — a "plan your festival"
+ * heading, a line naming the city, and the festival's venues listed in two
+ * columns. It was cut: a venue is a property of a screening, not of the
+ * festival, and the screening already carries it on the programme, on the
+ * screening page and on each film page. Listing every venue again at the foot
+ * of the page told a visitor where the festival happens without telling them
+ * which night is where, which is the only version of that question anyone
+ * asks. It is gone along with the `venues`, `planTitle`, `planBody`, `city`
+ * and `country` settings it read — schema, CMS inputs and stored fields.
  *
  * The house lights come up behind the invitation as it settles into view. It is
  * the last piece of motion on the page and it runs once, on scroll, so it reads
@@ -59,40 +65,6 @@ export function ClosingBand({
 
   return (
     <section ref={root} className="relative overflow-hidden bg-fest-room">
-      {settings.venues.length > 0 && (
-        <div className="mx-auto max-w-[1400px] px-5 py-16 md:px-10 md:py-24">
-          <div className="grid gap-10 border-t border-fest-beam/12 pt-12 md:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] md:gap-16">
-            <div>
-              <h2 className="font-fest-display text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold uppercase leading-[0.95] tracking-[-0.01em] text-fest-beam">
-                {settings.planTitle}
-              </h2>
-              <p className="mt-5 max-w-[46ch] font-fest-text text-base leading-[1.7] text-fest-beam/65">
-                {festival
-                  ? `${festival.name} screens across ${festival.city || settings.city}, ${settings.country}. `
-                  : `Every screening is in ${settings.city}, ${settings.country}. `}
-                {settings.planBody}
-              </p>
-            </div>
-
-            <ul className="grid gap-x-10 gap-y-0 self-start sm:grid-cols-2">
-              {settings.venues.map((venue) => (
-                <li
-                  key={venue.name}
-                  className="border-b border-fest-beam/12 py-4 font-fest-text text-fest-beam"
-                >
-                  {venue.name}
-                  {venue.suburb && (
-                    <span className="block text-sm italic text-fest-beam/50">
-                      {venue.suburb}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
       {/* House lights: a warm wash rising from the floor of the section. */}
       <div
         aria-hidden
