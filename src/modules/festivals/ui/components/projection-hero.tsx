@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type MouseEvent } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -8,7 +8,6 @@ import { useGSAP } from "@gsap/react";
 
 import type { Festival, FestivalPageSettings, FestivalPhase } from "../../lib/types";
 import { formatFestivalDatesShort } from "../../lib/festival-utils";
-import { FestivalButton } from "./festival-button";
 import { OpeningCountdown } from "./opening-countdown";
 import { FilmGrain } from "./film-grain";
 
@@ -60,6 +59,23 @@ export function ProjectionHero({
   const root = useRef<HTMLElement>(null);
   const { hero } = settings;
 
+  // The cue is a real anchor, so it works with JavaScript off and can be
+  // opened in a new tab; this only upgrades the jump to a glide, and only for
+  // viewers who have not asked for less motion. `scroll-mt` on the programme
+  // section is what keeps it clear of the fixed header.
+  const handleCueClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    const target = document.getElementById("programme");
+    if (!target) return;
+
+    event.preventDefault();
+    target.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+    });
+  };
+
   useGSAP(
     () => {
       const media = gsap.matchMedia();
@@ -102,7 +118,10 @@ export function ProjectionHero({
             ".hero-line",
             { opacity: 0, y: 18, duration: 0.75, stagger: 0.09 },
             1.15,
-          );
+          )
+          // The leader is fed in last, from above, once there is something
+          // worth scrolling to.
+          .from(".hero-cue-link", { opacity: 0, y: -12, duration: 0.7 }, 1.6);
 
         // Scrolling away closes the beam down, so the section reads as the
         // shutter shutting rather than as a panel sliding off.
@@ -118,7 +137,22 @@ export function ProjectionHero({
           },
         });
 
-        gsap.to(".hero-copy", {
+        // The cue has done its job the moment anyone acts on it, so it
+        // clears within the first screenful rather than riding the section
+        // down.
+        gsap.to(".hero-cue", {
+          opacity: 0,
+          y: 16,
+          ease: "none",
+          scrollTrigger: {
+            trigger: root.current,
+            start: "top top",
+            end: "+=200",
+            scrub: true,
+          },
+        });
+
+        gsap.to(".hero-copy, .hero-head", {
           y: -70,
           opacity: 0,
           ease: "none",
@@ -134,10 +168,16 @@ export function ProjectionHero({
     { scope: root },
   );
 
+  // The section is pulled up under the fixed 121px header, so it pays that
+  // height back as top padding: centring happens inside the content box, which
+  // is the part of the frame the header is not covering. Without it the group
+  // centres on the section and sits visibly high. The bottom padding does the
+  // same job for the scroll cue standing in the floor of the frame — the
+  // centred group is centred on what is left between the two.
   return (
     <section
       ref={root}
-      className="relative -mt-[88px] flex min-h-[100svh] flex-col justify-end overflow-hidden bg-fest-room"
+      className="relative -mt-22 flex min-h-svh flex-col justify-center overflow-hidden bg-fest-room pb-24 pt-[121px] md:pb-28"
     >
       {/* Everything light-bearing shares one wrapper so the scroll scrub closes
           the beam and the picture together, as one shutter rather than two. */}
@@ -210,33 +250,49 @@ export function ProjectionHero({
 
       <FilmGrain />
 
-      <div className="hero-copy relative z-10 mx-auto w-full max-w-[1400px] px-5 pb-16 pt-[150px] md:px-10 md:pb-20">
-        <p className="hero-name font-fest-display text-[13px] font-medium uppercase tracking-[0.34em] text-fest-lamp md:text-sm">
+      {/* The eyebrow is the marquee: one line, full bleed, with the name and
+          year under it. Full bleed rather than inside the 1400px column
+          because that column stops growing while the viewport does not — a
+          capped container is what forces a cap on the type. Sized in pure vw
+          with no ceiling, so the line and the space it sits in scale by the
+          same factor: it fits at every width, or at none. */}
+      <div className="hero-head relative z-10 w-full px-4 md:px-10">
+        <p className="hero-name whitespace-nowrap text-center font-fest-display text-[4.9vw] font-extrabold uppercase leading-[1.05] tracking-[0.02em] text-fest-lamp">
           {hero.eyebrow}
         </p>
 
-        {/* The year is the identity now that there is one festival a year, so
-            it carries the display weight and the festival's own name sits
-            under it as the line of text it actually is. */}
+        {/* Name and year read as the second line of the same centred stack:
+            one baseline row, one size on the h1 so the two spans cannot drift
+            apart, centred on the same axis as the marquee above. */}
+        {festival && (
+          <h1 className="mt-3 flex flex-wrap items-baseline justify-center gap-x-5 gap-y-1 text-[clamp(2rem,5.5vw,4rem)] md:mt-4">
+            <span className="hero-line font-fest-text font-normal italic leading-tight text-fest-beam/85">
+              {festival.name}
+            </span>
+            <span className="hero-year font-fest-display font-extrabold leading-[0.9] tracking-[-0.01em] text-fest-beam">
+              {festival.year}
+            </span>
+          </h1>
+        )}
+      </div>
+
+      <div className="hero-copy relative z-10 mx-auto mt-8 w-full max-w-[1400px] px-5 md:mt-12 md:px-10">
+        {/* The dates, tagline and countdown close the same centred group —
+            the marquee's supporting line rather than a separate floor band. */}
         {festival ? (
           <>
-            <h1 className="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-1 md:mt-6">
-              <span className="hero-year block font-fest-display text-[clamp(5.5rem,20vw,17rem)] font-extrabold leading-[0.78] tracking-[-0.02em] text-fest-beam">
-                {festival.year}
-              </span>
-              <span className="hero-line font-fest-text text-[clamp(1.35rem,3.4vw,2.5rem)] font-normal italic leading-tight text-fest-beam/85">
-                {festival.name}
-              </span>
-            </h1>
-
             <div className="hero-rule mt-7 h-px w-full origin-left bg-[linear-gradient(to_right,var(--color-fest-lamp),rgba(255,176,46,0.15)_45%,transparent)]" />
 
             <div className="mt-7 grid gap-x-14 gap-y-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
               <div>
                 <p className="hero-line font-fest-display text-[clamp(1.1rem,2.6vw,1.75rem)] font-semibold uppercase tracking-[0.06em] text-fest-beam">
                   {formatFestivalDatesShort(festival)}
-                  <span className="px-3 font-light text-fest-lamp/60">/</span>
-                  {festival.city || settings.city}
+                  {festival.city && (
+                    <>
+                      <span className="px-3 font-light text-fest-lamp/60">/</span>
+                      {festival.city}
+                    </>
+                  )}
                 </p>
 
                 <p className="hero-line mt-4 max-w-[52ch] font-fest-text text-base leading-[1.65] text-fest-beam/65 md:text-lg">
@@ -258,30 +314,55 @@ export function ProjectionHero({
             </p>
           </>
         )}
+      </div>
 
-        <div className="mt-11 flex flex-col gap-3 sm:flex-row sm:items-center">
-          {hero.primaryCta.label && (
-            <FestivalButton
-              href={hero.primaryCta.href || "#programme"}
-              className="hero-line"
-              withArrow
-            >
-              {hero.primaryCta.label}
-            </FestivalButton>
-          )}
-          {hero.secondaryCta.label && (
-            <FestivalButton
-              variant="secondary"
-              href={hero.secondaryCta.href || "/"}
-              className="hero-line"
-            >
-              {hero.secondaryCta.label}
-            </FestivalButton>
-          )}
-        </div>
+      {/* The way down to the programme.
+          Not a chevron and not a mouse-with-a-wheel: the hero is a projector
+          running, so the cue is the leader threading out of the gate. The lit
+          frame advances one frame-height at a time with a blank beat between
+          passes, which is how film actually moves past an aperture — a
+          continuous glide would be the one thing a projector never does. It
+          reads as downward because the light travels that way. */}
+      <div className="hero-cue pointer-events-none absolute inset-x-0 bottom-8 z-10 flex justify-center md:bottom-10">
+        <a
+          href="#programme"
+          onClick={handleCueClick}
+          className="hero-cue-link group pointer-events-auto flex flex-col items-center gap-3.5 px-6 py-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-fest-lamp"
+        >
+          <span className="font-fest-text text-sm italic leading-none text-fest-beam/55 transition-colors duration-300 group-hover:text-fest-lamp md:text-base">
+            Screenings
+          </span>
+
+          {/* The gate: 12px wide only so the frame's glow has room before it
+              is clipped. The path itself is the hairline down the middle. */}
+          <span
+            aria-hidden
+            className="relative block h-14 w-3 overflow-hidden opacity-80 transition-opacity duration-300 group-hover:opacity-100"
+          >
+            <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[linear-gradient(to_bottom,rgba(255,243,217,0.32),rgba(255,243,217,0.05))]" />
+            <span className="hero-cue-frame absolute left-1/2 top-0 block h-3.5 w-px bg-fest-beam shadow-[0_0_9px_2px_rgba(255,176,46,0.6)]" />
+          </span>
+        </a>
       </div>
 
       <style>{`
+        /* One frame-height per step, five steps across the 70px of travel:
+           four lit positions down the gate and one blank beat, which is the
+           shutter. Declared here rather than inline so the reduced-motion
+           rule below can actually switch it off. */
+        .hero-cue-frame {
+          animation: festThread 1.6s steps(5, end) infinite;
+        }
+
+        @keyframes festThread {
+          from { transform: translate(-50%, -14px); }
+          to   { transform: translate(-50%, 56px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .hero-cue-frame { animation: none; }
+        }
+
         @keyframes festMote {
           0%   { transform: translate3d(0, 0, 0); opacity: 0; }
           15%  { opacity: 0.85; }

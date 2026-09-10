@@ -25,9 +25,11 @@ export type SeatStatus = "available" | "limited" | "sold-out";
 /**
  * One film in a screening.
  *
- * Deliberately carries nothing about when or where it plays: the same film can
- * appear in two screenings, and duplicating a time onto it is how the two
- * copies start disagreeing.
+ * Carries nothing about where it plays, and only a clock time for when. A
+ * venue or a date copied onto a film is how a title programmed twice starts
+ * disagreeing with itself. `startTime` cannot: films are stored inside the
+ * screening that programmes them, so a title in two sessions is two rows, each
+ * with its own time.
  */
 export type Film = {
   /**
@@ -46,7 +48,36 @@ export type Film = {
   /** Year of production, not of the screening. */
   year: number;
   genre: string;
+  /**
+   * When this film actually plays: an ISO date, e.g. "2026-10-16", and a
+   * display-ready local time, e.g. "7:45 PM". Either may be empty.
+   *
+   * A session's own date range and `time` answer the same question for every
+   * film in it. That is right for a feature and wrong for everything else. A
+   * shorts block starts six films at six different minutes, and "7:30 PM"
+   * printed six times tells you nothing about which one you are in time for; a
+   * strand running Thursday to Saturday plays a different film each day, and
+   * "14-16 Oct" on all three is worse than useless to someone with one free
+   * evening.
+   *
+   * So a film may carry its own date and time, and `filmScreeningWhen` falls
+   * back to the session's for whichever half is missing — which is both halves
+   * until cms-hub carries the fields.
+   *
+   * Safe to hold on the film because the film row belongs to one screening:
+   * see the note above. Not validated against the session's range, because the
+   * CMS is the authority on its own programme and a frontend that silently
+   * corrected a date would hide the typo rather than surface it.
+   */
+  startDate: string;
+  startTime: string;
+  /**
+   * Runtime as two fields, the shape the CMS stores. Shorts are programmed to
+   * the second, so a lone minutes figure rounds away the difference between a
+   * 3:10 and a 3:50 film.
+   */
   runtimeMinutes: number;
+  runtimeSeconds: number;
   synopsis: string;
   /** Raw YouTube URL. `undefined` means no trailer is available. */
   trailerUrl?: string;
@@ -109,46 +140,36 @@ export type Festival = {
  */
 export type FestivalPhase = "upcoming" | "running" | "past";
 
-/** Venue on the festival's venue band. */
-export type FestivalVenue = {
-  name: string;
-  suburb: string;
-};
-
 /** A labelled link. An empty `label` hides the button entirely. */
 export type LinkedCta = {
   label: string;
   href: string;
 };
 
-export type FestivalStat = {
-  value: string;
-  label: string;
-};
-
 /**
  * Everything on the Festival page that is not the festival itself: the hero,
- * the intro, the award spotlight, the closing call to action, the venue list.
+ * the award spotlight and the closing call to action.
  *
  * Edited in cms-hub. `festival-api.ts` carries a full set of defaults, so the
  * page renders complete and correct before staff have saved anything — and
  * also when the API is unreachable.
  */
 export type FestivalPageSettings = {
-  city: string;
-  country: string;
-  planTitle: string;
-  planBody: string;
   /**
    * `seriesLabel` and `scheduleEyebrow` are deliberately absent. Both still
    * exist on the settings document in cms-hub and neither is rendered:
    * seriesLabel was already unused, and scheduleEyebrow was the tracked-out
    * caps label above the schedule, which the paper inversion replaced. Their
    * inputs are gone from the CMS so nobody edits a field that does nothing.
+   *
+   * `about` is gone outright — schema, CMS inputs and stored field — because
+   * the section that rendered it was cut. See the note in `festival-page.tsx`.
+   *
+   * So are `venues`, `planTitle`, `planBody`, `city` and `country`, which the
+   * venue band read. See the note in `closing-band.tsx`.
    */
   scheduleHeading: string;
   scheduleIntro: string;
-  venues: FestivalVenue[];
   hero: {
     eyebrow: string;
     title: string;
@@ -156,15 +177,6 @@ export type FestivalPageSettings = {
     backgroundImageUrl: string;
     primaryCta: LinkedCta;
     secondaryCta: LinkedCta;
-  };
-  about: {
-    eyebrow: string;
-    heading: string;
-    /** One paragraph per entry. */
-    body: string[];
-    /** Wide banner above the stats. Empty renders the section without one. */
-    imageUrl: string;
-    stats: FestivalStat[];
   };
   award: {
     eyebrow: string;

@@ -29,12 +29,13 @@ export async function generateMetadata({
   if (!match) return { title: "Film not found | IFFA" };
 
   const { film, screening, festival } = match;
+  const runtime = formatRuntime(film.runtimeMinutes, film.runtimeSeconds);
   return {
     title: `${film.title} | ${festival.name} | IFFA`,
     description:
       film.synopsis ||
       `${film.title} screens at ${festival.name} in ${screening.title} on ${formatScreeningDates(screening)}${
-        film.runtimeMinutes ? `, ${formatRuntime(film.runtimeMinutes)}` : ""
+        runtime ? `, ${runtime}` : ""
       }.`,
   };
 }

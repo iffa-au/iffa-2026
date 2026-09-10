@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 
 import type { Screening } from "../../lib/types";
+import { ProgrammeIndex } from "./programme-index";
 import { ScreeningBlock } from "./screening-block";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
@@ -27,19 +28,24 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
  * Each session's heading slides in as it arrives — one move, and it runs on
  * the heading only. The films themselves are a list, and a list that animates
  * in piece by piece is slower to read than one that is simply there.
+ *
+ * The rule under each heading used to wipe in from the left as a second move.
+ * It went when the index arrived: the index marks the current session with
+ * that same rule, and a device cannot be a live indicator in one place and
+ * decoration in another without the reader learning to ignore it. It also
+ * meant a rule that had already been wiped could be jumped back to and be
+ * caught mid-animation, which a navigation control makes a routine event
+ * rather than an unlikely one.
  */
 export function ProgrammeSection({
   screenings,
   heading,
   intro,
-  note,
 }: {
   /** In programme order — `orderScreenings` has already sorted these. */
   screenings: Screening[];
   heading: string;
   intro: string;
-  /** Booking status, said once for the whole programme rather than per session. */
-  note: string;
 }) {
   const root = useRef<HTMLElement>(null);
 
@@ -57,16 +63,6 @@ export function ProgrammeSection({
             scrollTrigger: { trigger: node, start: "top 88%" },
           });
         });
-
-        gsap.utils.toArray<HTMLElement>(".screening-rule").forEach((node) => {
-          gsap.from(node, {
-            scaleX: 0,
-            transformOrigin: "left center",
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: { trigger: node, start: "top 92%" },
-          });
-        });
       });
     },
     { scope: root },
@@ -76,7 +72,7 @@ export function ProgrammeSection({
     <section
       ref={root}
       id="programme"
-      className="relative scroll-mt-[121px] bg-fest-stock py-20 text-fest-ink md:py-28"
+      className="relative scroll-mt-[121px] bg-fest-stock py-16 text-fest-ink md:py-24"
     >
       {/* The hero's primary button was authored in the CMS as "#schedule" when
           this section was the month-by-month schedule. Keeping the old anchor
@@ -92,20 +88,20 @@ export function ProgrammeSection({
       />
 
       <div className="relative mx-auto max-w-[1400px] px-5 md:px-10">
-        <div className="grid gap-8 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:items-end md:gap-16">
-          <h2 className="max-w-[14ch] font-fest-display text-[clamp(2.75rem,8vw,6.5rem)] font-extrabold uppercase leading-[0.86] tracking-[-0.015em]">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] md:items-end md:gap-12">
+          <h2 className="max-w-[18ch] font-fest-display text-[clamp(2.25rem,5vw,4rem)] font-extrabold uppercase leading-[0.9] tracking-[-0.015em]">
             {heading}
           </h2>
 
-          <div>
-            <p className="max-w-[52ch] font-fest-text text-lg leading-[1.65] text-fest-ink/75">
-              {intro}
-            </p>
-            <p className="mt-4 font-fest-text text-base italic text-fest-ink/50">{note}</p>
-          </div>
+          <p className="max-w-[52ch] font-fest-text text-lg leading-[1.65] text-fest-ink/75">
+            {intro}
+          </p>
         </div>
 
-        <div className="mt-16 flex flex-col gap-16 md:mt-24 md:gap-24">
+        {/* One session needs no index of sessions. */}
+        {screenings.length > 1 && <ProgrammeIndex screenings={screenings} />}
+
+        <div className="mt-14 flex flex-col gap-16 md:mt-20 md:gap-24">
           {screenings.map((screening, index) => (
             <ScreeningBlock
               key={screening.id}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Festival, Screening, SeatStatus } from "../../lib/types";
 import {
   SEAT_STATUS_LABEL,
+  filmScreeningWhen,
   formatScreeningDates,
   screeningHref,
 } from "../../lib/festival-utils";
@@ -21,9 +22,12 @@ import { FilmCard } from "../components/film-card";
  * The page repeats the main page's inversion rather than inventing a third
  * treatment: the billing is on the dark ground, because that is where this
  * festival announces things, and the lineup is on paper, because a lineup is
- * the booklet. That also means `FilmCard` is reused exactly as the programme
- * uses it, instead of a near-copy drawn for a dark background that would drift
- * from it within a release.
+ * the booklet.
+ *
+ * This is the only page that renders `FilmCard`. The programme lays out the
+ * compact `FilmTile` — see the note there — and sends anyone who wants the
+ * countries, the synopses and the rest here. That split is what the page is
+ * for: the programme is the contents, this is the spread.
  *
  * No trailer control and no synopsis here — those belong to a film, and every
  * film in the lineup is one click away on its own page.
@@ -121,7 +125,17 @@ export function ScreeningPage({
           {screening.films.length > 0 ? (
             <div className="grid gap-x-12 lg:grid-cols-2">
               {screening.films.map((film) => (
-                <FilmCard key={film.id} film={film} />
+                <FilmCard
+                  key={film.id}
+                  film={film}
+                  // Left blank unless the film has a slot of its own — the
+                  // session's date and time are already in the panel above.
+                  when={
+                    film.startDate || film.startTime
+                      ? filmScreeningWhen(film, screening)
+                      : ""
+                  }
+                />
               ))}
             </div>
           ) : (

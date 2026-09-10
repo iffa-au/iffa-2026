@@ -39,7 +39,10 @@ type ApiFilm = {
   country?: string;
   year?: number;
   genre?: string;
+  startDate?: string;
+  startTime?: string;
   runtimeMinutes?: number;
+  runtimeSeconds?: number;
   synopsis?: string;
   trailerUrl?: string;
 };
@@ -66,6 +69,7 @@ type ApiScreening = {
   year?: number;
   genre?: string;
   runtimeMinutes?: number;
+  runtimeSeconds?: number;
   synopsis?: string;
   trailerUrl?: string;
 };
@@ -87,13 +91,8 @@ type ApiFestival = {
 type ApiCta = { label?: string; href?: string };
 
 type ApiSettings = {
-  city?: string;
-  country?: string;
-  planTitle?: string;
-  planBody?: string;
   scheduleHeading?: string;
   scheduleIntro?: string;
-  venues?: { name?: string; suburb?: string }[];
   hero?: {
     eyebrow?: string;
     title?: string;
@@ -101,13 +100,6 @@ type ApiSettings = {
     backgroundImageUrl?: string;
     primaryCta?: ApiCta;
     secondaryCta?: ApiCta;
-  };
-  about?: {
-    eyebrow?: string;
-    heading?: string;
-    body?: string[];
-    imageUrl?: string;
-    stats?: { value?: string; label?: string }[];
   };
   award?: {
     eyebrow?: string;
@@ -133,15 +125,9 @@ type ApiSettings = {
  * page should look identical whether the CMS answers or not.
  */
 const DEFAULT_SETTINGS: FestivalPageSettings = {
-  city: "Melbourne",
-  country: "Australia",
-  planTitle: "Plan your festival",
-  planBody:
-    "Booking opens closer to opening night — until then, every screening time and venue below is confirmed programming.",
   scheduleHeading: "Every film, every night",
   scheduleIntro:
     "The full programme, night by night. Times and venues are confirmed; booking opens closer to opening night.",
-  venues: [],
   hero: {
     eyebrow: "International Film Festival of Australia",
     title: "Where the world's cinema meets Australia",
@@ -150,20 +136,6 @@ const DEFAULT_SETTINGS: FestivalPageSettings = {
     backgroundImageUrl: "/assets/iffa big banner.jpg",
     primaryCta: { label: "See the programme", href: "#programme" },
     secondaryCta: { label: "Submit your film", href: "/submit-film" },
-  },
-  about: {
-    eyebrow: "The festival",
-    heading: "A festival built around the films, not the fanfare",
-    body: [
-      "IFFA runs once a year — one concentrated season that puts every film in front of an audience properly, rather than burying it in a schedule nobody can follow.",
-      "Every screening is curated. Every filmmaker is in the room. What began as a showcase for cinema from Oman, India, Malaysia and Spain now brings work from across the world to Melbourne's screens.",
-    ],
-    imageUrl: "",
-    stats: [
-      { value: "1", label: "Festival a year" },
-      { value: "20+", label: "Films in the programme" },
-      { value: "5", label: "Venues across Melbourne" },
-    ],
   },
   award: {
     eyebrow: "The IFFA Award",
@@ -251,7 +223,20 @@ const mapFilm = (raw: ApiFilm, index: number, seen: Set<string>): Film | null =>
     country: String(raw.country ?? "").trim(),
     year: Number(raw.year) || 0,
     genre: String(raw.genre ?? "").trim(),
+    // Absent for every film until cms-hub grows the fields, and absent after
+    // that for any session whose films all play together. `filmScreeningWhen`
+    // prints the session's own date and time in their place — see the note on
+    // `Film.startDate`.
+    //
+    // A malformed date is dropped rather than passed on: it would reach
+    // `formatShortDate` as a NaN weekday, and the session's date is a correct
+    // answer where "Invalid Date" is not.
+    startDate: ISO_DATE.test(String(raw.startDate ?? "").trim())
+      ? String(raw.startDate).trim()
+      : "",
+    startTime: String(raw.startTime ?? "").trim(),
     runtimeMinutes: Number(raw.runtimeMinutes) || 0,
+    runtimeSeconds: Number(raw.runtimeSeconds) || 0,
     synopsis: String(raw.synopsis ?? "").trim(),
     trailerUrl: trailer || undefined,
   };
@@ -286,6 +271,7 @@ const legacyScreening = (raw: ApiScreening): ApiScreening | null => {
         year: raw.year,
         genre: raw.genre,
         runtimeMinutes: raw.runtimeMinutes,
+        runtimeSeconds: raw.runtimeSeconds,
         synopsis: raw.synopsis,
         trailerUrl: raw.trailerUrl,
       },
@@ -401,18 +387,8 @@ const mapLines = (raw: unknown, fallback: string[]): string[] => {
 const mapSettings = (raw?: ApiSettings): FestivalPageSettings => {
   const d = DEFAULT_SETTINGS;
   return {
-    city: text(raw?.city, d.city),
-    country: text(raw?.country, d.country),
-    planTitle: text(raw?.planTitle, d.planTitle),
-    planBody: text(raw?.planBody, d.planBody),
     scheduleHeading: text(raw?.scheduleHeading, d.scheduleHeading),
     scheduleIntro: text(raw?.scheduleIntro, d.scheduleIntro),
-    venues: (raw?.venues ?? [])
-      .map((venue) => ({
-        name: String(venue.name ?? "").trim(),
-        suburb: String(venue.suburb ?? "").trim(),
-      }))
-      .filter((venue) => venue.name),
     hero: {
       eyebrow: text(raw?.hero?.eyebrow, d.hero.eyebrow),
       title: text(raw?.hero?.title, d.hero.title),
@@ -423,23 +399,6 @@ const mapSettings = (raw?: ApiSettings): FestivalPageSettings => {
       ),
       primaryCta: mapCta(raw?.hero?.primaryCta, d.hero.primaryCta),
       secondaryCta: mapCta(raw?.hero?.secondaryCta, d.hero.secondaryCta),
-    },
-    about: {
-      eyebrow: text(raw?.about?.eyebrow, d.about.eyebrow),
-      heading: text(raw?.about?.heading, d.about.heading),
-      body: mapLines(raw?.about?.body, d.about.body),
-      // No fallback image: the section is designed to work without one, and a
-      // stand-in banner that nobody chose is worse than the typographic
-      // version staff get until they upload something.
-      imageUrl: mapImage(raw?.about?.imageUrl, d.about.imageUrl),
-      stats: Array.isArray(raw?.about?.stats)
-        ? raw.about.stats
-            .map((stat) => ({
-              value: String(stat.value ?? "").trim(),
-              label: String(stat.label ?? "").trim(),
-            }))
-            .filter((stat) => stat.value || stat.label)
-        : d.about.stats,
     },
     award: {
       eyebrow: text(raw?.award?.eyebrow, d.award.eyebrow),
