@@ -86,6 +86,25 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/**
+ * Height of the fixed site header, consumed by the page wrapper in
+ * `root-layout.tsx` to keep content clear of it.
+ *
+ * These are first-paint defaults only. `header.tsx` measures the real header
+ * and overwrites this variable on <html>, so the two can never drift the way
+ * the old hardcoded `pt-[88px]` drifted from a 121px header. The breakpoint
+ * matches the `lg` at which the logo steps up from `w-14` to `w-20`.
+ */
+:root {
+  --header-h: 80px;
+}
+
+@media (width >= 64rem) {
+  :root {
+    --header-h: 104px;
+  }
+}
+
 :root {
   --background: oklch(0 0 0);
   --foreground: oklch(1 0 0);
