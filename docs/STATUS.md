@@ -14,15 +14,20 @@ the history.
   empty cell that already sat beside the half-width email field, so the card
   gained no height.
 
-  **cms-hub does not accept either field yet — that is the blocker.** The crew
-  sub-schema has to be taught both. Mongoose strict mode drops unknown fields
-  without error, so until it is, the form reports success, sends both
-  confirmation emails, and the two values are simply gone. The frontend sends
-  `contactPhone` and `notes`, but `instagram` already goes over the wire as
-  `instagramUrl` — confirm the names rather than assuming them. Shipping the
-  frontend first is safe; the fields are ignored until the backend lands. No
-  real submission has been run end-to-end, so do one after deploying and check
-  the record.
+  The frontend PR is iffa-au/iffa-2026#68. The cms-hub side is written and
+  open as two stacked PRs — iffa-au/cms-hub#28 (backend, merge first) and
+  iffa-au/cms-hub#29 (CMS UI) — so this is no longer blocked, only unmerged.
+  Until #28 deploys the form reports success and both values are discarded,
+  because Mongoose drops unknown fields without error. Merge order between the
+  repos does not matter. No real submission has been run end-to-end through
+  the new path, so do one after deploying and confirm both fields land.
+
+  #28 also closes a pre-existing leak worth knowing about here: the public
+  `/submissions/:id` endpoint returned the whole document minus two named
+  fields, so crew `email` has been readable by anyone holding a film's id for
+  as long as crew has been stored. Crew is now allow-listed down to
+  `fullName`, `role`, `imageUrl` — which is all the synopsis page ever read,
+  so nothing on this site changes.
 
   The type scale went up a step, which surfaced a standing bug worth knowing
   about anywhere these primitives are used: shadcn's `Input` and `Textarea`
