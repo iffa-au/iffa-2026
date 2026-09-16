@@ -1,6 +1,9 @@
+import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
-import { GoogleAnalyticsProvider } from "@/components/GoogleAnalyticsProvider";
 
+type GoogleAnalyticsProps = {
+  gaId: string;
+};
 export const metadata: Metadata = {
   title: "IFFA Awards",
   verification: {
@@ -8,20 +11,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body>
-        {children}
-
-        <GoogleAnalyticsProvider
-          gaId={process.env.NEXT_PUBLIC_GA_ID!}
-        />
-      </body>
-    </html>
-  );
-}
+export function GoogleAnalyticsProvider({
+  gaId,
+}: GoogleAnalyticsProps) {
+  return <GoogleAnalytics gaId={gaId} />;
+}   
