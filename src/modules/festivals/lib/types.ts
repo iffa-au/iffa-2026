@@ -132,14 +132,6 @@ export type Festival = {
   screenings: Screening[];
 };
 
-/**
- * Where a festival sits relative to today.
- *
- * Drives the countdown: `upcoming` counts down to opening night, `running`
- * says which night is on, `past` sends the viewer to the archive.
- */
-export type FestivalPhase = "upcoming" | "running" | "past";
-
 /** A labelled link. An empty `label` hides the button entirely. */
 export type LinkedCta = {
   label: string;
