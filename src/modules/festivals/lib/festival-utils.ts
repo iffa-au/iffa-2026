@@ -1,4 +1,4 @@
-import type { Festival, FestivalPhase, Film, Screening, SeatStatus } from "./types";
+import type { Festival, Film, Screening, SeatStatus } from "./types";
 
 /**
  * Every label, count and range rendered in the Festival section is derived
@@ -264,19 +264,6 @@ export const countFestivalFilms = (festival: Festival): number =>
 export const festivalCountries = (festival: Festival): string[] => [
   ...new Set(festivalFilms(festival).map((film) => film.country).filter(Boolean)),
 ];
-
-/**
- * Where a festival sits relative to a given day, as an ISO date string.
- *
- * Takes `today` rather than reading the clock so the caller decides — the page
- * computes it once on the server and passes the answer down, which is what
- * stops the server and the client from disagreeing about what day it is.
- */
-export const festivalPhase = (festival: Festival, todayIso: string): FestivalPhase => {
-  if (todayIso < festival.startDate) return "upcoming";
-  if (todayIso > festival.endDate) return "past";
-  return "running";
-};
 
 /** Today in Melbourne, as an ISO date — the festival's own timezone, not the server's. */
 export const melbourneToday = (): string =>

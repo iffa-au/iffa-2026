@@ -16,7 +16,7 @@ import { ProgrammeSection } from "../components/programme-section";
 /**
  * A festival that has already run.
  *
- * Deliberately not the main page in miniature: no beam, no countdown, no reel.
+ * Deliberately not the main page in miniature: no beam, no reel.
  * A past festival is a record, so it is set as one — the artwork, what it was,
  * and the programme exactly as it ran. The one piece of the live page it does
  * reuse is the printed programme, because "what screened, when" is the same
