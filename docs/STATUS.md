@@ -1,12 +1,40 @@
 # Status
 
-Updated: 2026-09-09
+Updated: 2026-09-16
 
 Current state of work across `iffa-2026` and `../cms-hub`. Keep this short —
 delete finished items rather than accumulating a changelog. Git already has
 the history.
 
 ## In flight
+
+- **Crew contact fields + form type scale** (branch `fix/submission-form`).
+  Every crew member on the film submission form gains two optional fields,
+  **Contact (Phone)** and **Notes**, across all four sections. Phone takes the
+  empty cell that already sat beside the half-width email field, so the card
+  gained no height.
+
+  **cms-hub does not accept either field yet — that is the blocker.** The crew
+  sub-schema has to be taught both. Mongoose strict mode drops unknown fields
+  without error, so until it is, the form reports success, sends both
+  confirmation emails, and the two values are simply gone. The frontend sends
+  `contactPhone` and `notes`, but `instagram` already goes over the wire as
+  `instagramUrl` — confirm the names rather than assuming them. Shipping the
+  frontend first is safe; the fields are ignored until the backend lands. No
+  real submission has been run end-to-end, so do one after deploying and check
+  the record.
+
+  The type scale went up a step, which surfaced a standing bug worth knowing
+  about anywhere these primitives are used: shadcn's `Input` and `Textarea`
+  carry `md:text-xs/relaxed` in their base class, and tailwind-merge only
+  dedupes within a variant — so a form's own unprefixed `text-[…]` never
+  conflicts with it, and **every input on this form had been rendering at 12px
+  on desktop**, not the 15px the token claimed. The shared token now declares
+  `md:text-[16px]` too, which is what lets the merge drop the primitive's rule.
+  The real desktop change is 12px to 16px, a bigger visual jump than it sounds.
+  `SelectTrigger`'s `text-xs/relaxed` is unprefixed and was never affected.
+
+  The form also widens past its fixed 1024px now: 1152 at `xl`, 1280 at `2xl`.
 
 - **One festival a year + Festival page redesign** (branch `page/festivals`).
   The Festivals section was built for two festivals a month; IFFA now runs one
