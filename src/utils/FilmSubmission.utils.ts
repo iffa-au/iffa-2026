@@ -41,6 +41,12 @@ const personSchema = z.object({
   biography: z.string().min(10, "Biography must be at least 10 characters"),
   instagram: z.string().optional(),
   email: z.string().email("A valid representative email is required"),
+  // Both optional and unvalidated by design. A phone number is asked for as a
+  // faster route to a filmmaker than email, not as a second identity check —
+  // any format rule here would reject a legitimate international number and
+  // block a submission over a field nobody is required to fill in.
+  contactPhone: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 /**
@@ -123,6 +129,12 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       actors: z.array(personSchema),
       directors: z.array(personSchema).min(1, "At least one director required"),
       producers: z.array(personSchema).min(1, "At least one producer required"),
+      // Mirrors personSchema with every rule relaxed: a wholly blank writer row
+      // is filtered out rather than rejected, and a partially filled one is
+      // validated against personSchema itself in the superRefine below. Any
+      // field added to personSchema has to be added here too, or FilmValues
+      // won't carry it on this branch and CrewList stops type-checking for
+      // fieldName="writers".
       writers: z.array(
         z.object({
           fullName: z.string(),
@@ -131,6 +143,8 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
           biography: z.string(),
           instagram: z.string().optional(),
           email: z.string(),
+          contactPhone: z.string().optional(),
+          notes: z.string().optional(),
         }),
       ),
       notes: z.string().max(1000, "Notes must be 1000 characters or less").optional(),
@@ -202,6 +216,8 @@ export const BLANK_PERSON: PersonEntry = {
   biography: "",
   instagram: "",
   email: "",
+  contactPhone: "",
+  notes: "",
 };
 
 export function filterFilledCrew(entries: PersonEntry[]): PersonEntry[] {

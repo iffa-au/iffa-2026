@@ -32,6 +32,7 @@ import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { CrewList } from "./components/CrewList";
 import { WebpImageUpload, uploadWebpImage, createSubmissionRef } from "./components/WebpImageUpload";
+import { L, I, HELP, ERR } from "./components/form-tokens";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const API_BASE = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL ||
@@ -41,15 +42,8 @@ const ACTOR_ROLES = ["Actor in a leading role", "Actress in a leading role", "Ac
 const DIRECTOR_ROLES = ["Director", "Co-Director"];
 const PRODUCER_ROLES = ["Producer", "Executive Producer"];
 
-// ─── Shared style tokens ──────────────────────────────────────────────────────
-// Sizes here are deliberately well above the 10–11px the form used to run on:
-// this is a long, dense form filled in once, under pressure, often on a
-// laptop — legibility matters more than fitting another field above the fold.
-const L = "text-[13px] font-semibold tracking-[0.01em] text-[#cbc0a0]";
-const I =
-  "bg-[#0a0908] border-[#2a2418] text-white text-[15px] placeholder-[#4a4436] focus:border-[#e6ba35]/50 focus-visible:ring-[#e6ba35]/20 focus-visible:ring-2 rounded-lg h-12 px-4";
-const HELP = "text-[13px] text-[#8a8268] leading-relaxed mt-2";
-const ERR = "text-red-400 text-[13px] mt-1.5";
+// Style tokens are shared with the CrewList cards embedded below — see
+// ./components/form-tokens.
 
 // The gold asterisk is decorative — the label text already carries the
 // requirement for assistive tech via the input's own `required` semantics.
@@ -63,7 +57,7 @@ function Req() {
 
 function Optional() {
   return (
-    <span className="ml-2 align-middle rounded-full border border-[#2a2418] px-2 py-[1px] text-[10px] font-medium uppercase tracking-wider text-[#6b6347]">
+    <span className="ml-2 align-middle rounded-full border border-[#2a2418] px-2 py-[1px] text-[11px] font-medium uppercase tracking-wider text-[#6b6347]">
       Optional
     </span>
   );
@@ -122,7 +116,7 @@ function Section({ id, step, title, desc, children }: { id: string; step: number
         </div>
         <div>
           <h2 className="text-white text-lg font-semibold tracking-tight">{title}</h2>
-          {desc && <p className="text-[#7a7258] text-[13px] mt-1">{desc}</p>}
+          {desc && <p className="text-[#7a7258] text-[14px] mt-1">{desc}</p>}
         </div>
       </div>
       <div className="p-8 md:p-10">{children}</div>
@@ -267,6 +261,8 @@ export function SubmitFilmForm() {
       biography: p.biography.trim(),
       instagramUrl: p.instagram?.trim() || "",
       email: p.email.trim().toLowerCase(),
+      contactPhone: p.contactPhone?.trim() || "",
+      notes: p.notes?.trim() || "",
     });
 
     const {
@@ -370,7 +366,7 @@ export function SubmitFilmForm() {
       {/* Header. The shared layout pads `main` by less than the fixed header's
           real height, so the extra top padding lives here rather than in the
           layout, which every other page also uses. */}
-      <div className="max-w-5xl mx-auto px-6 pt-16 md:pt-20 pb-10">
+      <div className="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 pt-16 md:pt-20 pb-10">
         <p className="text-[#e6ba35]/60 text-xs font-mono tracking-[0.2em] uppercase mb-5">
           IFFA Awards / Film Submission
         </p>
@@ -388,7 +384,7 @@ export function SubmitFilmForm() {
       {/* The fixed site header measures 121px, while the shared layout pads
           `main` by only 88px -- so this offset is deliberately not 88. */}
       <div className="sticky top-[121px] z-30 border-y border-[#1a1810] bg-[#0d0c09]/95 backdrop-blur-sm">
-        <nav aria-label="Form sections" className="max-w-5xl mx-auto px-6 py-3 flex items-center gap-2 overflow-x-auto">
+        <nav aria-label="Form sections" className="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 py-3 flex items-center gap-2 overflow-x-auto">
           {STEPS.map((s) => {
             const hasError = invalidSteps.includes(s.id);
             return (
@@ -396,7 +392,7 @@ export function SubmitFilmForm() {
                 key={s.id}
                 href={`#${s.id}`}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-full border px-4 py-2 text-[13px] whitespace-nowrap transition-colors",
+                  "flex items-center gap-2.5 rounded-full border px-4 py-2 text-[14px] whitespace-nowrap transition-colors",
                   hasError
                     ? "border-red-500/40 bg-red-500/10 text-red-300"
                     : "border-[#242017] text-[#8a8268] hover:border-[#e6ba35]/40 hover:text-[#e6ba35]"
@@ -418,7 +414,7 @@ export function SubmitFilmForm() {
         </nav>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 pt-10 pb-28">
+      <div className="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 pt-10 pb-28">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-8" noValidate>
 
@@ -677,7 +673,7 @@ export function SubmitFilmForm() {
                 {!hideActors && (
                   <>
                     <CrewList form={form} fieldName="actors" title="Actors — Lead & Supporting" label="Actor"
-                      defaultEntry={{ fullName: "", role: "Actor in a leading role", imageUrl: null, biography: "", instagram: "", email: "" }}
+                      defaultEntry={{ ...BLANK_PERSON, role: "Actor in a leading role" }}
                       roleInput={{ type: "select", options: ACTOR_ROLES }}
                       error={form.formState.errors.actors?.message} />
 
@@ -686,7 +682,7 @@ export function SubmitFilmForm() {
                 )}
 
                 <CrewList form={form} fieldName="directors" title="Director(s)" label="Director"
-                  defaultEntry={{ fullName: "", role: "Director", imageUrl: null, biography: "", instagram: "", email: "" }}
+                  defaultEntry={{ ...BLANK_PERSON, role: "Director" }}
                   roleInput={{ type: "select", options: DIRECTOR_ROLES }}
                   error={form.formState.errors.directors?.message}
                   onDuplicateEntry={duplicateDirectorAsProducer}
@@ -695,14 +691,14 @@ export function SubmitFilmForm() {
                 <div className="border-t border-[#141210]" />
 
                 <CrewList form={form} fieldName="producers" title="Producer(s)" label="Producer"
-                  defaultEntry={{ fullName: "", role: "Producer", imageUrl: null, biography: "", instagram: "", email: "" }}
+                  defaultEntry={{ ...BLANK_PERSON, role: "Producer" }}
                   roleInput={{ type: "select", options: PRODUCER_ROLES }}
                   error={form.formState.errors.producers?.message} />
 
                 <div className="border-t border-[#141210]" />
 
                 <CrewList form={form} fieldName="writers" title="Other — DOP, Editor, Writer, Music…" label="Credit"
-                  defaultEntry={{ fullName: "", role: "", imageUrl: null, biography: "", instagram: "", email: "" }}
+                  defaultEntry={{ ...BLANK_PERSON }}
                   roleInput={{ type: "text", placeholder: "e.g. Writer, DOP, Composer" }}
                   minEntries={0}
                   error={form.formState.errors.writers?.message} />
