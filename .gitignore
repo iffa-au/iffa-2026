@@ -50,3 +50,6 @@ docs/talent-lab-design-reference.html
 talent_lab_progress.md
 docs/SUBMISSION_FORM_PLAN.md
 submission_form_progress.md
+
+# local agent tooling (dev-server launch config, local settings)
+.claude/
