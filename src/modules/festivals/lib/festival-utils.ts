@@ -287,29 +287,22 @@ export const melbourneToday = (): string =>
     day: "2-digit",
   }).format(new Date());
 
-/** "7:30 PM" -> 1170, so screenings on one day can be ordered by start time. */
-const toMinutes = (time: string): number => {
-  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(time.trim());
-  if (!match) return 0;
-
-  const [, rawHour, rawMinute, meridiem] = match;
-  const hour = Number(rawHour) % 12;
-  const offset = meridiem.toUpperCase() === "PM" ? 12 : 0;
-  return (hour + offset) * 60 + Number(rawMinute);
-};
-
 /**
- * The programme's display order: by opening date, then by start time.
+ * The programme's display order: exactly the order staff arranged in the CMS.
  *
- * This replaced `groupScreeningsByDay`. Screenings are the organising unit
- * now, and a screening that runs Thursday to Saturday cannot be filed under a
- * single night without either duplicating it or picking one arbitrarily.
+ * This used to sort by opening date then start time. That fought the CMS,
+ * which gives every screening up/down arrows and saves the array in the order
+ * they leave it — a reorder there had no effect here, because the sort put the
+ * earliest date back on top. Programme order is an editorial decision (an
+ * opening gala headlines the page whatever its date, a strand runs together),
+ * so the CMS array wins and this only copies it.
+ *
+ * The copy is kept so callers can sort or reverse the result without mutating
+ * the festival they were handed.
  */
-export const orderScreenings = (festival: Festival): Screening[] =>
-  [...festival.screenings].sort(
-    (a, b) =>
-      a.startDate.localeCompare(b.startDate) || toMinutes(a.time) - toMinutes(b.time),
-  );
+export const orderScreenings = (festival: Festival): Screening[] => [
+  ...festival.screenings,
+];
 
 /**
  * Where a screening's own page lives.
