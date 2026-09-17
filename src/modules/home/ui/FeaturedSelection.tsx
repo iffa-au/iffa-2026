@@ -11,12 +11,16 @@ const count = featuredFilms.length;
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
 function SlideContent({ film }: { film: FeaturedFilm }) {
+  // A one-word title leaves `titlePart1` empty, so the joining space has to
+  // go with it — otherwise the heading opens on an indent.
+  const title = [film.titlePart1, film.titlePart2].filter(Boolean).join(" ");
+
   return (
     <div className="flex min-h-[600px] flex-col items-center gap-12 lg:flex-row lg:items-stretch">
       <div className="group w-full overflow-hidden rounded-sm shadow-2xl lg:w-1/2">
         <img
           src={film.posterUrl}
-          alt={`${film.titlePart1} ${film.titlePart2}`}
+          alt={title}
           loading="lazy"
           decoding="async"
           className="h-auto w-full object-contain transition-transform duration-700 group-hover:scale-105"
@@ -29,7 +33,8 @@ function SlideContent({ film }: { film: FeaturedFilm }) {
           </span>
         </div>
         <h3 className="mb-8 text-4xl font-bold leading-none text-white md:text-6xl">
-          {film.titlePart1}{" "}
+          {film.titlePart1}
+          {film.titlePart1 && film.titlePart2 ? " " : ""}
           <span className="text-yellow-500">{film.titlePart2}</span>
         </h3>
         <p className="mb-10 text-lg font-light leading-relaxed text-gray-400">
@@ -80,32 +85,46 @@ const FeaturedSelection = () => {
   const [trackX, setTrackX] = useState(-(100 / 3));
   const [sliding, setSliding] = useState(false);
   const [paused, setPaused] = useState(false);
+  // The slide being moved to, while it is moving. The track only ever holds
+  // three slots, so a jump to a distant film has to load that film into the
+  // incoming slot instead of stepping through everything in between.
+  const [incoming, setIncoming] = useState<{
+    index: number;
+    dir: "left" | "right";
+  } | null>(null);
   const lockRef = useRef(false);
   const activeRef = useRef(0);
 
-  const slide = useCallback((dir: "left" | "right") => {
-    if (lockRef.current) return;
+  const goTo = useCallback((index: number) => {
+    if (lockRef.current || index === activeRef.current) return;
     lockRef.current = true;
+
+    // Shortest way round the ring, so the dots never scroll the long way
+    // through five films to reach the neighbour on the other side. Ties go
+    // forward, which matches the direction the autoplay is already moving.
+    const dir =
+      mod(index - activeRef.current, count) <= mod(activeRef.current - index, count)
+        ? "left"
+        : "right";
+
+    setIncoming({ index, dir });
     setSliding(true);
     // Animate to the next or previous slot
     setTrackX(dir === "left" ? -(200 / 3) : 0);
 
     setTimeout(() => {
-      const newIndex =
-        dir === "left"
-          ? mod(activeRef.current + 1, count)
-          : mod(activeRef.current - 1, count);
-      activeRef.current = newIndex;
-      setActiveIndex(newIndex);
+      activeRef.current = index;
+      setActiveIndex(index);
       // Snap back to middle slot without transition
+      setIncoming(null);
       setSliding(false);
       setTrackX(-(100 / 3));
       lockRef.current = false;
     }, SLIDE_MS);
   }, []);
 
-  const next = useCallback(() => slide("left"), [slide]);
-  const prev = useCallback(() => slide("right"), [slide]);
+  const next = useCallback(() => goTo(mod(activeRef.current + 1, count)), [goTo]);
+  const prev = useCallback(() => goTo(mod(activeRef.current - 1, count)), [goTo]);
 
   useEffect(() => {
     if (paused) return;
@@ -114,9 +133,13 @@ const FeaturedSelection = () => {
   }, [paused, next]);
 
   const slots = [
-    featuredFilms[mod(activeIndex - 1, count)],
+    featuredFilms[
+      incoming?.dir === "right" ? incoming.index : mod(activeIndex - 1, count)
+    ],
     featuredFilms[activeIndex],
-    featuredFilms[mod(activeIndex + 1, count)],
+    featuredFilms[
+      incoming?.dir === "left" ? incoming.index : mod(activeIndex + 1, count)
+    ],
   ];
 
   return (
@@ -172,11 +195,7 @@ const FeaturedSelection = () => {
         {featuredFilms.map((_, i) => (
           <button
             key={i}
-            onClick={() => {
-              if (i !== activeRef.current) {
-                slide(i > activeRef.current ? "left" : "right");
-              }
-            }}
+            onClick={() => goTo(i)}
             aria-label={`Go to slide ${i + 1}`}
             className={`h-0.5 rounded-full transition-all duration-300 ${
               i === activeIndex ? "w-10 bg-yellow-500" : "w-4 bg-white/20"
