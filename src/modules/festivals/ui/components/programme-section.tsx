@@ -42,7 +42,7 @@ export function ProgrammeSection({
   heading,
   intro,
 }: {
-  /** In programme order — `orderScreenings` has already sorted these. */
+  /** In programme order — the CMS array order, via `orderScreenings`. */
   screenings: Screening[];
   heading: string;
   intro: string;

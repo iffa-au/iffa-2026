@@ -11,14 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { FilmValues, PersonEntry } from "@/utils/FilmSubmission.utils";
 import { WebpImageUpload } from "./WebpImageUpload";
-
-// Kept in step with the tokens in SubmitFilmForm.tsx so a crew card doesn't
-// read as a denser, secondary form embedded in the main one.
-const L = "text-[13px] font-semibold tracking-[0.01em] text-[#cbc0a0]";
-const I =
-  "bg-[#0a0908] border-[#2a2418] text-white text-[15px] placeholder-[#4a4436] focus:border-[#e6ba35]/50 focus-visible:ring-[#e6ba35]/20 focus-visible:ring-2 rounded-lg h-12 px-4";
-const HELP = "text-[13px] text-[#8a8268] leading-relaxed mt-2";
-const ERR = "text-red-400 text-[13px] mt-1.5";
+import { L, I, HELP, ERR } from "./form-tokens";
 
 type CrewField = "actors" | "directors" | "producers" | "writers";
 
@@ -77,7 +70,7 @@ export function CrewList({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-white text-base font-semibold">{title}</h3>
+          <h3 className="text-white text-lg font-semibold">{title}</h3>
           {error && <p className={ERR}>{error}</p>}
         </div>
         <Button
@@ -122,15 +115,15 @@ export function CrewList({
                 {/* Name and role in the collapsed summary, so a long crew
                     list can be scanned without opening every card. */}
                 <span className="min-w-0">
-                  <span className="block text-[#cbc0a0] text-[15px] font-medium truncate">
+                  <span className="block text-[#cbc0a0] text-[16px] font-medium truncate">
                     {name?.trim() || `${label} ${i + 1}`}
                   </span>
                   {role?.trim() && (
-                    <span className="block text-[#7a7258] text-[13px] truncate">{role}</span>
+                    <span className="block text-[#7a7258] text-[14px] truncate">{role}</span>
                   )}
                 </span>
                 {hasError && (
-                  <span className="ml-2 inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-[12px] text-red-300 shrink-0">
+                  <span className="ml-2 inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-[13px] text-red-300 shrink-0">
                     <AlertCircle size={12} /> Incomplete
                   </span>
                 )}
@@ -259,16 +252,54 @@ export function CrewList({
                   )}
                 />
 
+                {/* Sits beside the email field, which was half-width with an
+                    empty cell next to it — so the phone number costs the card
+                    no extra height. */}
+                <FormField
+                  control={form.control}
+                  name={`${fieldName}.${i}.contactPhone` as const}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={L}>
+                        Contact (Phone) <span className="ml-2 align-middle rounded-full border border-[#2a2418] px-2 py-[1px] text-[11px] font-medium uppercase tracking-wider text-[#6b6347]">Optional</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} type="tel" placeholder="+61 400 000 000" className={I} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name={`${fieldName}.${i}.instagram` as const}
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
                       <FormLabel className={L}>
-                        Instagram <span className="ml-2 align-middle rounded-full border border-[#2a2418] px-2 py-[1px] text-[10px] font-medium uppercase tracking-wider text-[#6b6347]">Optional</span>
+                        Instagram <span className="ml-2 align-middle rounded-full border border-[#2a2418] px-2 py-[1px] text-[11px] font-medium uppercase tracking-wider text-[#6b6347]">Optional</span>
                       </FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="@handle or profile URL" className={I} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`${fieldName}.${i}.notes` as const}
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel className={L}>
+                        Notes <span className="ml-2 align-middle rounded-full border border-[#2a2418] px-2 py-[1px] text-[11px] font-medium uppercase tracking-wider text-[#6b6347]">Optional</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Anything we should know about this credit…"
+                          rows={2}
+                          className={cn(I, "h-auto resize-none leading-relaxed")}
+                        />
                       </FormControl>
                     </FormItem>
                   )}

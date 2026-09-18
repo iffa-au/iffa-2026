@@ -6,9 +6,8 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 
-import type { Festival, FestivalPageSettings, FestivalPhase } from "../../lib/types";
+import type { Festival, FestivalPageSettings } from "../../lib/types";
 import { formatFestivalDatesShort } from "../../lib/festival-utils";
-import { OpeningCountdown } from "./opening-countdown";
 import { FilmGrain } from "./film-grain";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
@@ -50,11 +49,9 @@ const MOTES = [
 export function ProjectionHero({
   festival,
   settings,
-  phase,
 }: {
   festival: Festival | null;
   settings: FestivalPageSettings;
-  phase: FestivalPhase;
 }) {
   const root = useRef<HTMLElement>(null);
   const { hero } = settings;
@@ -265,7 +262,7 @@ export function ProjectionHero({
             one baseline row, one size on the h1 so the two spans cannot drift
             apart, centred on the same axis as the marquee above. */}
         {festival && (
-          <h1 className="mt-3 flex flex-wrap items-baseline justify-center gap-x-5 gap-y-1 text-[clamp(2rem,5.5vw,4rem)] md:mt-4">
+          <h1 className="mt-7 flex flex-wrap items-baseline justify-center gap-x-5 gap-y-1 text-[clamp(2rem,5.5vw,4rem)] md:mt-10">
             <span className="hero-line font-fest-text font-normal italic leading-tight text-fest-beam/85">
               {festival.name}
             </span>
@@ -277,31 +274,25 @@ export function ProjectionHero({
       </div>
 
       <div className="hero-copy relative z-10 mx-auto mt-8 w-full max-w-[1400px] px-5 md:mt-12 md:px-10">
-        {/* The dates, tagline and countdown close the same centred group —
-            the marquee's supporting line rather than a separate floor band. */}
+        {/* The dates and tagline close the same centred group — the marquee's
+            supporting line rather than a separate floor band. */}
         {festival ? (
           <>
-            <div className="hero-rule mt-7 h-px w-full origin-left bg-[linear-gradient(to_right,var(--color-fest-lamp),rgba(255,176,46,0.15)_45%,transparent)]" />
+            <div className="hero-rule mt-7 h-px w-full origin-center bg-[linear-gradient(to_right,transparent,rgba(255,176,46,0.15)_18%,var(--color-fest-lamp)_50%,rgba(255,176,46,0.15)_82%,transparent)]" />
 
-            <div className="mt-7 grid gap-x-14 gap-y-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-              <div>
-                <p className="hero-line font-fest-display text-[clamp(1.1rem,2.6vw,1.75rem)] font-semibold uppercase tracking-[0.06em] text-fest-beam">
-                  {formatFestivalDatesShort(festival)}
-                  {festival.city && (
-                    <>
-                      <span className="px-3 font-light text-fest-lamp/60">/</span>
-                      {festival.city}
-                    </>
-                  )}
-                </p>
+            <p className="hero-line mt-7 text-center font-fest-display text-[clamp(1.1rem,2.6vw,1.75rem)] font-semibold uppercase tracking-[0.06em] text-fest-beam">
+              {formatFestivalDatesShort(festival)}
+              {festival.city && (
+                <>
+                  <span className="px-3 font-light text-fest-lamp/60">/</span>
+                  {festival.city}
+                </>
+              )}
+            </p>
 
-                <p className="hero-line mt-4 max-w-[52ch] font-fest-text text-base leading-[1.65] text-fest-beam/65 md:text-lg">
-                  {festival.tagline || hero.subtitle}
-                </p>
-              </div>
-
-              <OpeningCountdown festival={festival} phase={phase} />
-            </div>
+            <p className="hero-line mx-auto mt-4 max-w-[56ch] text-center font-fest-text text-base leading-[1.65] text-fest-beam/65 md:text-lg">
+              {festival.tagline || hero.subtitle}
+            </p>
           </>
         ) : (
           <>
