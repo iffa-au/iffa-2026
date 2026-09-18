@@ -1,5 +1,5 @@
 export type FeaturedFilm = {
-  id: number;
+  id: string;
   badge: string;
   titlePart1: string;
   titlePart2: string;
@@ -15,20 +15,19 @@ export type FeaturedFilm = {
 const CF = "https://dhbdzeb2cbayq.cloudfront.net";
 
 /**
- * The homepage's featured row.
+ * Fallback for the homepage's featured row, which is now curated in cms-hub
+ * (Site content → Featured films) and loaded by `lib/featured-films-api.ts`.
+ * This list is served only when that API is unreachable or the row has never
+ * been saved in the CMS.
  *
- * Transcribed by hand from the 2026 submissions in the CMS rather than fetched:
- * this section is editorial, and the API has no field for the parts the design
- * needs — the two-tone title split, the badge, or a genre short enough for the
- * metadata grid (GDN carries eight genre tags in the database).
- *
- * Every other field is the submission record verbatim. Poster paths keep their
+ * Transcribed by hand from the 2026 submissions. Every field other than the
+ * badge, title split and genre is the submission record verbatim. Poster paths keep their
  * spaces percent-encoded, because several films were uploaded to folders named
  * after the film rather than a slug.
  */
 export const featuredFilms: FeaturedFilm[] = [
   {
-    id: 1,
+    id: "1",
     badge: "Must Watch",
     titlePart1: "High",
     titlePart2: "Rollers",
@@ -42,7 +41,7 @@ export const featuredFilms: FeaturedFilm[] = [
     trailerUrl: "https://www.youtube.com/watch?v=NhaXDfYundI",
   },
   {
-    id: 2,
+    id: "2",
     badge: "Official Selection",
     titlePart1: "Dhurandhar",
     titlePart2: "The Revenge",
@@ -56,7 +55,7 @@ export const featuredFilms: FeaturedFilm[] = [
     trailerUrl: "https://www.youtube.com/watch?v=NHk7scrb_9I",
   },
   {
-    id: 3,
+    id: "3",
     badge: "Official Selection",
     titlePart1: "Down the Arm of",
     titlePart2: "God",
@@ -70,7 +69,7 @@ export const featuredFilms: FeaturedFilm[] = [
     trailerUrl: "https://www.youtube.com/watch?v=qxqICU7O2cQ",
   },
   {
-    id: 4,
+    id: "4",
     badge: "Official Selection",
     // A three-letter title has nothing to split, so the whole thing takes the
     // accent colour. `SlideContent` drops the joining space when a part is empty.
@@ -86,7 +85,7 @@ export const featuredFilms: FeaturedFilm[] = [
     trailerUrl: "https://we.tl/t-LXjWzB6rhSVsJCAv",
   },
   {
-    id: 5,
+    id: "5",
     badge: "Official Selection",
     titlePart1: "Elijah",
     titlePart2: "Peel",
@@ -101,7 +100,7 @@ export const featuredFilms: FeaturedFilm[] = [
       "https://drive.google.com/file/d/1MNWY6np0UaYoYIWyNpK0MlxFzD2ba5wU/view",
   },
   {
-    id: 6,
+    id: "6",
     badge: "Official Selection",
     titlePart1: "Baby Do",
     titlePart2: "Die Do",
