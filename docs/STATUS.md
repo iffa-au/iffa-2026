@@ -1,12 +1,20 @@
 # Status
 
-Updated: 2026-09-16
+Updated: 2026-09-18
 
 Current state of work across `iffa-2026` and `../cms-hub`. Keep this short —
 delete finished items rather than accumulating a changelog. Git already has
 the history.
 
 ## In flight
+
+- **Featured Selection from the CMS** (branch `featured`, both repos). The
+  homepage row now loads `GET /featured-films` client-side instead of reading
+  `data/featured-films.ts`. That file remains as the fallback, served while the
+  API is unreachable or the row has never been saved in the CMS, so the
+  homepage looks the same until someone curates it. Once saved, the CMS is
+  authoritative, and an emptied row hides the section. Needs the cms-hub
+  backend (iffa-au/cms-hub#35) deployed first; see `../cms-hub/docs/STATUS.md`.
 
 - **Crew contact fields + form type scale** (branch `fix/submission-form`).
   Every crew member on the film submission form gains two optional fields,
