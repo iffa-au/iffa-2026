@@ -1,12 +1,53 @@
 # Status
 
-Updated: 2026-09-09
+Updated: 2026-09-18
 
 Current state of work across `iffa-2026` and `../cms-hub`. Keep this short —
 delete finished items rather than accumulating a changelog. Git already has
 the history.
 
 ## In flight
+
+- **Featured Selection from the CMS** (branch `featured`, both repos). The
+  homepage row now loads `GET /featured-films` client-side instead of reading
+  `data/featured-films.ts`. That file remains as the fallback, served while the
+  API is unreachable or the row has never been saved in the CMS, so the
+  homepage looks the same until someone curates it. Once saved, the CMS is
+  authoritative, and an emptied row hides the section. Needs the cms-hub
+  backend (iffa-au/cms-hub#35) deployed first; see `../cms-hub/docs/STATUS.md`.
+
+- **Crew contact fields + form type scale** (branch `fix/submission-form`).
+  Every crew member on the film submission form gains two optional fields,
+  **Contact (Phone)** and **Notes**, across all four sections. Phone takes the
+  empty cell that already sat beside the half-width email field, so the card
+  gained no height.
+
+  The frontend PR is iffa-au/iffa-2026#68. The cms-hub side is written and
+  open as two stacked PRs — iffa-au/cms-hub#28 (backend, merge first) and
+  iffa-au/cms-hub#29 (CMS UI) — so this is no longer blocked, only unmerged.
+  Until #28 deploys the form reports success and both values are discarded,
+  because Mongoose drops unknown fields without error. Merge order between the
+  repos does not matter. No real submission has been run end-to-end through
+  the new path, so do one after deploying and confirm both fields land.
+
+  #28 also closes a pre-existing leak worth knowing about here: the public
+  `/submissions/:id` endpoint returned the whole document minus two named
+  fields, so crew `email` has been readable by anyone holding a film's id for
+  as long as crew has been stored. Crew is now allow-listed down to
+  `fullName`, `role`, `imageUrl` — which is all the synopsis page ever read,
+  so nothing on this site changes.
+
+  The type scale went up a step, which surfaced a standing bug worth knowing
+  about anywhere these primitives are used: shadcn's `Input` and `Textarea`
+  carry `md:text-xs/relaxed` in their base class, and tailwind-merge only
+  dedupes within a variant — so a form's own unprefixed `text-[…]` never
+  conflicts with it, and **every input on this form had been rendering at 12px
+  on desktop**, not the 15px the token claimed. The shared token now declares
+  `md:text-[16px]` too, which is what lets the merge drop the primitive's rule.
+  The real desktop change is 12px to 16px, a bigger visual jump than it sounds.
+  `SelectTrigger`'s `text-xs/relaxed` is unprefixed and was never affected.
+
+  The form also widens past its fixed 1024px now: 1152 at `xl`, 1280 at `2xl`.
 
 - **One festival a year + Festival page redesign** (branch `page/festivals`).
   The Festivals section was built for two festivals a month; IFFA now runs one

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { fetchFestivalsPageData } from "@/modules/festivals/lib/festival-api";
-import { festivalPhase } from "@/modules/festivals/lib/festival-utils";
 import { FestivalPage } from "@/modules/festivals/ui/views/festival-page";
 
 /**
@@ -21,19 +20,9 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const { festival, archive, settings, today } = await fetchFestivalsPageData();
-
-  // Decided here, from Melbourne's date, and passed down. Every component that
-  // needs to know whether the festival is coming, running or over reads the
-  // same answer, so the countdown and the programme's wording cannot disagree.
-  const phase = festival ? festivalPhase(festival, today) : "upcoming";
+  const { festival, archive, settings } = await fetchFestivalsPageData();
 
   return (
-    <FestivalPage
-      festival={festival}
-      archive={archive}
-      settings={settings}
-      phase={phase}
-    />
+    <FestivalPage festival={festival} archive={archive} settings={settings} />
   );
 }

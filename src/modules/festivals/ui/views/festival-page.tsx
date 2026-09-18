@@ -1,4 +1,4 @@
-import type { Festival, FestivalPageSettings, FestivalPhase } from "../../lib/types";
+import type { Festival, FestivalPageSettings } from "../../lib/types";
 import { orderScreenings } from "../../lib/festival-utils";
 import { festivalFontClass } from "../../lib/festival-fonts";
 import { ArchiveBand } from "../components/archive-band";
@@ -49,18 +49,16 @@ export function FestivalPage({
   festival,
   archive,
   settings,
-  phase,
 }: {
   festival: Festival | null;
   archive: Festival[];
   settings: FestivalPageSettings;
-  phase: FestivalPhase;
 }) {
   const screenings = festival ? orderScreenings(festival) : [];
 
   return (
     <div className={`${festivalFontClass} relative bg-fest-room`}>
-      <ProjectionHero festival={festival} settings={settings} phase={phase} />
+      <ProjectionHero festival={festival} settings={settings} />
 
       {screenings.length > 0 ? (
         <ProgrammeSection

@@ -14,7 +14,14 @@ export async function fetchJsonCached<T>(
 	}
 
 	const { ttlMs: _ttl, ...fetchOptions } = options ?? {};
-	const res = await fetch(url, fetchOptions);
+
+	let res: Response;
+	try {
+		res = await fetch(url, fetchOptions);
+	} catch (error) {
+		console.warn(`fetchJsonCached: network error for ${url}`, error);
+		return null;
+	}
 
 	if (!res.ok) return null;
 

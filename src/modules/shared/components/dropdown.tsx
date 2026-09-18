@@ -1,6 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 import {
   DropdownMenu,
@@ -14,54 +15,63 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 import { Button } from "@/components/ui/button"
+import {
+  EVENTS_HREF,
+  EVENT_SECTIONS,
+  EVENT_YEARS,
+  NAV_ITEM,
+  NAV_MENU_ITEM,
+  isActive,
+} from "./nav-data"
 
-const years = ["2026", "2025", "2024", "2023", "2022"]
-
-export default function PastEventsDropdown({ onNavigate }: { onNavigate?: () => void }) {
-  const router = useRouter()
-
-  const handleNavigate = (year: string, type: string) => {
-    router.push(`/events/${year}/${type}`)
-    onNavigate?.()
-  }
+/**
+ * The events archive as it appears in the desktop bar: a year, then a section
+ * within it. Kept nested because the archive grows by one year at a time and a
+ * flat list of every year × section would be 15 rows and climbing.
+ */
+export default function PastEventsDropdown() {
+  const pathname = usePathname()
+  const sectionActive = isActive(pathname, EVENTS_HREF)
 
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="rounded-[5px] border-none text-white bg-transparent hover:bg-white/10 hover:text-gray-200 font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm">
-          Past Events
+        <Button
+          variant="ghost"
+          data-active={sectionActive}
+          aria-current={sectionActive ? "true" : undefined}
+          className={NAV_ITEM}
+        >
+          Events
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="bg-black/90 border-white/20 rounded-[2px]">
-        {years.map((year) => (
+      <DropdownMenuContent
+        align="start"
+        sideOffset={8}
+        className="bg-[#0E0C15]/95 backdrop-blur-sm border-white/20 rounded-[2px]"
+      >
+        {EVENT_YEARS.map((year) => (
           <DropdownMenuSub key={year}>
-            <DropdownMenuSubTrigger className="text-white font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm focus:bg-white/20 focus:text-gray-200 rounded-[2px] cursor-pointer">
+            <DropdownMenuSubTrigger
+              data-active={pathname.startsWith(`${EVENTS_HREF}/${year}`)}
+              className={NAV_MENU_ITEM}
+            >
               {year}
             </DropdownMenuSubTrigger>
 
             <DropdownMenuPortal>
-              <DropdownMenuSubContent className="bg-black/90 border-white/20 rounded-[2px]">
-                <DropdownMenuItem
-                  className="text-white font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm focus:bg-white/20 focus:text-gray-200 rounded-[2px] cursor-pointer"
-                  onClick={() => handleNavigate(year, "submissions")}
-                >
-                  Submissions
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  className="text-white font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm focus:bg-white/20 focus:text-gray-200 rounded-[2px] cursor-pointer"
-                  onClick={() => handleNavigate(year, "nominations")}
-                >
-                  Nominations
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  className="text-white font-sans tracking-[0.2em] uppercase text-[10px] md:text-xs lg:text-sm focus:bg-white/20 focus:text-gray-200 rounded-[2px] cursor-pointer"
-                  onClick={() => handleNavigate(year, "winners")}
-                >
-                  Winners
-                </DropdownMenuItem>
+              <DropdownMenuSubContent className="bg-[#0E0C15]/95 backdrop-blur-sm border-white/20 rounded-[2px]">
+                {EVENT_SECTIONS.map(({ label, segment }) => {
+                  const href = `${EVENTS_HREF}/${year}/${segment}`
+                  return (
+                    <DropdownMenuItem key={segment} asChild className={NAV_MENU_ITEM}>
+                      <Link href={href} data-active={pathname === href}>
+                        {label}
+                      </Link>
+                    </DropdownMenuItem>
+                  )
+                })}
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
