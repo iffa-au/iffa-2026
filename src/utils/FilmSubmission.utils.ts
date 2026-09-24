@@ -34,6 +34,17 @@ const optionalTrimmedUrl = (message: string) =>
     .transform((v) => v.trim())
     .refine((v) => v === "" || isUrl(v), { message });
 
+/**
+ * One short promotional clip. The whole list is optional, so a row is only
+ * held to the URL and password rules once its URL has something in it — see
+ * the superRefine in buildFilmSchema. A blank row is dropped on submit.
+ */
+const promoClipSchema = z.object({
+  url: z.string(),
+  hasPassword: z.boolean(),
+  password: z.string(),
+});
+
 const personSchema = z.object({
   fullName: z.string().min(1, "Name is required"),
   role: z.string().min(1, "Role is required"),
@@ -126,6 +137,7 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       // surfaced beside the URL in the CMS review screens.
       trailerHasPassword: z.boolean(),
       trailerPassword: z.string(),
+      promoClips: z.array(promoClipSchema),
       actors: z.array(personSchema),
       directors: z.array(personSchema).min(1, "At least one director required"),
       producers: z.array(personSchema).min(1, "At least one producer required"),
@@ -180,6 +192,25 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
         });
       }
 
+      for (const [index, clip] of data.promoClips.entries()) {
+        const url = clip.url.trim();
+        if (!url) continue;
+        if (!isUrl(url)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["promoClips", index, "url"],
+            message: "Must be a valid download URL",
+          });
+        }
+        if (clip.hasPassword && !clip.password.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["promoClips", index, "password"],
+            message: "Enter the password for this clip link",
+          });
+        }
+      }
+
       const contentTypeName = contentTypes.find(
         (ct) => ct._id === data.contentTypeId,
       )?.name;
@@ -208,6 +239,13 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
 
 export type FilmValues = z.infer<ReturnType<typeof buildFilmSchema>>;
 export type PersonEntry = z.infer<typeof personSchema>;
+export type PromoClipEntry = z.infer<typeof promoClipSchema>;
+
+export const BLANK_PROMO_CLIP: PromoClipEntry = {
+  url: "",
+  hasPassword: false,
+  password: "",
+};
 
 export const BLANK_PERSON: PersonEntry = {
   fullName: "",

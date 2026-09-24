@@ -21,6 +21,7 @@ import {
   buildFilmSchema,
   useSubmissionOptions,
   BLANK_PERSON,
+  BLANK_PROMO_CLIP,
   WATCH_FORMAT_OPTIONS,
   contentTypeHidesActors,
   filterFilledCrew,
@@ -31,6 +32,8 @@ import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
 import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { CrewList } from "./components/CrewList";
+import { PromoClipsList } from "./components/PromoClipsList";
+import { YesNoToggle } from "./components/YesNoToggle";
 import { WebpImageUpload, uploadWebpImage, createSubmissionRef } from "./components/WebpImageUpload";
 import { L, I, HELP, ERR } from "./components/form-tokens";
 
@@ -90,7 +93,7 @@ const STEPS = [
 const CREW_FIELDS = new Set(["actors", "directors", "producers", "writers"]);
 const MEDIA_FIELDS = new Set([
   "potraitImageUrl", "landscapeImageUrl", "imdbUrl", "trailerUrl",
-  "trailerHasPassword", "trailerPassword", "notes", "contactEmail", "agreeRights",
+  "trailerHasPassword", "trailerPassword", "promoClips", "notes", "contactEmail", "agreeRights",
 ]);
 
 /** Which section a (possibly nested, e.g. `directors.0.email`) field lives in. */
@@ -176,6 +179,7 @@ export function SubmitFilmForm() {
       languageId: "", productionHouse: "", distributor: "", genreIds: [],
       potraitImageUrl: null, landscapeImageUrl: null, imdbUrl: "", trailerUrl: "",
       trailerHasPassword: false, trailerPassword: "",
+      promoClips: [{ ...BLANK_PROMO_CLIP }],
       actors: [{ ...BLANK_PERSON, role: "Actor in a leading role" }],
       directors: [{ ...BLANK_PERSON, role: "Director" }],
       producers: [{ ...BLANK_PERSON, role: "Producer" }],
@@ -276,8 +280,18 @@ export function SubmitFilmForm() {
       // trailerPassword, so sending the boolean too would be a second source
       // of truth that could disagree with it.
       trailerHasPassword: _rawTrailerHasPassword,
+      promoClips: _rawPromoClips,
       ...restValues
     } = values;
+
+    // Blank rows are dropped, and — as with the trailer — the per-clip
+    // hasPassword toggle stays UI-only: a non-empty password is the signal.
+    const promoClips = values.promoClips
+      .map((clip) => ({
+        url: clip.url.trim(),
+        password: clip.hasPassword ? clip.password.trim() : "",
+      }))
+      .filter((clip) => clip.url);
 
     try {
       const [potraitImageUrl, landscapeImageUrl, actors, directors, producers, writers] =
@@ -308,6 +322,7 @@ export function SubmitFilmForm() {
         durationHours: values.durationHours || "0",
         durationMinutes: values.durationMinutes || "0",
         trailerPassword: values.trailerHasPassword ? values.trailerPassword.trim() : "",
+        promoClips,
         potraitImageUrl,
         landscapeImageUrl,
         // The server rebuilds the asset folder path from this plus the title —
@@ -349,6 +364,12 @@ export function SubmitFilmForm() {
           "Trailer Link Password Protected": values.trailerHasPassword
             ? "Yes — password is on the submission in the CMS"
             : "No",
+          // URLs only, for the same reason the trailer password is left out.
+          "Short Promotional Clips": promoClips.length
+            ? promoClips
+                .map((clip) => (clip.password ? `${clip.url} (password protected)` : clip.url))
+                .join(", ")
+            : "Not provided",
           "Release, Broadcast or Exhibition Link": values.releaseLinkUrl?.trim() || "Not provided",
           Notes: values.notes?.trim() || "Not provided",
         },
@@ -761,33 +782,16 @@ export function SubmitFilmForm() {
                     render={({ field }: { field: any }) => (
                       <FormItem>
                         <FormLabel className={L}>Is this link password-protected? <Req /></FormLabel>
-                        <div className="mt-2 flex gap-3" role="radiogroup" aria-label="Is the trailer link password-protected?">
-                          {[
-                            { label: "No", value: false },
-                            { label: "Yes", value: true },
-                          ].map((opt) => (
-                            <button
-                              key={opt.label}
-                              type="button"
-                              role="radio"
-                              aria-checked={field.value === opt.value}
-                              onClick={() => {
-                                field.onChange(opt.value);
-                                // Drop a password typed before switching back
-                                // to "No" so it can't be submitted invisibly.
-                                if (!opt.value) form.setValue("trailerPassword", "");
-                              }}
-                              className={cn(
-                                "min-w-24 rounded-lg border px-5 h-11 text-[15px] font-medium transition-colors",
-                                field.value === opt.value
-                                  ? "border-[#e6ba35] bg-[#e6ba35]/12 text-[#e6ba35]"
-                                  : "border-[#2a2418] text-[#8a8268] hover:border-[#e6ba35]/40 hover:text-[#cbc0a0]"
-                              )}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
+                        <YesNoToggle
+                          ariaLabel="Is the trailer link password-protected?"
+                          value={field.value}
+                          onChange={(value) => {
+                            field.onChange(value);
+                            // Drop a password typed before switching back
+                            // to "No" so it can't be submitted invisibly.
+                            if (!value) form.setValue("trailerPassword", "");
+                          }}
+                        />
                         <p className={HELP}>
                           Many filmmakers share trailers from a protected folder. Telling us now saves a round of emails before your film can be reviewed.
                         </p>
@@ -813,6 +817,10 @@ export function SubmitFilmForm() {
                         </FormItem>
                       )} />
                   )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <PromoClipsList form={form} />
                 </div>
 
                 <div className="md:col-span-2">
