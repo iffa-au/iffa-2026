@@ -264,6 +264,8 @@ export function SubmitFilmForm() {
       }),
       biography: p.biography.trim(),
       instagramUrl: p.instagram?.trim() || "",
+      representativeName: p.representativeName.trim(),
+      representativeRelationship: p.representativeRelationship.trim(),
       email: p.email.trim().toLowerCase(),
       contactPhone: p.contactPhone?.trim() || "",
       notes: p.notes?.trim() || "",
@@ -694,6 +696,7 @@ export function SubmitFilmForm() {
                 {!hideActors && (
                   <>
                     <CrewList form={form} fieldName="actors" title="Actors — Lead & Supporting" label="Actor"
+                      relationshipTo="Actor/Actress"
                       defaultEntry={{ ...BLANK_PERSON, role: "Actor in a leading role" }}
                       roleInput={{ type: "select", options: ACTOR_ROLES }}
                       error={form.formState.errors.actors?.message} />
@@ -719,6 +722,7 @@ export function SubmitFilmForm() {
                 <div className="border-t border-[#141210]" />
 
                 <CrewList form={form} fieldName="writers" title="Other — DOP, Editor, Writer, Music…" label="Credit"
+                  relationshipTo="Crew Member"
                   defaultEntry={{ ...BLANK_PERSON }}
                   roleInput={{ type: "text", placeholder: "e.g. Writer, DOP, Composer" }}
                   minEntries={0}

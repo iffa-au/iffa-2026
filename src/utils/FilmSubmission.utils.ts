@@ -69,6 +69,12 @@ const personSchema = z.object({
   imageUrl: requiredWebpFile("Photo is required"),
   biography: requiredText("Biography must be at least 10 characters", 10),
   instagram: z.string().optional(),
+  // The representative is who IFFA contacts about this credit — the person
+  // themselves, or an agent, manager, parent, etc. Name and relationship are
+  // required alongside the email so a reviewer knows who they're writing to.
+  // The API enforces the same three (createSubmissionPublic in cms-hub).
+  representativeName: requiredText("Representative name is required"),
+  representativeRelationship: requiredText("Relationship is required"),
   email: requiredEmail("A valid representative email is required"),
   // Both optional and unvalidated by design. A phone number is asked for as a
   // faster route to a filmmaker than email, not as a second identity check —
@@ -173,6 +179,8 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
           imageUrl: z.custom<File | null>(),
           biography: z.string(),
           instagram: z.string().optional(),
+          representativeName: z.string(),
+          representativeRelationship: z.string(),
           email: z.string(),
           contactPhone: z.string().optional(),
           notes: z.string().optional(),
@@ -272,6 +280,8 @@ export const BLANK_PERSON: PersonEntry = {
   imageUrl: null,
   biography: "",
   instagram: "",
+  representativeName: "",
+  representativeRelationship: "",
   email: "",
   contactPhone: "",
   notes: "",
@@ -285,7 +295,7 @@ export const BLANK_PERSON: PersonEntry = {
 export function isBlankPerson(entry: PersonEntry): boolean {
   const text = [
     entry.fullName, entry.role, entry.biography, entry.email,
-    entry.instagram, entry.contactPhone, entry.notes,
+    entry.representativeName, entry.representativeRelationship, entry.instagram, entry.contactPhone, entry.notes,
   ];
   return !(entry.imageUrl instanceof File) && text.every((v) => !v?.trim());
 }
