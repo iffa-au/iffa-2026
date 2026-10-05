@@ -7,13 +7,11 @@ import { mentors } from "../../data/mentors-data";
 import { opportunities } from "../../data/opportunities-data";
 import { partnerCategories } from "../../data/partners-data";
 import { resources } from "../../data/resources-data";
-import { streams } from "../../data/streams-data";
 import {
   eligibilityCriteria,
   howItWorksSteps,
   participantBenefits,
   pilotOutcomes,
-  programSnapshot,
   talentLabEdition,
 } from "../../data/talent-lab-edition";
 import { partitionEvents } from "../../lib/filters";
@@ -29,7 +27,6 @@ import { ResourceList, ResourceRow } from "../components/resource-row";
 import { SectionHeader } from "../components/section-header";
 import { StatTile, StatTileRow } from "../components/stat-tile";
 import { StepBlock } from "../components/step-block";
-import { StreamCard } from "../components/stream-card";
 import { PartnerTile } from "../components/partner-tile";
 
 const { sections } = talentLabEdition;
@@ -48,7 +45,7 @@ const { upcoming: upcomingEvents } = partitionEvents(events);
 export function TalentLabPage() {
   return (
     <div className="bg-black text-white">
-      {/* ------------------------------------------------------- 1. Hero */}
+      {/* ----------------------------------------------------- 1. Hero */}
       <section className="relative overflow-hidden">
         <div
           aria-hidden="true"
@@ -95,28 +92,11 @@ export function TalentLabPage() {
             >
               Become a mentor or partner <span aria-hidden="true">→</span>
             </Link>
-
-            <p className="mt-3 font-mono text-[10px] uppercase leading-loose tracking-[0.16em] text-white/30">
-              <span aria-hidden="true">[ image ] </span>
-              {talentLabEdition.heroImageCaption}
-            </p>
           </div>
         </div>
       </section>
 
-      {/* -------------------------------------------- 2. Program snapshot */}
-      <section className="border-t border-white/8">
-        <div className="mx-auto max-w-7xl px-5 py-10 md:px-8 md:py-12">
-          <h2 className="sr-only">Program snapshot</h2>
-          <StatTileRow>
-            {programSnapshot.map((stat) => (
-              <StatTile key={stat.caption} stat={stat} />
-            ))}
-          </StatTileRow>
-        </div>
-      </section>
-
-      {/* ------------------------------- 3. Why the Talent Lab exists */}
+      {/* -------------------------------- 2. Why the Talent Lab exists */}
       <Section>
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
           <div className="flex flex-col gap-5">
@@ -136,7 +116,7 @@ export function TalentLabPage() {
         </div>
       </Section>
 
-      {/* -------------------------------------------- 4. How it works */}
+      {/* --------------------------------------------- 3. How it works */}
       <Section className={TINTED}>
         <SectionHeader
           eyebrow={sections.howItWorks.eyebrow}
@@ -150,7 +130,7 @@ export function TalentLabPage() {
         </div>
       </Section>
 
-      {/* ------------------------------------ 5. Current opportunities */}
+      {/* ------------------------------------ 4. Current opportunities */}
       <Section>
         <SectionHeader
           eyebrow={sections.opportunities.eyebrow}
@@ -166,22 +146,7 @@ export function TalentLabPage() {
         </div>
       </Section>
 
-      {/* ----------------------------------------- 6. Talent Lab streams */}
-      <Section className={TINTED}>
-        <SectionHeader
-          eyebrow={sections.streams.eyebrow}
-          heading={sections.streams.heading}
-          subtitle={sections.streams.body}
-        />
-
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {streams.map((stream) => (
-            <StreamCard key={stream.slug} stream={stream} />
-          ))}
-        </div>
-      </Section>
-
-      {/* -------------------------------- 7. What participants receive */}
+      {/* -------------------------------- 5. What participants receive */}
       <Section>
         <SectionHeader
           eyebrow={sections.benefits.eyebrow}
@@ -199,7 +164,7 @@ export function TalentLabPage() {
         </p>
       </Section>
 
-      {/* ------------------------------------------- 8. Who can apply */}
+      {/* -------------------------------------------- 6. Who can apply */}
       <Section className={TINTED}>
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
           <div className="flex flex-col gap-5">
@@ -253,88 +218,103 @@ export function TalentLabPage() {
       </Section>
 
       {/* ------------------------------------------ 9. Mentors preview */}
-      <Section>
-        <SectionHeader
-          eyebrow={sections.mentors.eyebrow}
-          heading={sections.mentors.heading}
-          viewAllHref="/talent-lab/mentors"
-          viewAllLabel="Meet our mentors"
-        />
+      {/* Hidden until content is ready — re-enable by removing the {false && (…)} wrapper */}
+      {false && (
+        <Section>
+          <SectionHeader
+            eyebrow={sections.mentors.eyebrow}
+            heading={sections.mentors.heading}
+            viewAllHref="/talent-lab/mentors"
+            viewAllLabel="Meet our mentors"
+          />
 
-        <div className="mt-11 grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-          {previewMentors.map((mentor) => (
-            <MentorPreviewCard key={mentor.slug} mentor={mentor} />
-          ))}
-        </div>
-      </Section>
+          <div className="mt-11 grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+            {previewMentors.map((mentor) => (
+              <MentorPreviewCard key={mentor.slug} mentor={mentor} />
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* ------------------------------------------------ 10. Partners */}
-      <Section className={TINTED}>
-        <SectionHeader
-          eyebrow={sections.partners.eyebrow}
-          heading={sections.partners.heading}
-          viewAllHref="/talent-lab/partners"
-          viewAllLabel="All partners"
-        />
+      {/* Hidden until content is ready — re-enable by removing the {false && (…)} wrapper */}
+      {false && (
+        <Section className={TINTED}>
+          <SectionHeader
+            eyebrow={sections.partners.eyebrow}
+            heading={sections.partners.heading}
+            viewAllHref="/talent-lab/partners"
+            viewAllLabel="All partners"
+          />
 
-        <div className="mt-9 grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-          {partnerCategories.map((category) => (
-            <PartnerTile key={category} organisation={category} />
-          ))}
-        </div>
-      </Section>
+          <div className="mt-9 grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+            {partnerCategories.map((category) => (
+              <PartnerTile key={category} organisation={category} />
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* ------------------------------------------------ 11. Outcomes */}
-      <Section>
-        <SectionHeader
-          eyebrow={sections.outcomes.eyebrow}
-          heading={sections.outcomes.heading}
-        />
+      {/* Hidden until content is ready — re-enable by removing the {false && (…)} wrapper */}
+      {false && (
+        <Section>
+          <SectionHeader
+            eyebrow={sections.outcomes.eyebrow}
+            heading={sections.outcomes.heading}
+          />
 
-        <div className="mt-9">
-          <StatTileRow>
-            {pilotOutcomes.map((outcome) => (
-              <StatTile key={outcome.caption} stat={outcome} />
-            ))}
-          </StatTileRow>
-        </div>
-      </Section>
+          <div className="mt-9">
+            <StatTileRow>
+              {pilotOutcomes.map((outcome) => (
+                <StatTile key={outcome.caption} stat={outcome} />
+              ))}
+            </StatTileRow>
+          </div>
+        </Section>
+      )}
 
       {/* ------------------------------------------ 12. Alumni preview */}
-      <Section className={TINTED}>
-        <SectionHeader
-          eyebrow={sections.alumni.eyebrow}
-          heading={sections.alumni.heading}
-          viewAllHref="/talent-lab/alumni"
-          viewAllLabel="All alumni stories"
-        />
+      {/* Hidden until content is ready — re-enable by removing the {false && (…)} wrapper */}
+      {false && (
+        <Section className={TINTED}>
+          <SectionHeader
+            eyebrow={sections.alumni.eyebrow}
+            heading={sections.alumni.heading}
+            viewAllHref="/talent-lab/alumni"
+            viewAllLabel="All alumni stories"
+          />
 
-        <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {previewAlumni.map((alumnus) => (
-            <AlumniCard key={alumnus.slug} alumnus={alumnus} />
-          ))}
-        </div>
-      </Section>
+          <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {previewAlumni.map((alumnus) => (
+              <AlumniCard key={alumnus.slug} alumnus={alumnus} />
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* --------------------------------------- 13. Resources preview */}
-      <Section>
-        <SectionHeader
-          eyebrow={sections.resources.eyebrow}
-          heading={sections.resources.heading}
-          viewAllHref="/talent-lab/resources"
-          viewAllLabel="Resource library"
-        />
+      {/* Hidden until content is ready — re-enable by removing the {false && (…)} wrapper */}
+      {false && (
+        <Section>
+          <SectionHeader
+            eyebrow={sections.resources.eyebrow}
+            heading={sections.resources.heading}
+            viewAllHref="/talent-lab/resources"
+            viewAllLabel="Resource library"
+          />
 
-        <div className="mt-8">
-          <ResourceList>
-            {previewResources.map((resource) => (
-              <ResourceRow key={resource.id} resource={resource} />
-            ))}
-          </ResourceList>
-        </div>
-      </Section>
+          <div className="mt-8">
+            <ResourceList>
+              {previewResources.map((resource) => (
+                <ResourceRow key={resource.id} resource={resource} />
+              ))}
+            </ResourceList>
+          </div>
+        </Section>
+      )}
 
-      {/* ----------------------------------------------------- 14. FAQ */}
+      {/* ------------------------------------------------------ 7. FAQ */}
       <Section className={TINTED}>
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12">
           <div className="flex flex-col gap-3.5 self-start">
@@ -368,7 +348,7 @@ export function TalentLabPage() {
         </div>
       </Section>
 
-      {/* ----------------------------------------------- 15. Final CTA */}
+      {/* ------------------------------------------------ 8. Final CTA */}
       <CtaBand
         eyebrow={sections.finalCta.eyebrow}
         heading={sections.finalCta.heading}
