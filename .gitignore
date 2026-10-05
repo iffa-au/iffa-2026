@@ -51,6 +51,8 @@ talent_lab_progress.md
 /scripts
 docs/SUBMISSION_FORM_PLAN.md
 submission_form_progress.md
+docs/HOMEPAGE_BANNER_PLAN.md
+homepage_banner_progress.md
 
 # local agent tooling (dev-server launch config, local settings)
 .claude/

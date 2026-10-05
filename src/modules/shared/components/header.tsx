@@ -11,7 +11,7 @@ import TalentLabDropdown from "./talent-lab-dropdown"
 import MobileNav from "./mobile-nav"
 import SubmitFilmButton from "./submit-film-button"
 import { Button } from "@/components/ui/button"
-import { NAV_ITEM, PRIMARY_LINKS, isActive } from "./nav-data"
+import { DISTRIBUTION_CTA, NAV_ITEM, PRIMARY_LINKS, isActive } from "./nav-data"
 
 export default function Header() {
   const pathname = usePathname()
@@ -84,9 +84,9 @@ export default function Header() {
       />
 
       {/*
-        One row, three columns. Below `lg` the middle column holds the CTA and
-        the nav collapses into the drawer; from `lg` the middle column holds the
-        nav and the CTA moves to the right.
+        One row, three columns, and the CTA always sits in the middle one. Below
+        `lg` the nav collapses into the drawer and the CTA is all the middle
+        holds; from `lg` the CTA stacks centred beneath the nav.
 
         `1fr auto 1fr` from `lg` rather than `auto 1fr auto`: equal side columns
         are what centre the nav against the viewport instead of against whatever
@@ -108,7 +108,7 @@ export default function Header() {
           />
         </Link>
 
-        <div className="flex min-w-0 justify-center">
+        <div className="flex min-w-0 flex-col items-center lg:gap-1">
           <SubmitFilmButton className="lg:hidden" />
 
           <nav
@@ -134,10 +134,12 @@ export default function Header() {
               </Button>
             ))}
           </nav>
+
+          <SubmitFilmButton variant="inline" className="hidden lg:inline-flex" />
         </div>
 
         <div className="flex justify-end">
-          <SubmitFilmButton className="hidden lg:inline-flex" />
+          <SubmitFilmButton link={DISTRIBUTION_CTA} className="hidden lg:inline-flex" />
 
           <Button
             variant="ghost"
