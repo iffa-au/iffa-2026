@@ -3,7 +3,7 @@
 import Link from "next/link"
 
 import { cn } from "@/lib/utils"
-import { NAV_LABEL, SUBMIT_CTA } from "./nav-data"
+import { NAV_LABEL, SUBMIT_CTA, type NavLink } from "./nav-data"
 
 /**
  * The header's call to action, and the only place in the bar that carries an
@@ -17,13 +17,51 @@ import { NAV_LABEL, SUBMIT_CTA } from "./nav-data"
 export default function SubmitFilmButton({
   className,
   onClick,
+  variant = "button",
+  link = SUBMIT_CTA,
 }: {
   className?: string
   onClick?: () => void
+  /**
+   * `inline` is for the desktop bar, where the CTA sits directly under the
+   * nav: a boxed button there was as heavy as the links above it. Instead the
+   * label sits between two gold rules — the same short rule that leads every
+   * trailer title on the homepage — and the rules reach outward on hover.
+   */
+  variant?: "button" | "inline"
+  /** Where it goes and what it says. The bar's other CTA reuses this look. */
+  link?: NavLink
 }) {
+  if (variant === "inline") {
+    const rule =
+      "h-px w-5 bg-yellow-400/45 transition-all duration-300 ease-out " +
+      "group-hover/submit:w-9 group-hover/submit:bg-yellow-400 " +
+      "group-focus-visible/submit:w-9 group-focus-visible/submit:bg-yellow-400 " +
+      "motion-reduce:transition-none"
+
+    return (
+      <Link
+        href={link.href}
+        onClick={onClick}
+        className={cn(
+          "group/submit inline-flex shrink-0 items-center gap-3 rounded-[2px] px-2 py-1",
+          "text-[10px] font-semibold whitespace-nowrap",
+          NAV_LABEL,
+          "text-yellow-400/90 transition-colors duration-200 hover:text-yellow-300",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/70",
+          className
+        )}
+      >
+        <span aria-hidden className={rule} />
+        {link.label}
+        <span aria-hidden className={rule} />
+      </Link>
+    )
+  }
+
   return (
     <Link
-      href={SUBMIT_CTA.href}
+      href={link.href}
       onClick={onClick}
       /*
         `cn` rather than string concatenation: the header passes `hidden` and
@@ -50,7 +88,7 @@ export default function SubmitFilmButton({
         className
       )}
     >
-      {SUBMIT_CTA.label}
+      {link.label}
     </Link>
   )
 }
