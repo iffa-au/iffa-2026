@@ -104,9 +104,8 @@ export const EMPTY_ENQUIRY: DistributionEnquiryValues = {
 };
 
 /**
- * The request body a backend would receive. Nothing sends it yet — see the
- * note in the page's submit handler — but shaping it now means wiring the form
- * up is one `fetch` at that boundary, not a rewrite.
+ * The body for cms-hub's `POST /distribution-enquiries`. Field names follow the
+ * backend model (`contentType`, `country`, `runtimeMinutes`…), not the form.
  */
 export function toPayload(values: DistributionEnquiryValues) {
   return {
@@ -134,5 +133,6 @@ export function toPayload(values: DistributionEnquiryValues) {
     screenerPassword: values.screenerPassword,
     trailerUrl: values.trailerUrl,
     notes: values.notes,
+    rightsConfirmed: values.rightsConfirmed,
   };
 }

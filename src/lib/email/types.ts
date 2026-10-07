@@ -1,6 +1,7 @@
 export type FormType =
   | "film-submission"
   | "film-enquiry"
+  | "distribution-enquiry"
   | "contact"
   | "partner"
   | "oman-filming-enquiry";

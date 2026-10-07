@@ -32,6 +32,7 @@ export const OMAN_ADMIN_RECIPIENTS = [
 export const FORM_TYPE_LABELS: Record<string, string> = {
   "film-submission": "Film Submission",
   "film-enquiry": "Film Enquiry",
+  "distribution-enquiry": "Distribution Enquiry",
   contact: "Contact Form",
   partner: "Partnership Enquiry",
   "oman-filming-enquiry": "Oman Filming Enquiry",

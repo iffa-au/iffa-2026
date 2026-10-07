@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type BaseSyntheticEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, type Control } from "react-hook-form";
 import { AlertCircle } from "lucide-react";
@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
 import { cn } from "@/lib/utils";
 import { useSubmissionOptions } from "@/utils/FilmSubmission.utils";
 
@@ -43,6 +44,7 @@ import {
   toPayload,
   type DistributionEnquiryValues,
 } from "../../lib/schema";
+import { toConfirmationEmail } from "../../lib/notify";
 import { FormSection } from "../components/form-section";
 import {
   HELP,
@@ -72,6 +74,13 @@ type TextName = {
 }[keyof Values];
 
 type ListName = "rights" | "territories" | "deliverables";
+
+/** The hidden honeypot's value, read from the submitted form element. */
+function honeypotValue(event?: BaseSyntheticEvent): string {
+  const formEl = event?.target;
+  if (!(formEl instanceof HTMLFormElement)) return "";
+  return String(new FormData(formEl).get("homepage") ?? "");
+}
 
 function Required() {
   return <span className="text-[#e6ba35]"> *</span>;
@@ -295,6 +304,8 @@ function ChipsField({
 
 export function DistributionEnquiryPage() {
   const [submittedTitle, setSubmittedTitle] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const { genres, contentTypes, countries, languages, loading, error } =
     useSubmissionOptions(API_BASE);
 
@@ -313,13 +324,43 @@ export function DistributionEnquiryPage() {
   const listsPending = loading || Boolean(error);
   const pendingLabel = (what: string) => (loading ? "Loading…" : `Select ${what}`);
 
-  const onSubmit = (values: Values) => {
-    // Frontend only for now: the enquiry is validated and shaped, but not sent
-    // anywhere. Do NOT ship this page to production until a destination is
-    // wired here — a cms-hub `POST /distribution-enquiries` (like
-    // `/film-enquiries/`) and/or `sendConfirmationEmails`. Until then a real
-    // filmmaker would see "received" while their enquiry is discarded.
-    void toPayload(values);
+  const onSubmit = async (values: Values, event?: BaseSyntheticEvent) => {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch(`${API_BASE}/distribution-enquiries`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...toPayload(values),
+          homepage: honeypotValue(event),
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json?.success === false) {
+        throw new Error(json?.message || `Request failed (${res.status})`);
+      }
+    } catch (err) {
+      console.error("[distribution-enquiry] submit failed:", err);
+      setSubmitError(
+        "We couldn't send your enquiry. Please check your connection and try again — your answers are still here.",
+      );
+      setSubmitting(false);
+      return;
+    }
+
+    // The enquiry is stored in cms-hub at this point, so it counts as received
+    // whatever happens to the emails. Failing here would invite a resubmit and a
+    // duplicate record.
+    try {
+      await sendConfirmationEmails(
+        toConfirmationEmail(values, { contentTypes, genres, countries, languages }),
+      );
+    } catch (err) {
+      console.error("[distribution-enquiry] confirmation emails failed:", err);
+    }
+
+    setSubmitting(false);
     setSubmittedTitle(values.title);
     window.scrollTo({ top: 0 });
   };
@@ -373,6 +414,7 @@ export function DistributionEnquiryPage() {
             className="space-y-5"
             noValidate
           >
+
             <FormSection title="About you" desc="Who we should get back to about this film.">
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <TextField control={control} name="name" label="Full name" required autoComplete="name" />
@@ -506,13 +548,32 @@ export function DistributionEnquiryPage() {
               )}
             />
 
+            {submitError && (
+              <Alert
+                role="alert"
+                className="rounded-xl border-red-500/25 bg-red-950/25 text-red-300"
+              >
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">{submitError}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex justify-end">
               <Button
                 type="submit"
-                className="h-12 w-full rounded-lg bg-[#e6ba35] px-10 text-xs font-bold uppercase tracking-[0.2em] text-black hover:bg-[#d4a82e] sm:w-auto"
+                disabled={submitting}
+                className="h-12 w-full rounded-lg bg-[#e6ba35] px-10 text-xs font-bold uppercase tracking-[0.2em] text-black hover:bg-[#d4a82e] disabled:opacity-60 sm:w-auto"
               >
-                Send enquiry
+                {submitting ? "Sending…" : "Send enquiry"}
               </Button>
+            </div>
+            {/* Honeypot: hidden from people and assistive tech, so only a bot
+                fills it in. cms-hub quietly drops any enquiry that has it set. */}
+            <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+              <label>
+                Homepage
+                <input type="text" name="homepage" tabIndex={-1} autoComplete="off" />
+              </label>
             </div>
           </form>
         </Form>
