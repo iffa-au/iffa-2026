@@ -7,16 +7,16 @@ type PlaceholderPanelProps = {
 };
 
 /**
- * The Talent Lab's only imagery.
+ * Stands in for a picture that does not exist yet (mentor, alumni, speaker and
+ * event photos). The landing page's hero and "Why" images are real now and live
+ * in `public/assets/talent-lab/`.
  *
- * No photography exists for this section, and inventing a CloudFront path to
- * fill the gap would ship a broken image to a real user. So the gap is stated
- * rather than faked: a striped-gradient panel carrying a mono label that says
- * what the picture will be.
+ * Inventing a CloudFront path to fill a gap would ship a broken image to a real
+ * user, so the gap is stated rather than faked: a striped-gradient panel
+ * carrying a mono label that says what the picture will be.
  *
  * The gradient is decorative and `aria-hidden`; the caption is real text, so
- * the intent still reaches anyone not looking at the screen. There are no
- * `<img>` tags anywhere in this section by design.
+ * the intent still reaches anyone not looking at the screen.
  *
  * Built entirely from `<span>`s with display utilities rather than `<div>`s and
  * `<p>`s. `mentor-card` renders this inside a `<button>`, whose content model
