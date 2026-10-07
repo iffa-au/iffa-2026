@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import SubmitFilmButton from "./submit-film-button"
 import {
+  DISTRIBUTION_CTA,
   EVENTS_HREF,
   EVENT_SECTIONS,
   EVENT_YEARS,
@@ -156,6 +157,16 @@ export default function MobileNav({ onClose }: { onClose: () => void }) {
             </Link>
           ))}
         </div>
+
+        {/* The bar's second CTA. The first already sits at the top of this sheet. */}
+        <Link
+          href={DISTRIBUTION_CTA.href}
+          onClick={onClose}
+          data-active={isActive(pathname, DISTRIBUTION_CTA.href)}
+          className={`mt-6 block rounded-[2px] bg-yellow-400/10 px-3 py-3 text-center text-[12px] font-semibold ${NAV_LABEL} text-yellow-400 transition-colors hover:bg-yellow-400/20`}
+        >
+          {DISTRIBUTION_CTA.label}
+        </Link>
       </nav>
     </div>
   )

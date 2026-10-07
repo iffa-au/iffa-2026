@@ -81,6 +81,20 @@ export function buildUserEmailContent(payload: ConfirmationEmailPayload): {
       };
     }
 
+    case "distribution-enquiry": {
+      const filmTitle = payload.fields["Film Title"] ?? "your film";
+      return {
+        subject: "IFFA — Distribution Enquiry Received",
+        message: [
+          `Dear ${payload.submitterName},`,
+          `Thank you for your distribution enquiry for "${filmTitle}".`,
+          "We have received the details and our distribution team will review them and contact you about next steps.",
+          "Best regards,",
+          "The IFFA Awards Team",
+        ].join("\n"),
+      };
+    }
+
     case "oman-filming-enquiry": {
       const company = payload.fields["Company / Production House"] ?? "your production";
       return {

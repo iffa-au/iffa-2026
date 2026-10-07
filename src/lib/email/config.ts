@@ -19,8 +19,10 @@ export const EMAILJS_CONFIG = {
     process.env.NEXT_PUBLIC_EMAILJS_USER_TEMPLATE_ID ?? "template_l0yivqg",
 } as const;
 
+// The fallback was `info@iffaawards.com`, a domain that does not exist, so
+// every admin notification sent without the env var set bounced.
 export const IFFA_NOTIFICATION_EMAIL =
-  process.env.NEXT_PUBLIC_IFFA_NOTIFICATION_EMAIL ?? "info@iffaawards.com";
+  process.env.NEXT_PUBLIC_IFFA_NOTIFICATION_EMAIL || "info@iffa.com.au";
 
 export const OMAN_ADMIN_RECIPIENTS = [
   process.env.NEXT_PUBLIC_OMAN_RECIPIENT_1 ?? "omanfilmsociety@gmail.com",
@@ -32,6 +34,7 @@ export const OMAN_ADMIN_RECIPIENTS = [
 export const FORM_TYPE_LABELS: Record<string, string> = {
   "film-submission": "Film Submission",
   "film-enquiry": "Film Enquiry",
+  "distribution-enquiry": "Distribution Enquiry",
   contact: "Contact Form",
   partner: "Partnership Enquiry",
   "oman-filming-enquiry": "Oman Filming Enquiry",
