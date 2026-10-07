@@ -63,8 +63,14 @@ export const PRIMARY_LINKS: NavLink[] = [
  * only one of them should be the funnel everything feeds into.
  */
 export const SUBMIT_CTA: NavLink = {
-  label: "Submit Film",
+  label: "Submit Film Enquiry",
   href: "/submit-film-enquiry",
+}
+
+/** For filmmakers looking for distribution — the bar's second call to action. */
+export const DISTRIBUTION_CTA: NavLink = {
+  label: "Distribution Enquiry",
+  href: "/distribution-enquiry",
 }
 
 /**

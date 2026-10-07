@@ -4,13 +4,12 @@ import FeaturedSelection from "@/modules/home/ui/FeaturedSelection";
 import TextDivider from "@/modules/home/ui/sections/text-divider";
 import Carousel from "@/modules/home/ui/views/carousel/Carousel";
 import HomeNews from "@/modules/home/News";
+import HeroBanner from "@/modules/home/ui/sections/hero-banner";
 
 export default function Home() {
   return (
     <main className="w-full min-h-screen bg-black">
-      <section className="px-6 py-10 text-white">
-        
-      </section>
+      <HeroBanner />
 
       <TrailerSection
         videoslug="Hero_1v"
