@@ -22,9 +22,12 @@ export const talentLabEdition = {
   /** The single source for this address — it appears in the FAQ intro. */
   contactEmail: "talentlab@iffaawards.com",
 
-  /** Rendered as real text beneath the hero; there is no hero photograph. */
-  heroImageCaption:
-    "Writers’ room session — mentor and three participants at a table, low key lighting",
+  /**
+   * Abstract backdrop behind the hero: a night-side globe with Australia lit
+   * and network lines reaching out, which is the tagline in picture form. It is
+   * decorative (the <h1> carries the meaning), so it has no alt text.
+   */
+  heroImageSrc: "/assets/talent-lab/talent-lab-hero.webp",
 
   cycleModel:
     "Expressions of interest are open year-round. Formal applications open twice a year, in January and July.",
@@ -37,8 +40,10 @@ export const talentLabEdition = {
         "Emerging practitioners across Australia finish study, short films and first credits with real skill — and no clear route into the rooms where careers are made. Introductions still travel through networks most people cannot reach.",
         "IFFA already convenes filmmakers, festivals and screen bodies across Australia, Asia and the Middle East. The Talent Lab turns that international reach into a structured, year-round pathway: mentoring, masterclasses and project development that bridge the gap between education and industry — delivered primarily online so regional and remote practitioners are included from the start.",
       ],
-      imageCaption:
-        "Two crew members reviewing a shot on a monitor, on set at night",
+      image: {
+        src: "/assets/talent-lab/talent-lab-why.webp",
+        alt: "Two crew members reviewing a shot on a field monitor, on a film set at night",
+      },
     },
     howItWorks: {
       eyebrow: "How it works",
