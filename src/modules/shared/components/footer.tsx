@@ -7,8 +7,6 @@ import { FaInstagram, FaFacebook, FaLinkedin, FaYoutube, FaImdb } from "react-ic
 
 export function Footer() {
   const pathname = usePathname();
-  const acknowledgement =
-    "We acknowledge the Traditional Owners of the land where we work and live. We pay our respects to Elders past, present and emerging. We celebrate the stories, culture and traditions of Aboriginal and Torres Strait Islander Elders of all communities who also work and live on this land.";
 
   const navLinks = [
     { name: "About Us", path: "/AboutUs" },
@@ -35,28 +33,29 @@ export function Footer() {
         <div className="py-8 sm:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 px-4">
             
-            {/* Acknowledgement Section */}
-            <div className="lg:col-span-4 flex flex-col justify-center gap-4 sm:gap-6">
-              <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-3">
-                <div className="relative group">
-                  <div className="relative w-12 sm:w-16 md:w-18 aspect-video">
-                    {/* Placeholder for flags - adjust src path based on where flags.png is migrated in iffa-2026 public folder */}
-                    <img
-                      src="/footer/flags.png"
-                      alt="Flags"
-                      className="w-12 sm:w-16 md:w-18 h-auto opacity-100 filter drop-shadow-xl group-hover:scale-110 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="absolute -inset-2 bg-gradient-to-br from-yellow-400/20 to-transparent rounded-lg blur-sm opacity-30 group-hover:opacity-100 transition-opacity duration-500"></div>
+            {/* Distribution Partner Section */}
+            <div className="lg:col-span-4 flex flex-col items-center lg:items-start justify-center gap-4 sm:gap-5">
+              <p className="text-xs sm:text-sm uppercase tracking-widest text-neutral-300 font-light text-center lg:text-left">
+                Our Australia-wide distribution partner
+              </p>
+              <a
+                href="https://creativeproductionstudio.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Creative Production Studio (opens in a new tab)"
+                className="relative group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
+              >
+                <div className="absolute -inset-2 bg-gradient-to-br from-yellow-400/20 to-transparent rounded-xl blur-md opacity-30 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10 rounded-lg bg-[#f3f3f3] px-4 py-3 shadow-xl shadow-black/35 group-hover:scale-105 transition-transform duration-500">
+                  <img
+                    src="/footer/creative-production-studio.png"
+                    alt="Creative Production Studio"
+                    width={570}
+                    height={60}
+                    className="w-64 sm:w-72 h-auto"
+                  />
                 </div>
-                <div className="h-px flex-1 bg-gradient-to-r from-neutral-700/80 via-yellow-400/50 to-transparent"></div>
-              </div>
-              <div className="relative group">
-                <p className="text-xs sm:text-sm leading-relaxed text-neutral-100 font-light relative z-10 group-hover:text-white transition-colors duration-500">
-                  {acknowledgement}
-                </p>
-                <div className="absolute -inset-4 bg-gradient-to-br from-neutral-800/12 to-transparent rounded-xl blur-sm opacity-40 group-hover:opacity-100 transition-opacity duration-500"></div>
-              </div>
+              </a>
             </div>
 
             {/* Logo & Navigation Section */}
