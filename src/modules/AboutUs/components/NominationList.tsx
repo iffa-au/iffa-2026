@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Trash2, Users } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
@@ -42,6 +43,34 @@ interface NominationListProps {
  */
 export function NominationList({ form, categories, hideActors, loading }: NominationListProps) {
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "nominations" });
+
+  // A new card lands at the bottom of a list that can run past the screen,
+  // so adding one looked like nothing happened. After the add renders, the
+  // new card is scrolled into view, its category dropdown focused, and the
+  // card briefly highlighted.
+  const cardRefs = useRef(new Map<string, HTMLDivElement>());
+  const revealNewCard = useRef(false);
+  const [highlighted, setHighlighted] = useState<number | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    if (!revealNewCard.current) return;
+    revealNewCard.current = false;
+    const card = cardRefs.current.get(fields[fields.length - 1]?.id ?? "");
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.querySelector<HTMLElement>('[role="combobox"]')?.focus({ preventScroll: true });
+  }, [fields]);
+
+  useEffect(() => () => clearTimeout(highlightTimer.current), []);
+
+  const addNomination = () => {
+    revealNewCard.current = true;
+    setHighlighted(fields.length);
+    clearTimeout(highlightTimer.current);
+    highlightTimer.current = setTimeout(() => setHighlighted(null), 1600);
+    append({ ...BLANK_NOMINATION }, { shouldFocus: false });
+  };
 
   const [contentTypeId, nominations, actors, directors, producers, writers] = useWatch({
     control: form.control,
@@ -85,7 +114,7 @@ export function NominationList({ form, categories, hideActors, loading }: Nomina
           variant="ghost"
           size="sm"
           disabled={!contentTypeId || allChosen}
-          onClick={() => append({ ...BLANK_NOMINATION })}
+          onClick={addNomination}
           className="text-[#e6ba35] hover:bg-[#e6ba35]/10 text-sm gap-2 h-10 rounded-lg px-4"
         >
           <Plus size={16} /> Add nomination
@@ -106,7 +135,19 @@ export function NominationList({ form, categories, hideActors, loading }: Nomina
         const options = category && !wholeTeam ? nomineeOptions(category) : [];
 
         return (
-          <div key={field.id} className="rounded-xl border border-[#1e1c14] bg-[#080706] overflow-hidden">
+          <div
+            key={field.id}
+            ref={(el) => {
+              if (el) cardRefs.current.set(field.id, el);
+              else cardRefs.current.delete(field.id);
+            }}
+            className={cn(
+              "rounded-xl border bg-[#080706] overflow-hidden transition-[border-color,box-shadow] duration-700",
+              highlighted === i
+                ? "border-[#e6ba35]/60 shadow-[0_0_0_3px_rgba(230,186,53,0.15)]"
+                : "border-[#1e1c14]"
+            )}
+          >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#12110e]">
               <span className="text-[#cbc0a0] text-[16px] font-medium truncate">
                 {category?.name || `Nomination ${i + 1}`}
