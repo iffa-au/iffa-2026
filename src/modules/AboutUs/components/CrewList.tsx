@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { FilmValues, PersonEntry } from "@/utils/FilmSubmission.utils";
+import { newPerson, type FilmValues, type PersonEntry } from "@/utils/FilmSubmission.utils";
 import { WebpImageUpload } from "./WebpImageUpload";
 import { L, I, HELP, ERR } from "./form-tokens";
 
@@ -80,7 +80,7 @@ export function CrewList({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={() => append({ ...defaultEntry })}
+          onClick={() => append(newPerson(defaultEntry))}
           className="text-[#e6ba35] hover:bg-[#e6ba35]/10 text-sm gap-2 h-10 rounded-lg px-4"
         >
           <Plus size={16} /> Add {label}
