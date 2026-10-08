@@ -22,6 +22,11 @@ import {
   useSubmissionOptions,
   BLANK_PERSON,
   BLANK_PROMO_CLIP,
+  BLANK_NOMINATION,
+  CREW_API_GROUP,
+  NOMINEE_FIELDS,
+  newPerson,
+  newPersonUid,
   WATCH_FORMAT_OPTIONS,
   contentTypeHidesActors,
   filterFilledCrew,
@@ -33,6 +38,7 @@ import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { CrewList } from "./components/CrewList";
 import { PromoClipsList } from "./components/PromoClipsList";
+import { NominationList } from "./components/NominationList";
 import { YesNoToggle } from "./components/YesNoToggle";
 import { WebpImageUpload, uploadWebpImage, createSubmissionRef } from "./components/WebpImageUpload";
 import { L, I, HELP, ERR } from "./components/form-tokens";
@@ -87,7 +93,8 @@ function sanitizeDurationInput(raw: string, max: number, onChange: (value: strin
 const STEPS = [
   { id: "section-basics", step: 1, title: "Basic Information", short: "Basics" },
   { id: "section-crew", step: 2, title: "Crew Information", short: "Crew" },
-  { id: "section-media", step: 3, title: "Media, Links & Declaration", short: "Media" },
+  { id: "section-nominations", step: 3, title: "Award Nominations", short: "Nominations" },
+  { id: "section-media", step: 4, title: "Media, Links & Declaration", short: "Media" },
 ] as const;
 
 const CREW_FIELDS = new Set(["actors", "directors", "producers", "writers"]);
@@ -100,7 +107,8 @@ const MEDIA_FIELDS = new Set([
 function stepForField(name: string) {
   const root = name.split(".")[0];
   if (CREW_FIELDS.has(root)) return STEPS[1];
-  if (MEDIA_FIELDS.has(root)) return STEPS[2];
+  if (root === "nominations") return STEPS[2];
+  if (MEDIA_FIELDS.has(root)) return STEPS[3];
   return STEPS[0];
 }
 
@@ -168,8 +176,11 @@ export function SubmitFilmForm() {
   // that an invalid field is routinely off-screen — without this, pressing
   // Submit looks like it did nothing at all.
   const [invalidSteps, setInvalidSteps] = useState<string[]>([]);
-  const { genres, contentTypes, countries, languages, loading } = useSubmissionOptions(API_BASE);
-  const filmSchema = useMemo(() => buildFilmSchema(contentTypes), [contentTypes]);
+  const { awardCategories, genres, contentTypes, countries, languages, loading } = useSubmissionOptions(API_BASE);
+  const filmSchema = useMemo(
+    () => buildFilmSchema(contentTypes, awardCategories),
+    [contentTypes, awardCategories],
+  );
 
   const form = useForm<FilmValues>({
     resolver: zodResolver(filmSchema),
@@ -180,10 +191,11 @@ export function SubmitFilmForm() {
       potraitImageUrl: null, landscapeImageUrl: null, imdbUrl: "", trailerUrl: "",
       trailerHasPassword: false, trailerPassword: "",
       promoClips: [{ ...BLANK_PROMO_CLIP }],
-      actors: [{ ...BLANK_PERSON, role: "Actor in a leading role" }],
-      directors: [{ ...BLANK_PERSON, role: "Director" }],
-      producers: [{ ...BLANK_PERSON, role: "Producer" }],
+      actors: [newPerson({ role: "Actor in a leading role" })],
+      directors: [newPerson({ role: "Director" })],
+      producers: [newPerson({ role: "Producer" })],
       writers: [],
+      nominations: [{ ...BLANK_NOMINATION }],
       notes: "",
       contactEmail: "",
       agreeRights: false,
@@ -198,7 +210,7 @@ export function SubmitFilmForm() {
     if (hideActors) {
       form.setValue("actors", []);
     } else if (form.getValues("actors").length === 0) {
-      form.setValue("actors", [{ ...BLANK_PERSON, role: "Actor in a leading role" }]);
+      form.setValue("actors", [newPerson({ role: "Actor in a leading role" })]);
     }
   }, [hideActors, form]);
 
@@ -210,7 +222,9 @@ export function SubmitFilmForm() {
     if (!exists && entry.fullName.trim()) {
       form.setValue("producers", [
         ...producers,
-        { ...entry, role: "Producer" },
+        // A new uid: this is a second credit, and sharing the director's
+        // would let a nomination of one match both.
+        { ...entry, role: "Producer", uid: newPersonUid() },
       ]);
     }
   };
@@ -283,8 +297,30 @@ export function SubmitFilmForm() {
       // of truth that could disagree with it.
       trailerHasPassword: _rawTrailerHasPassword,
       promoClips: _rawPromoClips,
+      nominations: _rawNominations,
       ...restValues
     } = values;
+
+    // Nominees go to the API as crew group + name, which it matches against
+    // the crew in this same payload — the form's uids mean nothing there.
+    const crewByUid = new Map(
+      (["actors", "directors", "producers", "writers"] as const).flatMap((field) =>
+        values[field].map((p) => [p.uid, { group: CREW_API_GROUP[field], fullName: p.fullName.trim() }] as const),
+      ),
+    );
+    const nominations = values.nominations
+      .filter((n) => n.categoryId)
+      .map((n) => {
+        const category = awardCategories.find((c) => c._id === n.categoryId);
+        const individual = category && NOMINEE_FIELDS[category.nomineeType].length > 0;
+        return {
+          awardCategoryId: n.categoryId,
+          categoryName: category?.name ?? "",
+          nominees: individual
+            ? n.nomineeUids.flatMap((uid) => crewByUid.get(uid) ?? [])
+            : [],
+        };
+      });
 
     // Blank rows are dropped, and — as with the trailer — the per-clip
     // hasPassword toggle stays UI-only: a non-empty password is the signal.
@@ -336,6 +372,7 @@ export function SubmitFilmForm() {
         isFeatured: false,
         genreId: values.genreIds[0],
         crew: { actors, directors, producers, other: writers },
+        nominations: nominations.map(({ awardCategoryId, nominees }) => ({ awardCategoryId, nominees })),
       };
 
       const res = await fetch(`${API_BASE}/submissions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -372,6 +409,13 @@ export function SubmitFilmForm() {
                 .map((clip) => (clip.password ? `${clip.url} (password protected)` : clip.url))
                 .join(", ")
             : "Not provided",
+          "Award Nominations": nominations
+            .map((n) =>
+              n.nominees.length
+                ? `${n.categoryName}: ${n.nominees.map((p) => p.fullName).join(", ")}`
+                : `${n.categoryName}: Whole team`,
+            )
+            .join("; "),
           "Release, Broadcast or Exhibition Link": values.releaseLinkUrl?.trim() || "Not provided",
           Notes: values.notes?.trim() || "Not provided",
         },
@@ -398,7 +442,8 @@ export function SubmitFilmForm() {
           Submit Your Film
         </h1>
         <p className="text-[#9a9278] text-base leading-relaxed max-w-2xl">
-          Three sections: your film&apos;s details, the people who made it, and your media links.
+          Four sections: your film&apos;s details, the people who made it, the awards you&apos;re
+          entering, and your media links.
           Fields marked <span className="text-[#e6ba35] font-semibold">*</span> are required.
         </p>
       </div>
@@ -730,8 +775,13 @@ export function SubmitFilmForm() {
               </div>
             </Section>
 
-            {/* ── 3 · Media & Contact ── */}
-            <Section id="section-media" step={3} title="Media, Links & Declaration" desc="URLs, contact email and rights confirmation">
+            {/* ── 3 · Award Nominations ── */}
+            <Section id="section-nominations" step={3} title="Award Nominations" desc="The awards you're entering and who you're nominating">
+              <NominationList form={form} categories={awardCategories} hideActors={hideActors} loading={loading} />
+            </Section>
+
+            {/* ── 4 · Media & Contact ── */}
+            <Section id="section-media" step={4} title="Media, Links & Declaration" desc="URLs, contact email and rights confirmation">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-7">
                 <FormField control={form.control} name="potraitImageUrl"
                   render={({ field }: { field: any }) => (
