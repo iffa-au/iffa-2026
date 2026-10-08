@@ -26,6 +26,8 @@ interface CrewListProps {
   minEntries?: number;
   onDuplicateEntry?: (entry: PersonEntry) => void;
   duplicateLabel?: string;
+  /** Who the representative relates to, e.g. "Actor/Actress". Defaults to `label`. */
+  relationshipTo?: string;
 }
 
 export function CrewList({
@@ -39,6 +41,7 @@ export function CrewList({
   minEntries = 1,
   onDuplicateEntry,
   duplicateLabel,
+  relationshipTo = label,
 }: CrewListProps) {
   const { fields, append, remove } = useFieldArray({ control: form.control, name: fieldName });
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
@@ -230,6 +233,46 @@ export function CrewList({
                           rows={3}
                           className={cn(I, "h-auto resize-none leading-relaxed")}
                         />
+                      </FormControl>
+                      <FormMessage className={ERR} />
+                    </FormItem>
+                  )}
+                />
+
+                {/* The four contact fields below all describe the
+                    representative, not the credited person — the heading
+                    keeps "Name" here from reading as a repeat of Full Name. */}
+                <div className="md:col-span-2 border-t border-[#12110e] pt-5 -mb-1">
+                  <h4 className="text-[#cbc0a0] text-[15px] font-semibold">Representative</h4>
+                  <p className={HELP}>Who we should contact about this credit — the person themselves, or their agent, manager, etc.</p>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name={`${fieldName}.${i}.representativeName` as const}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={L}>
+                        Representative Name <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Full name" className={I} />
+                      </FormControl>
+                      <FormMessage className={ERR} />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`${fieldName}.${i}.representativeRelationship` as const}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={L}>
+                        Relationship to {relationshipTo} <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g. Self, Agent, Manager, Publicist, Family member" className={I} />
                       </FormControl>
                       <FormMessage className={ERR} />
                     </FormItem>

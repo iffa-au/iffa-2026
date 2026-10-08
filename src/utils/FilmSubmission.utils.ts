@@ -20,7 +20,25 @@ const requiredWebpFile = (message: string) =>
  * `z.string().url()` rejects that with a "must be a valid URL" message that
  * reads like a lie next to a link they can see is fine.
  */
-const isUrl = (v: string) => z.string().url().safeParse(v).success;
+//
+// Only http(s) counts: `z.string().url()` defers to `new URL()`, which also
+// accepts strings like "a:b" or "javascript:…" — enough to get a junk value
+// past a required link field.
+const isUrl = (v: string) => {
+  if (!z.string().url().safeParse(v).success) return false;
+  const { protocol } = new URL(v);
+  return protocol === "http:" || protocol === "https:";
+};
+
+/**
+ * Required free text. Trimmed before the length check so a box holding only
+ * spaces counts as empty rather than answered — and the trimmed value is what
+ * reaches onSubmit.
+ */
+const requiredText = (message: string, min = 1) => z.string().trim().min(min, message);
+
+/** Emails are trimmed first: a pasted trailing space shouldn't read as invalid. */
+const requiredEmail = (message: string) => z.string().trim().email(message);
 
 const trimmedUrl = (message: string) =>
   z
@@ -34,13 +52,30 @@ const optionalTrimmedUrl = (message: string) =>
     .transform((v) => v.trim())
     .refine((v) => v === "" || isUrl(v), { message });
 
+/**
+ * One short promotional clip. The whole list is optional, so a row is only
+ * held to the URL and password rules once its URL has something in it — see
+ * the superRefine in buildFilmSchema. A blank row is dropped on submit.
+ */
+const promoClipSchema = z.object({
+  url: z.string(),
+  hasPassword: z.boolean(),
+  password: z.string(),
+});
+
 const personSchema = z.object({
-  fullName: z.string().min(1, "Name is required"),
-  role: z.string().min(1, "Role is required"),
+  fullName: requiredText("Name is required"),
+  role: requiredText("Role is required"),
   imageUrl: requiredWebpFile("Photo is required"),
-  biography: z.string().min(10, "Biography must be at least 10 characters"),
+  biography: requiredText("Biography must be at least 10 characters", 10),
   instagram: z.string().optional(),
-  email: z.string().email("A valid representative email is required"),
+  // The representative is who IFFA contacts about this credit — the person
+  // themselves, or an agent, manager, parent, etc. Name and relationship are
+  // required alongside the email so a reviewer knows who they're writing to.
+  // The API enforces the same three (createSubmissionPublic in cms-hub).
+  representativeName: requiredText("Representative name is required"),
+  representativeRelationship: requiredText("Relationship is required"),
+  email: requiredEmail("A valid representative email is required"),
   // Both optional and unvalidated by design. A phone number is asked for as a
   // faster route to a filmmaker than email, not as a second identity check —
   // any format rule here would reject a legitimate international number and
@@ -84,8 +119,8 @@ export function contentTypeHidesActors(contentTypeName?: string): boolean {
 export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
   return z
     .object({
-      title: z.string().min(1, "Film title is required"),
-      synopsis: z.string().min(20, "Synopsis must be at least 20 characters"),
+      title: requiredText("Film title is required"),
+      synopsis: requiredText("Synopsis must be at least 20 characters", 20),
       releaseDate: z.string().min(1, "Release date is required"),
       // Digit-only strings (not numbers) so the field type matches what a
       // controlled <input> naturally holds — see sanitizeDurationInput in
@@ -113,7 +148,7 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
         .min(1, "Select at least one watch format"),
       releaseLinkUrl: optionalTrimmedUrl("Must be a valid URL").optional(),
       languageId: z.string().min(1, "Language is required"),
-      productionHouse: z.string().min(1, "Production house is required"),
+      productionHouse: requiredText("Production house is required"),
       distributor: z.string().optional(),
       genreIds: z.array(z.string()).min(1, "Select at least one genre"),
       potraitImageUrl: requiredWebpFile("Portrait poster is required"),
@@ -126,11 +161,13 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       // surfaced beside the URL in the CMS review screens.
       trailerHasPassword: z.boolean(),
       trailerPassword: z.string(),
+      promoClips: z.array(promoClipSchema),
       actors: z.array(personSchema),
       directors: z.array(personSchema).min(1, "At least one director required"),
       producers: z.array(personSchema).min(1, "At least one producer required"),
       // Mirrors personSchema with every rule relaxed: a wholly blank writer row
-      // is filtered out rather than rejected, and a partially filled one is
+      // (see isBlankPerson) is filtered out rather than rejected, and any row
+      // with something in it — even without a name — is
       // validated against personSchema itself in the superRefine below. Any
       // field added to personSchema has to be added here too, or FilmValues
       // won't carry it on this branch and CrewList stops type-checking for
@@ -142,13 +179,15 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
           imageUrl: z.custom<File | null>(),
           biography: z.string(),
           instagram: z.string().optional(),
+          representativeName: z.string(),
+          representativeRelationship: z.string(),
           email: z.string(),
           contactPhone: z.string().optional(),
           notes: z.string().optional(),
         }),
       ),
       notes: z.string().max(1000, "Notes must be 1000 characters or less").optional(),
-      contactEmail: z.string().email("Must be a valid email"),
+      contactEmail: requiredEmail("Must be a valid email"),
       // `z.boolean().refine(...)`, not `z.literal(true)`: a failing literal
       // aborts the whole object parse and takes every `.superRefine` check
       // below down with it. Since this box starts unticked, that suppressed
@@ -180,6 +219,25 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
         });
       }
 
+      for (const [index, clip] of data.promoClips.entries()) {
+        const url = clip.url.trim();
+        if (!url) continue;
+        if (!isUrl(url)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["promoClips", index, "url"],
+            message: "Must be a valid download URL",
+          });
+        }
+        if (clip.hasPassword && !clip.password.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["promoClips", index, "password"],
+            message: "Enter the password for this clip link",
+          });
+        }
+      }
+
       const contentTypeName = contentTypes.find(
         (ct) => ct._id === data.contentTypeId,
       )?.name;
@@ -192,7 +250,7 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       }
 
       for (const [index, writer] of data.writers.entries()) {
-        if (!writer.fullName.trim()) continue;
+        if (isBlankPerson(writer)) continue;
         const result = personSchema.safeParse(writer);
         if (!result.success) {
           for (const issue of result.error.issues) {
@@ -208,6 +266,13 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
 
 export type FilmValues = z.infer<ReturnType<typeof buildFilmSchema>>;
 export type PersonEntry = z.infer<typeof personSchema>;
+export type PromoClipEntry = z.infer<typeof promoClipSchema>;
+
+export const BLANK_PROMO_CLIP: PromoClipEntry = {
+  url: "",
+  hasPassword: false,
+  password: "",
+};
 
 export const BLANK_PERSON: PersonEntry = {
   fullName: "",
@@ -215,13 +280,28 @@ export const BLANK_PERSON: PersonEntry = {
   imageUrl: null,
   biography: "",
   instagram: "",
+  representativeName: "",
+  representativeRelationship: "",
   email: "",
   contactPhone: "",
   notes: "",
 };
 
+/**
+ * A crew row with nothing in it at all. Keying this on the name alone let a
+ * row with a photo, bio and email but no name be dropped silently on submit
+ * instead of being flagged as incomplete.
+ */
+export function isBlankPerson(entry: PersonEntry): boolean {
+  const text = [
+    entry.fullName, entry.role, entry.biography, entry.email,
+    entry.representativeName, entry.representativeRelationship, entry.instagram, entry.contactPhone, entry.notes,
+  ];
+  return !(entry.imageUrl instanceof File) && text.every((v) => !v?.trim());
+}
+
 export function filterFilledCrew(entries: PersonEntry[]): PersonEntry[] {
-  return entries.filter((entry) => entry.fullName.trim().length > 0);
+  return entries.filter((entry) => !isBlankPerson(entry));
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
