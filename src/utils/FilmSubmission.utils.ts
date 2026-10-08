@@ -64,6 +64,10 @@ const promoClipSchema = z.object({
 });
 
 const personSchema = z.object({
+  // Form-only identity, never sent to the API. Nominations point at crew by
+  // this rather than by array position, so deleting or reordering a crew
+  // card can't silently move a nomination onto someone else.
+  uid: z.string(),
   fullName: requiredText("Name is required"),
   role: requiredText("Role is required"),
   imageUrl: requiredWebpFile("Photo is required"),
@@ -116,7 +120,68 @@ export function contentTypeHidesActors(contentTypeName?: string): boolean {
   );
 }
 
-export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
+// ─── Award nominations ───────────────────────────────────────────────────────
+/**
+ * Who a category is awarded to. Mirrors NOMINEE_TYPES on AwardCategory in
+ * cms-hub, which decides the same thing server-side.
+ */
+export type NomineeType = "actors" | "directors" | "craft" | "producers" | "whole-team";
+
+export interface AwardCategoryOption {
+  _id: string;
+  name: string;
+  group: string;
+  nomineeType: NomineeType;
+  /** Empty means open to every screen format. */
+  contentTypeIds: string[];
+}
+
+export type CrewField = "actors" | "directors" | "producers" | "writers";
+
+/**
+ * Which crew lists each kind of category draws nominees from. Craft credits
+ * (cinematography, editing, writing) live in the free-text "Other" list, and
+ * a director or producer often holds one too.
+ */
+export const NOMINEE_FIELDS: Record<NomineeType, readonly CrewField[]> = {
+  actors: ["actors"],
+  directors: ["directors"],
+  craft: ["writers", "directors", "producers"],
+  producers: ["producers"],
+  "whole-team": [],
+};
+
+/** The API's name for each crew list — `writers` is sent as `other`. */
+export const CREW_API_GROUP: Record<CrewField, string> = {
+  actors: "actors",
+  directors: "directors",
+  producers: "producers",
+  writers: "other",
+};
+
+/**
+ * Whether a category can be entered by a film of this screen format. Actor
+ * categories are also closed when the format has no cast panel, since there
+ * would be no one to nominate.
+ */
+export function categoryOpenTo(
+  category: AwardCategoryOption,
+  contentTypeId: string,
+  hideActors: boolean,
+): boolean {
+  if (category.nomineeType === "actors" && hideActors) return false;
+  return category.contentTypeIds.length === 0 || category.contentTypeIds.includes(contentTypeId);
+}
+
+const nominationSchema = z.object({
+  categoryId: z.string(),
+  nomineeUids: z.array(z.string()),
+});
+
+export function buildFilmSchema(
+  contentTypes: { _id: string; name: string }[],
+  awardCategories: AwardCategoryOption[],
+) {
   return z
     .object({
       title: requiredText("Film title is required"),
@@ -174,6 +239,7 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
       // fieldName="writers".
       writers: z.array(
         z.object({
+          uid: z.string(),
           fullName: z.string(),
           role: z.string(),
           imageUrl: z.custom<File | null>(),
@@ -186,6 +252,7 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
           notes: z.string().optional(),
         }),
       ),
+      nominations: z.array(nominationSchema),
       notes: z.string().max(1000, "Notes must be 1000 characters or less").optional(),
       contactEmail: requiredEmail("Must be a valid email"),
       // `z.boolean().refine(...)`, not `z.literal(true)`: a failing literal
@@ -261,12 +328,68 @@ export function buildFilmSchema(contentTypes: { _id: string; name: string }[]) {
           }
         }
       }
+
+      const hideActors = contentTypeHidesActors(contentTypeName);
+      const chosen = data.nominations.filter((n) => n.categoryId);
+      if (chosen.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["nominations"],
+          message: "Choose at least one award to enter",
+        });
+      }
+      const seen = new Set<string>();
+      for (const [index, nomination] of data.nominations.entries()) {
+        const issue = (field: "categoryId" | "nomineeUids", message: string) =>
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["nominations", index, field],
+            message,
+          });
+
+        if (!nomination.categoryId) {
+          issue("categoryId", "Choose an award category");
+          continue;
+        }
+        const category = awardCategories.find((c) => c._id === nomination.categoryId);
+        if (!category) {
+          issue("categoryId", "This category is no longer open — choose another");
+          continue;
+        }
+        if (seen.has(category._id)) {
+          issue("categoryId", "This category is already chosen above");
+          continue;
+        }
+        seen.add(category._id);
+        if (!categoryOpenTo(category, data.contentTypeId, hideActors)) {
+          issue("categoryId", `${category.name} isn't open to this screen format`);
+          continue;
+        }
+
+        const fields = NOMINEE_FIELDS[category.nomineeType];
+        if (fields.length === 0) continue;
+        if (nomination.nomineeUids.length === 0) {
+          issue("nomineeUids", "Choose at least one nominee");
+          continue;
+        }
+        const available = new Set(
+          fields.flatMap((f) =>
+            (data[f] as PersonEntry[]).filter((p) => p.fullName.trim()).map((p) => p.uid),
+          ),
+        );
+        if (nomination.nomineeUids.some((uid) => !available.has(uid))) {
+          issue("nomineeUids", "A nominee was removed from the crew list — check your choice");
+        }
+      }
     });
 }
 
 export type FilmValues = z.infer<ReturnType<typeof buildFilmSchema>>;
 export type PersonEntry = z.infer<typeof personSchema>;
 export type PromoClipEntry = z.infer<typeof promoClipSchema>;
+export type NominationEntry = z.infer<typeof nominationSchema>;
+
+export const BLANK_NOMINATION: NominationEntry = { categoryId: "", nomineeUids: [] };
 
 export const BLANK_PROMO_CLIP: PromoClipEntry = {
   url: "",
@@ -275,6 +398,7 @@ export const BLANK_PROMO_CLIP: PromoClipEntry = {
 };
 
 export const BLANK_PERSON: PersonEntry = {
+  uid: "",
   fullName: "",
   role: "",
   imageUrl: null,
@@ -286,6 +410,22 @@ export const BLANK_PERSON: PersonEntry = {
   contactPhone: "",
   notes: "",
 };
+
+/**
+ * A fresh crew row with its own uid. Every new row must come from here (or
+ * at least get a new uid) — a row copied with `...BLANK_PERSON` or from
+ * another row shares its uid, and a nomination would then match both.
+ * Not crypto: the id only has to be unique within one open form.
+ */
+export function newPerson(overrides: Partial<PersonEntry> = {}): PersonEntry {
+  return { ...BLANK_PERSON, ...overrides, uid: newPersonUid() };
+}
+
+let uidCounter = 0;
+export function newPersonUid(): string {
+  uidCounter += 1;
+  return `p${Date.now().toString(36)}${uidCounter}`;
+}
 
 /**
  * A crew row with nothing in it at all. Keying this on the name alone let a
@@ -310,6 +450,7 @@ interface Option {
   name: string;
 }
 interface SubmissionOptions {
+  awardCategories: AwardCategoryOption[];
   genres: Option[];
   contentTypes: Option[];
   countries: Option[];
@@ -319,6 +460,7 @@ interface SubmissionOptions {
 }
 
 export function useSubmissionOptions(baseUrl: string): SubmissionOptions {
+  const [awardCategories, setAwardCategories] = useState<AwardCategoryOption[]>([]);
   const [genres, setGenres] = useState<Option[]>([]);
   const [contentTypes, setContentTypes] = useState<Option[]>([]);
   const [countries, setCountries] = useState<Option[]>([]);
@@ -342,16 +484,36 @@ export function useSubmissionOptions(baseUrl: string): SubmissionOptions {
         name: x.name,
       }));
     };
+    // `openForSubmission` is re-checked here as well as asked for in the
+    // query: an API that predates the flag ignores `?open=true` and returns
+    // every category, past years' included.
+    const fetchAwardCategories = async (): Promise<AwardCategoryOption[]> => {
+      const res = await fetch(`${baseUrl}/award-categories?open=true`);
+      if (!res.ok) throw new Error("Failed to fetch award-categories");
+      const json = await res.json();
+      const arr = Array.isArray(json?.data) ? json.data : [];
+      return arr
+        .filter((x: { openForSubmission?: boolean }) => x.openForSubmission === true)
+        .map((x: AwardCategoryOption & { contentTypeIds?: string[] }) => ({
+          _id: x._id,
+          name: x.name,
+          group: x.group || "Other",
+          nomineeType: x.nomineeType || "whole-team",
+          contentTypeIds: (x.contentTypeIds ?? []).map(String),
+        }));
+    };
     (async () => {
       try {
         setLoading(true);
-        const [g, ct, lang, ctry] = await Promise.all([
+        const [g, ct, lang, ctry, awards] = await Promise.all([
           fetchList("genres"),
           fetchList("content-types"),
           fetchList("languages"),
           fetchList("countries"),
+          fetchAwardCategories(),
         ]);
         if (cancelled) return;
+        setAwardCategories(awards);
         setGenres(g);
         setContentTypes(ct);
         setLanguages(lang);
@@ -367,5 +529,5 @@ export function useSubmissionOptions(baseUrl: string): SubmissionOptions {
     };
   }, [baseUrl]);
 
-  return { genres, contentTypes, countries, languages, loading, error };
+  return { awardCategories, genres, contentTypes, countries, languages, loading, error };
 }
