@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { alumni } from "../../data/alumni-data";
@@ -22,7 +23,6 @@ import { FaqAccordion } from "../components/faq-accordion";
 import { MentorPreviewCard } from "../components/mentor-preview-card";
 import { OpportunityCard } from "../components/opportunity-card";
 import { PageSection as Section, TINTED } from "../components/page-section";
-import { PlaceholderPanel } from "../components/placeholder-panel";
 import { ResourceList, ResourceRow } from "../components/resource-row";
 import { SectionHeader } from "../components/section-header";
 import { StatTile, StatTileRow } from "../components/stat-tile";
@@ -46,10 +46,32 @@ export function TalentLabPage() {
   return (
     <div className="bg-black text-white">
       {/* ----------------------------------------------------- 1. Hero */}
-      <section className="relative overflow-hidden">
+      <section className="relative isolate overflow-hidden bg-black">
+        {/* Decorative, so `alt=""`: the <h1> says what this is. The artwork
+            carries its own diagonal stripes, which is why the old CSS stripe
+            layer is gone. It is the LCP element, hence eager + high priority
+            (`priority` is deprecated in Next 16). The crop is anchored right of
+            centre so Australia stays in frame on a narrow phone. */}
+        <Image
+          src={talentLabEdition.heroImageSrc}
+          alt=""
+          fill
+          sizes="100vw"
+          loading="eager"
+          fetchPriority="high"
+          className="-z-10 object-cover object-[78%_50%]"
+        />
+        {/* Phones stack the text across the whole width, so the image is dimmed
+            evenly; from `md` the text holds the left side and only that side
+            needs darkening. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-[repeating-linear-gradient(112deg,rgba(255,255,255,0.028)_0_2px,transparent_2px_11px),radial-gradient(90%_80%_at_72%_18%,rgba(230,186,53,0.14),transparent_60%),linear-gradient(180deg,#14121a_0%,#0a090e_45%,#000_100%)]"
+          className="absolute inset-0 -z-10 bg-black/60 md:bg-transparent md:bg-linear-to-r md:from-black/85 md:via-black/50 md:via-45% md:to-transparent md:to-80%"
+        />
+        {/* Blends into the black section below. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 -z-10 h-24 bg-linear-to-t from-black to-transparent"
         />
 
         <div className="relative mx-auto max-w-7xl px-5 pb-20 pt-14 md:px-8 md:pb-24 md:pt-20">
@@ -112,7 +134,15 @@ export function TalentLabPage() {
             ))}
           </div>
 
-          <PlaceholderPanel caption={sections.why.imageCaption} />
+          <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-[#0e0d13]">
+            <Image
+              src={sections.why.image.src}
+              alt={sections.why.image.alt}
+              fill
+              sizes="(min-width: 1280px) 600px, (min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+            />
+          </div>
         </div>
       </Section>
 
