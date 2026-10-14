@@ -35,17 +35,19 @@ export function HomepageTrailersProvider({ children }: { children: ReactNode }) 
  * the same empty player box and spinner TrailerSection always shows, so the
  * page doesn't jump; an unfilled slot renders nothing.
  *
+ * `className` goes on a wrapper that exists only while the slot shows
+ * something — the place for the negative margins that tuck a trailer under its
+ * neighbours, so an empty slot can't pull those neighbours together.
+ *
  * Keyed on the video so a changed URL remounts the player — TrailerSection
  * reads `videoUrl` into state once, at mount.
  */
-export function TrailerSlot({ index }: { index: number }) {
+export function TrailerSlot({ index, className }: { index: number; className?: string }) {
   const state = useContext(TrailersContext);
-  if (state.status === "loading") return <TrailerSection />;
+  const trailer = state.status === "ready" ? state.trailers[index] : undefined;
+  if (state.status === "ready" && !trailer) return null;
 
-  const trailer = state.trailers[index];
-  if (!trailer) return null;
-
-  return (
+  const section = trailer ? (
     <TrailerSection
       key={trailer.videoUrl}
       videoUrl={trailer.videoUrl}
@@ -53,5 +55,9 @@ export function TrailerSlot({ index }: { index: number }) {
       youtubeUrl={trailer.youtubeUrl}
       learnMoreUrl={trailer.learnMoreUrl}
     />
+  ) : (
+    <TrailerSection />
   );
+
+  return className ? <div className={className}>{section}</div> : section;
 }
