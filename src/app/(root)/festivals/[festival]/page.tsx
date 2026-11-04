@@ -37,7 +37,9 @@ export async function generateMetadata({
     title: `${festival.name} ${festival.year} | IFFA`,
     description:
       festival.description ||
-      `${festival.name}, ${formatFestivalDates(festival)} in ${festival.city}.`,
+      [festival.name, festival.startDate && formatFestivalDates(festival)]
+        .filter(Boolean)
+        .join(", ") + (festival.city ? ` in ${festival.city}.` : "."),
   };
 }
 

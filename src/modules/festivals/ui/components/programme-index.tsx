@@ -116,8 +116,9 @@ export function ProgrammeIndex({ screenings }: { screenings: Screening[] }) {
                 }`}
               >
                 <span className="block truncate font-fest-text text-xs italic leading-tight">
-                  {formatScreeningDatesShort(screening)}
-                  {screening.time ? `, ${screening.time}` : ""}
+                  {[formatScreeningDatesShort(screening), screening.time]
+                    .filter(Boolean)
+                    .join(", ")}
                 </span>
 
                 <span className="block truncate font-fest-display text-base font-bold uppercase leading-tight tracking-[-0.005em]">

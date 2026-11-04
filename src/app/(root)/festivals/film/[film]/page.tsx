@@ -34,7 +34,7 @@ export async function generateMetadata({
     title: `${film.title} | ${festival.name} | IFFA`,
     description:
       film.synopsis ||
-      `${film.title} screens at ${festival.name} in ${screening.title} on ${formatScreeningDates(screening)}${
+      `${film.title} screens at ${festival.name} in ${screening.title}${screening.startDate ? ` on ${formatScreeningDates(screening)}` : ""}${
         runtime ? `, ${runtime}` : ""
       }.`,
   };
