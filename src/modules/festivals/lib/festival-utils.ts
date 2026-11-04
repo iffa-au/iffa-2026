@@ -143,12 +143,18 @@ export const formatDateRange = (startIso: string, endIso: string): string => {
   return `${formatFullDate(startIso)} - ${formatFullDate(endIso)}`;
 };
 
+/** Printed wherever a festival's dates would be when cms-hub has none yet. */
+export const FESTIVAL_DATES_TBC = "To be confirmed";
+
 /** A festival's dates, collapsed. */
 export const formatFestivalDates = (festival: Festival): string =>
-  formatDateRange(festival.startDate, festival.endDate);
+  festival.startDate && festival.endDate
+    ? formatDateRange(festival.startDate, festival.endDate)
+    : FESTIVAL_DATES_TBC;
 
 /** The same range without the year, for use beside a year set as display type. */
 export const formatFestivalDatesShort = (festival: Festival): string => {
+  if (!festival.startDate || !festival.endDate) return FESTIVAL_DATES_TBC;
   const start = parseIsoDate(festival.startDate);
   const end = parseIsoDate(festival.endDate);
 
@@ -169,17 +175,19 @@ export const formatFestivalDatesShort = (festival: Festival): string => {
  * 17 October" is already four words longer than the date it is replacing.
  */
 export const formatScreeningDates = (screening: Screening): string => {
-  if (screening.startDate === screening.endDate) {
-    return formatDayHeading(screening.startDate);
-  }
+  const { startDate, endDate = startDate } = screening;
+  // "" for an undated session: the site hides the date rather than print a
+  // placeholder, so every caller can drop it with filter(Boolean).
+  if (!startDate || !endDate) return "";
+  if (startDate === endDate) return formatDayHeading(startDate);
 
-  const start = parseIsoDate(screening.startDate);
-  const end = parseIsoDate(screening.endDate);
+  const start = parseIsoDate(startDate);
+  const end = parseIsoDate(endDate);
 
   if (start.month === end.month && start.year === end.year) {
     return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]}`;
   }
-  return `${formatShortDate(screening.startDate)} - ${formatShortDate(screening.endDate)}`;
+  return `${formatShortDate(startDate)} - ${formatShortDate(endDate)}`;
 };
 
 /**
@@ -191,12 +199,12 @@ export const formatScreeningDates = (screening: Screening): string => {
  * festival that runs a fortnight at most.
  */
 export const formatScreeningDatesShort = (screening: Screening): string => {
-  if (screening.startDate === screening.endDate) {
-    return formatShortDate(screening.startDate);
-  }
+  const { startDate, endDate = startDate } = screening;
+  if (!startDate || !endDate) return "";
+  if (startDate === endDate) return formatShortDate(startDate);
 
-  const start = parseIsoDate(screening.startDate);
-  const end = parseIsoDate(screening.endDate);
+  const start = parseIsoDate(startDate);
+  const end = parseIsoDate(endDate);
 
   if (start.month === end.month && start.year === end.year) {
     return `${start.day}-${end.day} ${MONTHS_SHORT[end.month - 1]}`;
@@ -245,7 +253,9 @@ const datesInRange = (startIso: string, endIso: string): string[] => {
 export const countFestivalDays = (festival: Festival): number => {
   const days = new Set<string>();
   for (const screening of festival.screenings) {
-    for (const date of datesInRange(screening.startDate, screening.endDate)) {
+    // An undated session adds no nights.
+    if (!screening.startDate) continue;
+    for (const date of datesInRange(screening.startDate, screening.endDate ?? screening.startDate)) {
       days.add(date);
     }
   }

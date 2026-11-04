@@ -61,6 +61,11 @@ export function FilmPage({
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const embedUrl = getYouTubeEmbedUrl(film.trailerUrl);
 
+  // No venue means the slot is not settled, so the date and time read
+  // "To be confirmed" with it, even where cms-hub has values for them.
+  const TBC = "To be confirmed";
+  const venueTbc = !screening.venue;
+
   const facts = [
     { label: "Screening", value: screening.title, href: screeningHref(screening.id) },
     // This film's own date and time where cms-hub has them, the session's
@@ -68,14 +73,24 @@ export function FilmPage({
     // cover several days and a dozen films, so a film that knows its own slot
     // has to say so here of all places — the reader is on this page precisely
     // because this is the film they are trying to catch.
+    // No row at all when neither the film nor its session has a date yet.
+    ...(venueTbc
+      ? [{ label: "Date", value: TBC }]
+      : film.startDate || screening.startDate
+      ? [
+          {
+            label: film.startDate ? "Date" : "Dates",
+            value: film.startDate
+              ? formatDayHeading(film.startDate)
+              : formatScreeningDates(screening),
+          },
+        ]
+      : []),
     {
-      label: film.startDate ? "Date" : "Dates",
-      value: film.startDate
-        ? formatDayHeading(film.startDate)
-        : formatScreeningDates(screening),
+      label: "Time",
+      value: venueTbc ? TBC : film.startTime || screening.time || TBC,
     },
-    { label: "Time", value: film.startTime || screening.time || "To be confirmed" },
-    { label: "Venue", value: screening.venue || "To be confirmed" },
+    { label: "Venue", value: screening.venue || TBC },
     {
       label: "Running time",
       value: formatRuntime(film.runtimeMinutes, film.runtimeSeconds) || "—",
@@ -131,11 +146,14 @@ export function FilmPage({
             )}
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <span
-                className={`border px-4 py-2 font-fest-text text-sm ${SEAT_STATUS_CLASSES[screening.seatStatus]}`}
-              >
-                {SEAT_STATUS_LABEL[screening.seatStatus]}
-              </span>
+              {/* No seat status for a session that has no date yet. */}
+              {screening.startDate && (
+                <span
+                  className={`border px-4 py-2 font-fest-text text-sm ${SEAT_STATUS_CLASSES[screening.seatStatus]}`}
+                >
+                  {SEAT_STATUS_LABEL[screening.seatStatus]}
+                </span>
+              )}
 
               {embedUrl && (
                 <FestivalButton size="md" onClick={() => setIsTrailerOpen(true)}>

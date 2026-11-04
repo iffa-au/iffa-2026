@@ -291,17 +291,19 @@ const mapScreening = (
   if (!raw) return null;
 
   const title = String(raw.title ?? "").trim();
-  const startDate = String(raw.startDate ?? "").trim();
-  // A screening with no title or no opening date cannot be placed on the
-  // programme at all, so it is dropped rather than rendered as an undated blank.
-  if (!title || !ISO_DATE.test(startDate)) return null;
+  const rawStart = String(raw.startDate ?? "").trim();
+  // A screening with no title cannot be listed. One with no date is kept and
+  // shown as "To be confirmed": the dates are optional in cms-hub.
+  if (!title) return null;
+  const startDate = ISO_DATE.test(rawStart) ? rawStart : undefined;
 
   // A missing or malformed end date means a single sitting, which is the
   // common case — not an error worth dropping the session over. An end that
   // precedes the start is treated the same way: the start is the date staff
   // are most likely to have got right.
   const rawEnd = String(raw.endDate ?? "").trim();
-  const endDate = ISO_DATE.test(rawEnd) && rawEnd >= startDate ? rawEnd : startDate;
+  const endDate =
+    startDate && ISO_DATE.test(rawEnd) && rawEnd >= startDate ? rawEnd : startDate;
 
   return {
     id: mintId(title, index, seenScreenings, "screening"),
@@ -321,12 +323,20 @@ const mapScreening = (
 const mapFestival = (raw: ApiFestival): Festival | null => {
   const slug = String(raw.slug ?? "").trim();
   const name = String(raw.name ?? "").trim();
-  const startDate = String(raw.startDate ?? "").trim();
-  const endDate = String(raw.endDate ?? "").trim();
+  const rawStart = String(raw.startDate ?? "").trim();
+  const rawEnd = String(raw.endDate ?? "").trim();
 
-  // Without a slug there is no archive route to link to, and without dates the
-  // festival cannot be placed on a timeline.
-  if (!slug || !name || !ISO_DATE.test(startDate) || !ISO_DATE.test(endDate)) {
+  // Dates are both or neither. No valid start means no dates at all ("to be
+  // confirmed"); a missing or backwards end with a valid start means one day.
+  const startDate = ISO_DATE.test(rawStart) ? rawStart : undefined;
+  const endDate =
+    startDate && (ISO_DATE.test(rawEnd) && rawEnd >= startDate ? rawEnd : startDate);
+  // Undated, the year comes from cms-hub, which keeps it when dates are cleared.
+  const year = startDate ? Number(startDate.slice(0, 4)) : Number(raw.year) || 0;
+
+  // Without a slug there is no archive route to link to, and without a year
+  // the festival cannot be placed on a timeline.
+  if (!slug || !name || !year) {
     return null;
   }
 
@@ -339,7 +349,7 @@ const mapFestival = (raw: ApiFestival): Festival | null => {
     // Derived, never read from the API: a festival's year and its start date
     // cannot be allowed to disagree, and the dates are the thing staff edit.
     // The stored `year` on the backend exists only to enforce one-per-year.
-    year: Number(startDate.slice(0, 4)),
+    year,
     name,
     tagline: String(raw.tagline ?? "").trim(),
     description: String(raw.description ?? "").trim(),
@@ -433,11 +443,15 @@ const splitByPhase = (
   festivals: Festival[],
   todayIso: string,
 ): { festival: Festival | null; archive: Festival[] } => {
-  const chronological = [...festivals].sort((a, b) =>
-    a.startDate.localeCompare(b.startDate),
+  const chronological = [...festivals].sort(
+    (a, b) => a.year - b.year || (a.startDate ?? "").localeCompare(b.startDate ?? ""),
   );
 
-  const current = chronological.find((entry) => entry.endDate >= todayIso);
+  // ponytail: an undated festival counts as running until the end of its year,
+  // so an announced-but-undated one still takes the hero during that year.
+  const current = chronological.find(
+    (entry) => (entry.endDate ?? `${entry.year}-12-31`) >= todayIso,
+  );
   const festival = current ?? chronological[chronological.length - 1] ?? null;
 
   return {

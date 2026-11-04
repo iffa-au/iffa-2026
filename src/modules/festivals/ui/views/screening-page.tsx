@@ -50,7 +50,10 @@ export function ScreeningPage({
   otherScreenings: Screening[];
 }) {
   const facts = [
-    { label: "Dates", value: formatScreeningDates(screening) },
+    // Undated sessions show no date row and no seat status (see the badge).
+    ...(screening.startDate
+      ? [{ label: "Dates", value: formatScreeningDates(screening) }]
+      : []),
     { label: "Time", value: screening.time || "To be confirmed" },
     { label: "Venue", value: screening.venue || "To be confirmed" },
     {
@@ -86,13 +89,15 @@ export function ScreeningPage({
           </p>
         )}
 
-        <div className="mt-8 flex flex-wrap items-center gap-4">
-          <span
-            className={`border px-4 py-2 font-fest-text text-sm ${SEAT_STATUS_CLASSES[screening.seatStatus]}`}
-          >
-            {SEAT_STATUS_LABEL[screening.seatStatus]}
-          </span>
-        </div>
+        {screening.startDate && (
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <span
+              className={`border px-4 py-2 font-fest-text text-sm ${SEAT_STATUS_CLASSES[screening.seatStatus]}`}
+            >
+              {SEAT_STATUS_LABEL[screening.seatStatus]}
+            </span>
+          </div>
+        )}
 
         <dl className="mt-12 grid grid-cols-2 gap-x-10 gap-y-7 border-t border-fest-beam/12 pt-8 sm:grid-cols-4">
           {facts.map((fact) => (
