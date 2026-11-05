@@ -60,6 +60,9 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, title }: TrailerModalProps) =
 
   if (!isMounted || typeof document === "undefined") return null;
 
+  // YouTube and Drive play 16:9; Instagram's embed is a tall portrait card.
+  const isPortrait = embedUrl?.startsWith("https://www.instagram.com/") ?? false;
+
   return createPortal(
     <div
       role="dialog"
@@ -74,7 +77,7 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, title }: TrailerModalProps) =
       }}
     >
       <div
-        className={`relative w-full max-w-3xl overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl transition-all duration-200 ${
+        className={`relative w-full ${isPortrait ? "max-w-[540px]" : "max-w-3xl"} overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl transition-all duration-200 ${
           isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -92,13 +95,13 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, title }: TrailerModalProps) =
           <X className="h-4 w-4" />
         </button>
 
-        <div className="aspect-video w-full bg-black">
+        <div className={`w-full bg-black ${isPortrait ? "h-[min(75vh,720px)]" : "aspect-video"}`}>
           {embedUrl ? (
             <iframe
               src={embedUrl}
               title={`${title} trailer`}
               className="h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
           ) : (

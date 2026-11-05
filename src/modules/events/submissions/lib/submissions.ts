@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+import { getInstagramEmbedUrl } from "@/lib/instagram";
+
+const API_BASE_URL =process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const OBJECT_ID_REGEX = /^[a-f0-9]{24}$/i;
 const FALLBACK_POSTER = "/fallbacks/no-poster.svg";
 
@@ -126,7 +128,7 @@ const getGoogleDriveEmbedUrl = (parsed: URL): string | null => {
 
 /**
  * Resolves whatever the CMS holds in `trailerUrl` into something an <iframe>
- * can play, or null when the link isn't embeddable (a Dropbox or WeTransfer
+ * can play (YouTube, Google Drive or Instagram), or null when the link isn't embeddable (a Dropbox or WeTransfer
  * download, say) — callers hide their trailer button on null.
  */
 export const getTrailerEmbedUrl = (url?: string): string | null => {
@@ -134,7 +136,11 @@ export const getTrailerEmbedUrl = (url?: string): string | null => {
 
   try {
     const parsed = new URL(url);
-    return getYouTubeEmbedUrl(parsed) ?? getGoogleDriveEmbedUrl(parsed);
+    return (
+      getYouTubeEmbedUrl(parsed) ??
+      getGoogleDriveEmbedUrl(parsed) ??
+      getInstagramEmbedUrl(url)
+    );
   } catch {
     return null;
   }
