@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { getYouTubeEmbedUrl } from "@/lib/youtube";
+import { getTrailerEmbedUrl } from "@/modules/events/submissions/lib/submissions";
 import TrailerModal from "@/modules/home/ui/views/carousel/TrailerModal";
 
 import type { Festival, Film, Screening, SeatStatus } from "../../lib/types";
@@ -59,7 +59,7 @@ export function FilmPage({
   alsoInScreening: Film[];
 }) {
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
-  const embedUrl = getYouTubeEmbedUrl(film.trailerUrl);
+  const embedUrl = getTrailerEmbedUrl(film.trailerUrl);
 
   // No venue means the slot is not settled, so the date and time read
   // "To be confirmed" with it, even where cms-hub has values for them.
