@@ -62,6 +62,9 @@ export function ScreeningBlock({
   /** "01", "02" — position in the programme, not a calendar date. */
   index: string;
 }) {
+  // An undated session is announced but not scheduled: its date, seat status
+  // and film count are left off rather than printed as placeholders.
+  const dated = Boolean(screening.startDate);
   const facts = [formatScreeningDates(screening), screening.venue].filter(Boolean);
   const shown = screening.films.slice(0, LINEUP_LIMIT);
   const hidden = screening.films.length - shown.length;
@@ -87,7 +90,7 @@ export function ScreeningBlock({
           {/* The time is the one number a reader scans a programme for, so it
               is set in display type and pushed to the far edge where the eye
               can run down a column of them. */}
-          {screening.time && (
+          {dated && screening.time && (
             <span className="ml-auto font-fest-display text-2xl font-bold tabular-nums leading-none md:text-[1.75rem]">
               {screening.time}
             </span>
@@ -100,13 +103,21 @@ export function ScreeningBlock({
               {fact}
             </span>
           ))}
-          <span className={SEAT_STATUS_CLASSES[screening.seatStatus]}>
-            {SEAT_STATUS_LABEL[screening.seatStatus]}
-          </span>
-          <span className="text-fest-ink/45">
-            {screening.films.length}{" "}
-            {screening.films.length === 1 ? "film" : "films"}
-          </span>
+          {dated ? (
+            <>
+              <span className={SEAT_STATUS_CLASSES[screening.seatStatus]}>
+                {SEAT_STATUS_LABEL[screening.seatStatus]}
+              </span>
+              <span className="text-fest-ink/45">
+                {screening.films.length}{" "}
+                {screening.films.length === 1 ? "film" : "films"}
+              </span>
+            </>
+          ) : (
+            <span className="italic text-fest-ink/70">
+              To be confirmed
+            </span>
+          )}
         </div>
 
         {screening.description && (

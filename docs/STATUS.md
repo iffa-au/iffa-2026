@@ -1,12 +1,23 @@
 # Status
 
-Updated: 2026-09-18
+Updated: 2026-11-04
 
 Current state of work across `iffa-2026` and `../cms-hub`. Keep this short —
 delete finished items rather than accumulating a changelog. Git already has
 the history.
 
 ## In flight
+
+- **Optional festival and screening dates** (branch
+  `claude/elastic-driscoll-d879d8`, 2026-11-04). Dates are both-or-neither.
+  An undated festival shows "Dates to be confirmed", takes its year from
+  cms-hub's stored `year`, and counts as running until the end of that year
+  when picking the hero. An undated screening hides its date, seat status
+  and film count everywhere (programme block, index, film tiles, screening
+  and film pages) instead of printing a placeholder. Frontend only.
+  On a film page, a session with no venue shows Date and Time as "To be
+  confirmed" too, whatever cms-hub holds for them. Frontend only. The live "Chilean Showcase – 2027" is hidden
+  until this deploys. Needs cms-hub `claude/compassionate-kare-00fe4c` first.
 
 - **Featured Selection from the CMS** (branch `featured`, both repos). The
   homepage row now loads `GET /featured-films` client-side instead of reading
