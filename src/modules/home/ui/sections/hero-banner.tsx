@@ -62,7 +62,7 @@ const HeroBanner = () => {
         <h1
           id="home-hero-title"
           style={{ fontFamily: SERIF }}
-          className="bg-linear-to-b from-[#f6e6b4] via-[#e6ba35] to-[#a8792a] bg-clip-text text-transparent text-balance font-medium leading-[1.50] tracking-[0.02em] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] text-3xl sm:text-4xl md:text5xl lg:text-6xl xl:text-7xl"
+          className="bg-linear-to-b from-[#f6e6b4] via-[#e6ba35] to-[#a8792a] bg-clip-text text-transparent text-balance font-medium leading-[1.50] tracking-[0.02em] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
         >
           {heroBanner.title}
         </h1>
