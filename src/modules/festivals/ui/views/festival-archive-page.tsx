@@ -5,6 +5,7 @@ import {
   countFestivalDays,
   countFestivalFilms,
   festivalCountries,
+  festivalYearLabel,
   formatFestivalDates,
   orderScreenings,
 } from "../../lib/festival-utils";
@@ -54,7 +55,7 @@ export function FestivalArchivePage({ festival }: { festival: Festival }) {
           crumbs={[
             { label: "Home", href: "/" },
             { label: "Festival", href: "/festivals" },
-            { label: `${festival.year}` },
+            { label: festivalYearLabel(festival) || festival.name },
           ]}
         />
 
@@ -63,9 +64,11 @@ export function FestivalArchivePage({ festival }: { festival: Festival }) {
         </p>
 
         <h1 className="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-1">
-          <span className="font-fest-display text-[clamp(4rem,14vw,11rem)] font-extrabold leading-[0.8] tracking-[-0.02em] text-fest-beam">
-            {festival.year}
-          </span>
+          {festivalYearLabel(festival) && (
+            <span className="font-fest-display text-[clamp(4rem,14vw,11rem)] font-extrabold leading-[0.8] tracking-[-0.02em] text-fest-beam">
+              {festivalYearLabel(festival)}
+            </span>
+          )}
           <span className="font-fest-text text-[clamp(1.25rem,3vw,2.25rem)] italic leading-tight text-fest-beam/80">
             {festival.name}
           </span>

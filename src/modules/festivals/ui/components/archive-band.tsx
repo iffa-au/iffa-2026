@@ -1,7 +1,11 @@
 import Link from "next/link";
 
 import type { Festival } from "../../lib/types";
-import { countFestivalDays, formatFestivalDatesShort } from "../../lib/festival-utils";
+import {
+  countFestivalDays,
+  festivalYearLabel,
+  formatFestivalDatesShort,
+} from "../../lib/festival-utils";
 
 /**
  * Previous editions.
@@ -29,7 +33,7 @@ export function ArchiveBand({ festivals }: { festivals: Festival[] }) {
                 className="group grid gap-x-8 gap-y-1 border-b border-fest-beam/12 py-5 transition-colors duration-300 hover:bg-fest-beam/[0.03] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-fest-lamp md:grid-cols-[6rem_minmax(0,1fr)_auto] md:items-baseline"
               >
                 <span className="font-fest-display text-2xl font-bold tabular-nums leading-none text-fest-lamp">
-                  {festival.year}
+                  {festivalYearLabel(festival) || "TBA"}
                 </span>
 
                 <span className="font-fest-display text-xl font-semibold uppercase leading-tight tracking-[-0.005em] text-fest-beam transition-colors duration-300 group-hover:text-fest-lamp md:text-2xl">

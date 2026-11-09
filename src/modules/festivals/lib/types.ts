@@ -21,6 +21,11 @@
  */
 
 export type SeatStatus = "available" | "limited" | "sold-out";
+export type ScreeningStatus =
+  | "upcoming"
+  | "screening"
+  | "to-be-announced"
+  | "coming-soon";
 
 /**
  * One film in a screening.
@@ -97,14 +102,12 @@ export type Screening = {
   title: string;
   /** A short blurb for the session as a whole. May be empty. */
   description: string;
-  /**
-   * ISO date the session opens, e.g. "2026-10-14". Both dates are absent when
-   * cms-hub has none yet; the site then hides the date, seat status and film
-   * count.
-   */
-  startDate?: string;
+  /** Public status when no date has been finalised yet. */
+  status: ScreeningStatus;
+  /** ISO date the session opens, e.g. "2026-10-14". */
+  startDate: string;
   /** ISO date it closes. Equal to `startDate` for a single sitting. */
-  endDate?: string;
+  endDate: string;
   /** Display-ready local start time, e.g. "7:30 PM". May be empty. */
   time: string;
   venue: string;
@@ -117,10 +120,10 @@ export type Festival = {
   /** URL segment: /festivals/<slug>. */
   slug: string;
   /**
-   * The festival year, derived from `startDate`. A festival with no dates
-   * uses the year cms-hub stores for it.
+   * The festival year, derived from `startDate` rather than read from the API.
    * One festival owns a year outright, so this is the festival's identity —
-   * "IFFA 2026" — and what the archive is keyed on.
+   * "IFFA 2026" — and what the archive is keyed on. 0 while the festival has
+   * no dates yet; render it through `festivalYearLabel`.
    */
   year: number;
   name: string;
@@ -133,11 +136,10 @@ export type Festival = {
   city: string;
   /**
    * ISO dates. Derived labels come from `festival-utils`, never hardcoded.
-   * Both or neither: a festival can be published before its dates are set,
-   * and then the site says "Dates to be confirmed".
+   * Both "" while the dates have not been announced.
    */
-  startDate?: string;
-  endDate?: string;
+  startDate: string;
+  endDate: string;
   screenings: Screening[];
 };
 

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Play, X } from "lucide-react";
 
+import { isInstagramEmbed } from "@/modules/events/submissions/lib/submissions";
+
 type TrailerModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -60,8 +62,7 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, title }: TrailerModalProps) =
 
   if (!isMounted || typeof document === "undefined") return null;
 
-  // YouTube and Drive play 16:9; Instagram's embed is a tall portrait card.
-  const isPortrait = embedUrl?.startsWith("https://www.instagram.com/") ?? false;
+  const portrait = isInstagramEmbed(embedUrl);
 
   return createPortal(
     <div
@@ -76,8 +77,13 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, title }: TrailerModalProps) =
         onClose();
       }}
     >
+      {/* Original version kept for reference:
       <div
-        className={`relative w-full ${isPortrait ? "max-w-[540px]" : "max-w-3xl"} overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl transition-all duration-200 ${
+        className={`relative w-full max-w-3xl overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl transition-all duration-200 ${
+      */}
+      {/* New version: narrower for a portrait Instagram embed. */}
+      <div
+        className={`relative w-full ${portrait ? "max-w-[400px]" : "max-w-3xl"} overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl transition-all duration-200 ${
           isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -95,7 +101,18 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, title }: TrailerModalProps) =
           <X className="h-4 w-4" />
         </button>
 
-        <div className={`w-full bg-black ${isPortrait ? "h-[min(75vh,720px)]" : "aspect-video"}`}>
+        {/* Original version kept for reference:
+        <div className="aspect-video w-full bg-black">
+        */}
+        {/* New version: Instagram's player is portrait and carries its own
+            header and caption, so it gets a tall box capped to the screen. */}
+        <div
+          className={
+            portrait
+              ? "h-[min(80vh,720px)] w-full bg-black"
+              : "aspect-video w-full bg-black"
+          }
+        >
           {embedUrl ? (
             <iframe
               src={embedUrl}

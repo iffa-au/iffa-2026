@@ -1,4 +1,10 @@
-import type { Festival, Film, Screening, SeatStatus } from "./types";
+import type {
+  Festival,
+  Film,
+  Screening,
+  ScreeningStatus,
+  SeatStatus,
+} from "./types";
 
 /**
  * Every label, count and range rendered in the Festival section is derived
@@ -143,18 +149,12 @@ export const formatDateRange = (startIso: string, endIso: string): string => {
   return `${formatFullDate(startIso)} - ${formatFullDate(endIso)}`;
 };
 
-/** Printed wherever a festival's dates would be when cms-hub has none yet. */
-export const FESTIVAL_DATES_TBC = "To be confirmed";
-
 /** A festival's dates, collapsed. */
 export const formatFestivalDates = (festival: Festival): string =>
-  festival.startDate && festival.endDate
-    ? formatDateRange(festival.startDate, festival.endDate)
-    : FESTIVAL_DATES_TBC;
+  formatDateRange(festival.startDate, festival.endDate);
 
 /** The same range without the year, for use beside a year set as display type. */
 export const formatFestivalDatesShort = (festival: Festival): string => {
-  if (!festival.startDate || !festival.endDate) return FESTIVAL_DATES_TBC;
   const start = parseIsoDate(festival.startDate);
   const end = parseIsoDate(festival.endDate);
 
@@ -175,19 +175,21 @@ export const formatFestivalDatesShort = (festival: Festival): string => {
  * 17 October" is already four words longer than the date it is replacing.
  */
 export const formatScreeningDates = (screening: Screening): string => {
-  const { startDate, endDate = startDate } = screening;
-  // "" for an undated session: the site hides the date rather than print a
-  // placeholder, so every caller can drop it with filter(Boolean).
-  if (!startDate || !endDate) return "";
-  if (startDate === endDate) return formatDayHeading(startDate);
+  if (!screening.startDate) {
+    return SCREENING_STATUS_LABEL[screening.status] ?? "To be announced";
+  }
 
-  const start = parseIsoDate(startDate);
-  const end = parseIsoDate(endDate);
+  if (screening.startDate === screening.endDate) {
+    return formatDayHeading(screening.startDate);
+  }
+
+  const start = parseIsoDate(screening.startDate);
+  const end = parseIsoDate(screening.endDate);
 
   if (start.month === end.month && start.year === end.year) {
     return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]}`;
   }
-  return `${formatShortDate(startDate)} - ${formatShortDate(endDate)}`;
+  return `${formatShortDate(screening.startDate)} - ${formatShortDate(screening.endDate)}`;
 };
 
 /**
@@ -199,12 +201,16 @@ export const formatScreeningDates = (screening: Screening): string => {
  * festival that runs a fortnight at most.
  */
 export const formatScreeningDatesShort = (screening: Screening): string => {
-  const { startDate, endDate = startDate } = screening;
-  if (!startDate || !endDate) return "";
-  if (startDate === endDate) return formatShortDate(startDate);
+  if (!screening.startDate) {
+    return SCREENING_STATUS_LABEL[screening.status] ?? "To be announced";
+  }
 
-  const start = parseIsoDate(startDate);
-  const end = parseIsoDate(endDate);
+  if (screening.startDate === screening.endDate) {
+    return formatShortDate(screening.startDate);
+  }
+
+  const start = parseIsoDate(screening.startDate);
+  const end = parseIsoDate(screening.endDate);
 
   if (start.month === end.month && start.year === end.year) {
     return `${start.day}-${end.day} ${MONTHS_SHORT[end.month - 1]}`;
@@ -224,13 +230,32 @@ export const formatScreeningDatesShort = (screening: Screening): string => {
  * own inside a strand that runs three days reads "14-16 Oct" — vague, but
  * true, which is the honest answer when nobody has said which day it is on.
  */
+// Original version kept for reference:
+// export const filmScreeningWhen = (film: Film, screening: Screening): string => {
+//   const date = film.startDate
+//     ? formatShortDate(film.startDate)
+//     : formatScreeningDatesShort(screening);
+//
+//   return [date, film.startTime || screening.time].filter(Boolean).join(", ");
+// };
+
+// New version: while the screening itself has no dates, it is "Coming soon" /
+// "To be announced", and a film's own date and time would contradict that. The
+// film's slot stays stored in cms-hub and shows again once the screening is
+// given a date.
 export const filmScreeningWhen = (film: Film, screening: Screening): string => {
+  if (!screening.startDate) return formatScreeningDatesShort(screening);
+
   const date = film.startDate
     ? formatShortDate(film.startDate)
     : formatScreeningDatesShort(screening);
 
   return [date, film.startTime || screening.time].filter(Boolean).join(", ");
 };
+
+/** Whether a film's own date and time should be shown — only inside a dated screening. */
+export const showsFilmSlot = (film: Film, screening: Screening): boolean =>
+  Boolean(screening.startDate) && Boolean(film.startDate || film.startTime);
 
 /** Every ISO date a span covers, inclusive of both ends. */
 const datesInRange = (startIso: string, endIso: string): string[] => {
@@ -250,12 +275,25 @@ const datesInRange = (startIso: string, endIso: string): string[] => {
 };
 
 /** Number of distinct dates a festival actually screens on. */
+// Original version kept for reference:
+// export const countFestivalDays = (festival: Festival): number => {
+//   const days = new Set<string>();
+//   for (const screening of festival.screenings) {
+//     for (const date of datesInRange(screening.startDate, screening.endDate)) {
+//       days.add(date);
+//     }
+//   }
+//   return days.size;
+// };
+
+// New version: a screening with no dates yet adds no days. Passing "" to
+// datesInRange builds an invalid Date and throws "Invalid time value", which
+// took down the archive band and archive page.
 export const countFestivalDays = (festival: Festival): number => {
   const days = new Set<string>();
   for (const screening of festival.screenings) {
-    // An undated session adds no nights.
     if (!screening.startDate) continue;
-    for (const date of datesInRange(screening.startDate, screening.endDate ?? screening.startDate)) {
+    for (const date of datesInRange(screening.startDate, screening.endDate)) {
       days.add(date);
     }
   }
@@ -326,6 +364,25 @@ export const filmHref = (id: string): string => `/festivals/film/${id}`;
  * Seat status is never communicated by colour alone — every consumer pairs the
  * colour with this text label.
  */
+export const SCREENING_STATUS_LABEL: Record<ScreeningStatus, string> = {
+  upcoming: "Upcoming",
+  screening: "Screening",
+  "to-be-announced": "To be announced",
+  "coming-soon": "Coming soon",
+};
+
+/** Festival year label for archive and page headings, e.g. "2026". */
+export const festivalYearLabel = (festival: Festival): string =>
+  festival.year ? String(festival.year) : "";
+
+/** The festival's display title, with the year if the name itself is not already branded. */
+export const festivalTitle = (festival: Festival): string => {
+  const trimmed = festival.name.trim();
+  if (!trimmed) return "IFFA";
+  if (/IFFA/i.test(trimmed)) return trimmed;
+  return festival.year ? `IFFA ${festival.year}` : trimmed;
+};
+
 export const SEAT_STATUS_LABEL: Record<SeatStatus, string> = {
   available: "Seats available",
   limited: "Seats limited",
