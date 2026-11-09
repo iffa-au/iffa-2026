@@ -105,6 +105,7 @@ export default function Header() {
             height={80}
             loading="eager"
             className="h-auto w-14 lg:w-20"
+            style={{ maskImage: "url(/IFFA_logo.png)", maskMode: "luminance", maskSize: "100% 100%" }}
           />
         </Link>
 

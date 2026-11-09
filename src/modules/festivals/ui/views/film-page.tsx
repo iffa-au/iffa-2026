@@ -92,8 +92,7 @@ export function FilmPage({
       label: "Time",
       value:
         (showsFilmSlot(film, screening) && film.startTime) ||
-        screening.time ||
-        "To be confirmed",
+        formatScreeningDates(screening) === "Screening" ? screening.time : formatScreeningDates(screening),
     },
     { label: "Venue", value: screening.venue || "To be confirmed" },
     {
