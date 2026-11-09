@@ -1,6 +1,4 @@
-import { getInstagramEmbedUrl } from "@/lib/instagram";
-
-const API_BASE_URL =process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const OBJECT_ID_REGEX = /^[a-f0-9]{24}$/i;
 const FALLBACK_POSTER = "/fallbacks/no-poster.svg";
 
@@ -126,10 +124,56 @@ const getGoogleDriveEmbedUrl = (parsed: URL): string | null => {
     : null;
 };
 
+/** Instagram shortcodes: letters, digits, `_` and `-`. */
+const INSTAGRAM_SHORTCODE = /^[\w-]{5,}$/;
+
+/**
+ * Instagram posts, reels and IGTV links — `/p/<code>/`, `/reel/<code>/`,
+ * `/reels/<code>/`, `/tv/<code>/` — all embed through `/<kind>/<code>/embed`.
+ * `/reels/` is the plural share form of the same reel, so it embeds as `/reel/`.
+ *
+ * The post must be public; a private account's post renders Instagram's
+ * "this content isn't available" card inside the iframe instead.
+ */
+const getInstagramEmbedUrl = (parsed: URL): string | null => {
+  if (!/(^|\.)instagram\.com$/.test(parsed.hostname)) return null;
+
+  const [kind, code] = parsed.pathname.split("/").filter(Boolean);
+  const embedKind = kind === "reels" ? "reel" : kind;
+  if (!["p", "reel", "tv"].includes(embedKind)) return null;
+
+  return code && INSTAGRAM_SHORTCODE.test(code)
+    ? `https://www.instagram.com/${embedKind}/${code}/embed`
+    : null;
+};
+
+/** Instagram embeds are portrait, so the trailer modal sizes for them differently. */
+export const isInstagramEmbed = (embedUrl?: string | null): boolean =>
+  !!embedUrl && embedUrl.startsWith("https://www.instagram.com/");
+
+// Original version kept for reference:
+// /**
+//  * Resolves whatever the CMS holds in `trailerUrl` into something an <iframe>
+//  * can play, or null when the link isn't embeddable (a Dropbox or WeTransfer
+//  * download, say) — callers hide their trailer button on null.
+//  */
+// export const getTrailerEmbedUrl = (url?: string): string | null => {
+//   if (!url) return null;
+//
+//   try {
+//     const parsed = new URL(url);
+//     return getYouTubeEmbedUrl(parsed) ?? getGoogleDriveEmbedUrl(parsed);
+//   } catch {
+//     return null;
+//   }
+// };
+
 /**
  * Resolves whatever the CMS holds in `trailerUrl` into something an <iframe>
- * can play (YouTube, Google Drive or Instagram), or null when the link isn't embeddable (a Dropbox or WeTransfer
+ * can play, or null when the link isn't embeddable (a Dropbox or WeTransfer
  * download, say) — callers hide their trailer button on null.
+ *
+ * New version: Instagram posts and reels are embeddable too.
  */
 export const getTrailerEmbedUrl = (url?: string): string | null => {
   if (!url) return null;
@@ -139,7 +183,7 @@ export const getTrailerEmbedUrl = (url?: string): string | null => {
     return (
       getYouTubeEmbedUrl(parsed) ??
       getGoogleDriveEmbedUrl(parsed) ??
-      getInstagramEmbedUrl(url)
+      getInstagramEmbedUrl(parsed)
     );
   } catch {
     return null;
