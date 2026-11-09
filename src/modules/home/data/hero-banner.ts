@@ -7,8 +7,8 @@
  */
 
 export type HeroBanner = {
+  eyebrow: string;
   title: string;
-  subTitle?: string;
   date: string;
   location: string;
   imageSrc: string;
@@ -17,8 +17,8 @@ export type HeroBanner = {
 };
 
 export const heroBanner: HeroBanner = {
-  title: "International Film Festival of Australia",
-  subTitle: "IFFA Awards 2026",
+  eyebrow: "International Film Festival of Australia",   
+  title: "IFFA Awards 2026",
   date: "27 March 2027",
   location: "Melbourne, Australia",
   imageSrc: "/assets/home/iffa-awards-2026-banner.webp",

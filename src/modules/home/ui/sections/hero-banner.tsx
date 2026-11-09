@@ -59,20 +59,22 @@ const HeroBanner = () => {
         {/* The gold is a clipped background gradient, so legibility has to come
             from a `filter` drop-shadow — a `text-shadow` paints over the
             gradient and muddies it. */}
+        <p
+  style={{ fontFamily: SERIF }}
+  className="mb-3 whitespace-nowrap bg-linear-to-b from-[#f6e6b4] via-[#e6ba35] to-[#a8792a] bg-clip-text text-transparent font-medium leading-[1.05] tracking-[0.02em] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] text-xl sm:text-3xl md:text-4xl lg:text-5xl"
+>
+  {heroBanner.eyebrow}
+</p>
+        
         <h1
           id="home-hero-title"
           style={{ fontFamily: SERIF }}
-          className="bg-linear-to-b from-[#f6e6b4] via-[#e6ba35] to-[#a8792a] bg-clip-text text-transparent text-balance font-medium leading-[1.50] tracking-[0.02em] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
+          className="bg-linear-to-b from-[#f6e6b4] via-[#e6ba35] to-[#a8792a] bg-clip-text text-transparent text-balance font-medium leading-[1.05] tracking-[0.02em] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-6xl"
         >
           {heroBanner.title}
         </h1>
 
-        <h3 className="font-medium leading-[1.05] tracking-[0.02em] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl">
-          {heroBanner.subTitle}
-        </h3>
-
-        <p className="mt-3 text-white tracking-[0.2em] drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)] text-xs sm:text-sm md:mt-4 md:text-base lg:text-lg">
-          <span>{heroBanner.date}</span>
+ <p className="mt-3 text-white tracking-[0.15em] drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)] text-[10px] sm:text-xs md:mt-4 md:text-sm lg:text-base">         <span>{heroBanner.date}</span>
           {/* Below `sm` the two phrases stack and the rule is dropped. Each
               stays in its own span so screen readers hear them apart. */}
           <span aria-hidden="true" className="mx-2 hidden sm:inline md:mx-3">
