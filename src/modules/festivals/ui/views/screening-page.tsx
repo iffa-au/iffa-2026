@@ -57,7 +57,7 @@ export function ScreeningPage({
 
   const facts = [
     { label: "Dates", value: formatScreeningDates(screening) },
-    { label: "Time", value: screening.time || "To be confirmed" },
+    { label: "Time", value: formatScreeningDates(screening) === "Screening" ? screening.time : formatScreeningDates(screening) },
     { label: "Venue", value: screening.venue || "To be confirmed" },
     {
       label: screening.films.length === 1 ? "Film" : "Films",

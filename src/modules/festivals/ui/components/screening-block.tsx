@@ -103,7 +103,7 @@ export function ScreeningBlock({
               {fact}
             </span>
           ))}
-          {dated ? (
+          {dated && (
             <>
               <span className={SEAT_STATUS_CLASSES[screening.seatStatus]}>
                 {SEAT_STATUS_LABEL[screening.seatStatus]}
@@ -113,10 +113,6 @@ export function ScreeningBlock({
                 {screening.films.length === 1 ? "film" : "films"}
               </span>
             </>
-          ) : (
-            <span className="italic text-fest-ink/70">
-              To be confirmed
-            </span>
           )}
         </div>
 

@@ -62,10 +62,14 @@ const HeroBanner = () => {
         <h1
           id="home-hero-title"
           style={{ fontFamily: SERIF }}
-          className="bg-linear-to-b from-[#f6e6b4] via-[#e6ba35] to-[#a8792a] bg-clip-text text-transparent text-balance font-medium leading-[1.05] tracking-[0.02em] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
+          className="bg-linear-to-b from-[#f6e6b4] via-[#e6ba35] to-[#a8792a] bg-clip-text text-transparent text-balance font-medium leading-[1.50] tracking-[0.02em] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
         >
           {heroBanner.title}
         </h1>
+
+        <h3 className="font-medium leading-[1.05] tracking-[0.02em] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl">
+          {heroBanner.subTitle}
+        </h3>
 
         <p className="mt-3 text-white tracking-[0.2em] drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)] text-xs sm:text-sm md:mt-4 md:text-base lg:text-lg">
           <span>{heroBanner.date}</span>
