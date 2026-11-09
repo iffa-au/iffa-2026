@@ -7,7 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 
 import type { Festival, FestivalPageSettings } from "../../lib/types";
-import { formatFestivalDatesShort } from "../../lib/festival-utils";
+import { festivalYearLabel, formatFestivalDatesShort } from "../../lib/festival-utils";
 import { FilmGrain } from "./film-grain";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
@@ -266,9 +266,11 @@ export function ProjectionHero({
             <span className="hero-line font-fest-text font-normal italic leading-tight text-fest-beam/85">
               {festival.name}
             </span>
-            <span className="hero-year font-fest-display font-extrabold leading-[0.9] tracking-[-0.01em] text-fest-beam">
-              {festival.year}
-            </span>
+            {festivalYearLabel(festival) && (
+              <span className="hero-year font-fest-display font-extrabold leading-[0.9] tracking-[-0.01em] text-fest-beam">
+                {festivalYearLabel(festival)}
+              </span>
+            )}
           </h1>
         )}
       </div>

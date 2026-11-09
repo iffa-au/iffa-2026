@@ -2,10 +2,13 @@ import Link from "next/link";
 
 import type { Festival, Screening, SeatStatus } from "../../lib/types";
 import {
+  SCREENING_STATUS_LABEL,
   SEAT_STATUS_LABEL,
+  festivalTitle,
   filmScreeningWhen,
   formatScreeningDates,
   screeningHref,
+  showsFilmSlot,
 } from "../../lib/festival-utils";
 import { festivalFontClass } from "../../lib/festival-fonts";
 import { FestivalBreadcrumb } from "../components/festival-breadcrumb";
@@ -49,11 +52,11 @@ export function ScreeningPage({
   /** The rest of the festival's programme, in programme order. */
   otherScreenings: Screening[];
 }) {
+  const statusLabel =
+    SCREENING_STATUS_LABEL[screening.status] ?? "To be announced";
+
   const facts = [
-    // Undated sessions show no date row and no seat status (see the badge).
-    ...(screening.startDate
-      ? [{ label: "Dates", value: formatScreeningDates(screening) }]
-      : []),
+    { label: "Dates", value: formatScreeningDates(screening) },
     { label: "Time", value: screening.time || "To be confirmed" },
     { label: "Venue", value: screening.venue || "To be confirmed" },
     {
@@ -74,9 +77,7 @@ export function ScreeningPage({
         />
 
         <p className="font-fest-text text-base italic text-fest-lamp/80">
-          {festival.name.includes(String(festival.year))
-            ? festival.name
-            : `${festival.name}, ${festival.year}`}
+          {festivalTitle(festival)}
         </p>
 
         <h1 className="mt-4 max-w-[18ch] font-fest-display text-[clamp(2.5rem,7vw,5.5rem)] font-extrabold uppercase leading-[0.88] tracking-[-0.015em] text-fest-beam">
@@ -89,15 +90,16 @@ export function ScreeningPage({
           </p>
         )}
 
-        {screening.startDate && (
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <span
-              className={`border px-4 py-2 font-fest-text text-sm ${SEAT_STATUS_CLASSES[screening.seatStatus]}`}
-            >
-              {SEAT_STATUS_LABEL[screening.seatStatus]}
-            </span>
-          </div>
-        )}
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <span
+            className={`border px-4 py-2 font-fest-text text-sm ${SEAT_STATUS_CLASSES[screening.seatStatus]}`}
+          >
+            {SEAT_STATUS_LABEL[screening.seatStatus]}
+          </span>
+          <span className="border border-fest-beam/25 bg-fest-beam/5 px-4 py-2 font-fest-text text-sm text-fest-beam/80">
+            {statusLabel}
+          </span>
+        </div>
 
         <dl className="mt-12 grid grid-cols-2 gap-x-10 gap-y-7 border-t border-fest-beam/12 pt-8 sm:grid-cols-4">
           {facts.map((fact) => (
@@ -135,11 +137,15 @@ export function ScreeningPage({
                   film={film}
                   // Left blank unless the film has a slot of its own — the
                   // session's date and time are already in the panel above.
-                  when={
-                    film.startDate || film.startTime
-                      ? filmScreeningWhen(film, screening)
-                      : ""
-                  }
+                  // Original version kept for reference:
+                  // when={
+                  //   film.startDate || film.startTime
+                  //     ? filmScreeningWhen(film, screening)
+                  //     : ""
+                  // }
+                  // New version: also blank while the screening has no dates;
+                  // the panel above already says "Coming soon".
+                  when={showsFilmSlot(film, screening) ? filmScreeningWhen(film, screening) : ""}
                 />
               ))}
             </div>
