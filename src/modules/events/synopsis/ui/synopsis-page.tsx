@@ -76,6 +76,7 @@ export type SynopsisFilm = {
   starring?: string;
   trailerEmbedUrl: string | null;
   trailerVideoUrl: string | null;
+  trailerSourceUrl?: string;
 };
 
 type SynopsisPageProps = {
@@ -224,6 +225,7 @@ export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
       starring: joinNames(crew.actors.map((a) => a.name)),
       trailerEmbedUrl: getTrailerEmbedUrl(data.trailerUrl),
       trailerVideoUrl: getTrailerVideoSrc(data.trailerVideoUrl),
+      trailerSourceUrl: data.trailerUrl,
     },
     crew,
   };
@@ -770,6 +772,7 @@ export function SynopsisPage({ id }: SynopsisPageProps) {
         onClose={() => setIsTrailerOpen(false)}
         embedUrl={film.trailerEmbedUrl}
         videoUrl={film.trailerVideoUrl}
+        sourceUrl={film.trailerSourceUrl}
         title={film.title}
       />
     </div>

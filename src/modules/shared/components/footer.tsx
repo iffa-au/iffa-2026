@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaInstagram, FaFacebook, FaLinkedin, FaYoutube, FaImdb } from "react-icons/fa";
+import { IFFA_SOCIAL_LINKS } from "@/modules/shared/data/social-links";
 
 export function Footer() {
   const pathname = usePathname();
@@ -20,13 +20,7 @@ export function Footer() {
     { name: "Filming in Australia", path: "/australia" },
   ];
 
-  const socialLinks = [
-    { icon: FaInstagram, href: "https://www.instagram.com/iffaawards/", label: "Instagram" },
-    { icon: FaFacebook, href: "https://www.facebook.com/iffaawardss", label: "Facebook" },
-    { icon: FaLinkedin, href: "https://www.linkedin.com/company/iffaawards/?viewAsMember=true", label: "LinkedIn" },
-    { icon: FaYoutube, href: "https://www.youtube.com/channel/UCO2xJ6Cw1-5o1iolIJtO4yQ", label: "YouTube" },
-    { icon: FaImdb, href: "https://m.imdb.com/event/ev0074610/2025/1/?ref_=ev_tl_yr_1", label: "IMDb" },
-  ];
+  const socialLinks = IFFA_SOCIAL_LINKS;
 
   return (
     <footer className="w-full bg-gradient-to-b from-neutral-900 via-neutral-900 to-black text-white relative overflow-hidden">

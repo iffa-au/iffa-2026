@@ -194,6 +194,7 @@ export function SubmissionsHeroCarousel() {
         onClose={() => setTrailerFilm(null)}
         embedUrl={trailerFilm?.trailerEmbedUrl ?? null}
         videoUrl={trailerFilm?.trailerVideoUrl ?? null}
+        sourceUrl={trailerFilm?.trailerSourceUrl ?? null}
         title={trailerFilm?.title ?? ""}
       />
     </section>
