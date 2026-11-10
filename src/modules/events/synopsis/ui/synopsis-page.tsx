@@ -6,6 +6,7 @@ import { Calendar, ChevronRight, Clock, Film, Play, Tag } from "lucide-react";
 import {
   formatDuration,
   getTrailerEmbedUrl,
+  getTrailerVideoSrc,
   pickImageUrl,
 } from "@/modules/events/submissions/lib/submissions";
 import TrailerModal from "@/modules/home/ui/views/carousel/TrailerModal";
@@ -33,6 +34,7 @@ type SubmissionApiResponse = {
   durationHours?: number;
   durationMinutes?: number;
   trailerUrl?: string;
+  trailerVideoUrl?: string;
   contentType?: NamedRef;
   language?: NamedRef;
   country?: NamedRef;
@@ -73,6 +75,7 @@ export type SynopsisFilm = {
   writers?: string;
   starring?: string;
   trailerEmbedUrl: string | null;
+  trailerVideoUrl: string | null;
 };
 
 type SynopsisPageProps = {
@@ -220,6 +223,7 @@ export function mapSubmissionToSynopsis(data: SubmissionApiResponse): {
       writers: joinNames(writers.map((w) => w.name)),
       starring: joinNames(crew.actors.map((a) => a.name)),
       trailerEmbedUrl: getTrailerEmbedUrl(data.trailerUrl),
+      trailerVideoUrl: getTrailerVideoSrc(data.trailerVideoUrl),
     },
     crew,
   };
@@ -625,7 +629,7 @@ function HeroSection({
               )}
             </div>
 
-            {film.trailerEmbedUrl && (
+            {(film.trailerVideoUrl || film.trailerEmbedUrl) && (
               <button
                 onClick={onWatchTrailer}
                 className="mt-6 inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-6 py-3 text-sm font-bold uppercase tracking-widest text-black transition-colors hover:bg-yellow-400"
@@ -765,6 +769,7 @@ export function SynopsisPage({ id }: SynopsisPageProps) {
         isOpen={isTrailerOpen}
         onClose={() => setIsTrailerOpen(false)}
         embedUrl={film.trailerEmbedUrl}
+        videoUrl={film.trailerVideoUrl}
         title={film.title}
       />
     </div>
