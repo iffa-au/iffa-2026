@@ -53,11 +53,14 @@ export function ScreeningPage({
   otherScreenings: Screening[];
 }) {
   const statusLabel =
-    SCREENING_STATUS_LABEL[screening.status] ?? "To be announced";
+    SCREENING_STATUS_LABEL[screening.status];
+
+    // Session details only exist once the screening is on; until then, show its status.
+  const ifScreening = (value: string) => screening.status === "screening" ? value : statusLabel;
 
   const facts = [
-    { label: "Dates", value: formatScreeningDates(screening) },
-    { label: "Time", value: formatScreeningDates(screening) === "Screening" ? screening.time : formatScreeningDates(screening) },
+    { label: "Dates", value: ifScreening(formatScreeningDates(screening)) },
+    { label: "Time", value: ifScreening(screening.time) },
     { label: "Venue", value: screening.venue || "To be confirmed" },
     {
       label: screening.films.length === 1 ? "Film" : "Films",

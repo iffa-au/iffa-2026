@@ -8,6 +8,7 @@ import TrailerModal from "@/modules/home/ui/views/carousel/TrailerModal";
 
 import type { Festival, Film, Screening, SeatStatus } from "../../lib/types";
 import {
+  SCREENING_STATUS_LABEL,
   SEAT_STATUS_LABEL,
   festivalTitle,
   filmHref,
@@ -63,6 +64,9 @@ export function FilmPage({
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const embedUrl = getTrailerEmbedUrl(film.trailerUrl);
 
+  // Session details only exist once the screening is on; until then, show its status.
+  const ifScreening = (value: string) => screening.status === "screening" ? value : SCREENING_STATUS_LABEL[screening.status];
+
   const facts = [
     { label: "Screening", value: screening.title, href: screeningHref(screening.id) },
     // This film's own date and time where cms-hub has them, the session's
@@ -82,19 +86,13 @@ export function FilmPage({
     // New version: the film's own slot is hidden while its screening has no
     // dates, so this page says "Coming soon" like the screening does.
     {
-      label: showsFilmSlot(film, screening) && film.startDate ? "Date" : "Dates",
-      value:
-        showsFilmSlot(film, screening) && film.startDate
-          ? formatDayHeading(film.startDate)
-          : formatScreeningDates(screening),
+      label: film.startDate ? "Date" : "Dates",
+      value: ifScreening(
+        film.startDate ? formatDayHeading(film.startDate) : formatScreeningDates(screening),
+      ),
     },
-    {
-      label: "Time",
-      value:
-        (showsFilmSlot(film, screening) && film.startTime) ||
-        formatScreeningDates(screening) === "Screening" ? screening.time : formatScreeningDates(screening),
-    },
-    { label: "Venue", value: screening.venue || "To be confirmed" },
+    { label: "Time", value: ifScreening(film.startTime || screening.time || "To be confirmed") },
+    { label: "Venue", value: ifScreening(screening.venue || "To be confirmed") },
     {
       label: "Running time",
       value: formatRuntime(film.runtimeMinutes, film.runtimeSeconds) || "—",
@@ -174,7 +172,7 @@ export function FilmPage({
             )}
 
             <dl className="mt-12 grid grid-cols-2 gap-x-10 gap-y-7 border-t border-fest-beam/12 pt-8 sm:grid-cols-3">
-              {facts.map((fact) => (
+              {facts.map((fact) =>  (
                 <div key={fact.label}>
                   <dt className="font-fest-text text-sm italic text-fest-lamp/75">
                     {fact.label}
@@ -187,9 +185,8 @@ export function FilmPage({
                       >
                         {fact.value}
                       </Link>
-                    ) : (
-                      fact.value
-                    )}
+                    ) : fact.value
+                    }
                   </dd>
                 </div>
               ))}
