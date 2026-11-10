@@ -151,6 +151,21 @@ const getInstagramEmbedUrl = (parsed: URL): string | null => {
     : null;
 };
 
+/**
+ * The public page of an Instagram post or reel — where a visitor can like it
+ * and follow the account — from whatever the CMS holds: a link, or a pasted
+ * embed snippet. Null for anything that isn't an Instagram post.
+ */
+export const getInstagramPostUrl = (value?: string | null): string | null => {
+  if (!value) return null;
+  try {
+    const embed = getInstagramEmbedUrl(new URL(linkFromEmbedCode(value)));
+    return embed ? embed.replace(/\/embed$/, "/") : null;
+  } catch {
+    return null;
+  }
+};
+
 /** Instagram embeds are portrait, so the trailer modal sizes for them differently. */
 export const isInstagramEmbed = (embedUrl?: string | null): boolean =>
   !!embedUrl && embedUrl.startsWith("https://www.instagram.com/");
@@ -356,6 +371,8 @@ export type CarouselFilmItem = {
   duration?: string;
   trailerEmbedUrl: string | null;
   trailerVideoUrl: string | null;
+  /** The stored trailer link, for the popup's "Like on Instagram". */
+  trailerSourceUrl?: string;
 };
 
 const mapSubmissionToCarouselItem = (item: SubmissionApiItem): CarouselFilmItem => {
@@ -374,6 +391,7 @@ const mapSubmissionToCarouselItem = (item: SubmissionApiItem): CarouselFilmItem 
     duration: formatDuration(item.durationHours, item.durationMinutes),
     trailerEmbedUrl: getTrailerEmbedUrl(item.trailerUrl ?? item.trailer ?? item.youtubeUrl),
     trailerVideoUrl: getTrailerVideoSrc(item.trailerVideoUrl),
+    trailerSourceUrl: item.trailerUrl ?? item.trailer ?? item.youtubeUrl,
   };
 };
 
