@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { Screening, SeatStatus } from "../../lib/types";
 import {
+  SCREENING_STATUS_LABEL,
   SEAT_STATUS_LABEL,
   filmScreeningWhen,
   formatScreeningDates,
@@ -90,7 +91,7 @@ export function ScreeningBlock({
           {/* The time is the one number a reader scans a programme for, so it
               is set in display type and pushed to the far edge where the eye
               can run down a column of them. */}
-          {dated && screening.time && (
+          {screening.status === "screening" && screening.time && (
             <span className="ml-auto font-fest-display text-2xl font-bold tabular-nums leading-none md:text-[1.75rem]">
               {screening.time}
             </span>
@@ -98,21 +99,27 @@ export function ScreeningBlock({
         </div>
 
         <div className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 font-fest-text text-[0.9375rem]">
-          {facts.map((fact) => (
-            <span key={fact} className="italic text-fest-ink/70">
-              {fact}
+          {screening.status === "screening" ? <>
+            {facts.map((fact) => (
+              <span key={fact} className="italic text-fest-ink/70">
+                {fact}
+              </span>
+            ))}
+            {dated && (
+              <>
+                <span className={SEAT_STATUS_CLASSES[screening.seatStatus]}>
+                  {SEAT_STATUS_LABEL[screening.seatStatus]}
+                </span>
+                <span className="text-fest-ink/45">
+                  {screening.films.length}{" "}
+                  {screening.films.length === 1 ? "film" : "films"}
+                </span>
+              </>
+            )}
+          </> : (
+            <span className="italic text-fest-ink/70">
+              {SCREENING_STATUS_LABEL[screening.status]}
             </span>
-          ))}
-          {dated && (
-            <>
-              <span className={SEAT_STATUS_CLASSES[screening.seatStatus]}>
-                {SEAT_STATUS_LABEL[screening.seatStatus]}
-              </span>
-              <span className="text-fest-ink/45">
-                {screening.films.length}{" "}
-                {screening.films.length === 1 ? "film" : "films"}
-              </span>
-            </>
           )}
         </div>
 
@@ -132,6 +139,7 @@ export function ScreeningBlock({
               <FilmTile
                 key={film.id}
                 film={film}
+                screeningStatus={screening.status}
                 // The film's own date and time once cms-hub carries them, the
                 // session's until then. See the note on `Film.startDate`.
                 when={filmScreeningWhen(film, screening)}

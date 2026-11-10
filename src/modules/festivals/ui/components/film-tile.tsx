@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import type { Film } from "../../lib/types";
-import { filmHref, formatRuntime } from "../../lib/festival-utils";
+import type { Film, ScreeningStatus } from "../../lib/types";
+import { filmHref, formatRuntime, SCREENING_STATUS_LABEL } from "../../lib/festival-utils";
 import { PosterFrame } from "./poster-frame";
 
 /**
@@ -28,6 +28,7 @@ import { PosterFrame } from "./poster-frame";
 export function FilmTile({
   film,
   when,
+  screeningStatus,
 }: {
   film: Film;
   /**
@@ -36,6 +37,7 @@ export function FilmTile({
    * rather than derived here so the tile never needs the session it sits in.
    */
   when: string;
+  screeningStatus: ScreeningStatus
 }) {
   const runtime = formatRuntime(film.runtimeMinutes, film.runtimeSeconds);
 
@@ -60,9 +62,13 @@ export function FilmTile({
           {film.title}
         </h4>
 
-        {when && (
+        { screeningStatus === "screening" ? when && (
           <p className="mt-1.5 font-fest-text text-[0.8125rem] italic leading-snug text-fest-ink/65">
             {when}
+          </p>
+        ) : (
+          <p className="mt-1.5 font-fest-text text-[0.8125rem] italic leading-snug text-fest-ink/65">
+            {SCREENING_STATUS_LABEL[screeningStatus]}
           </p>
         )}
 
