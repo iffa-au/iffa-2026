@@ -116,9 +116,13 @@ export function ProgrammeIndex({ screenings }: { screenings: Screening[] }) {
                 }`}
               >
                 <span className="block truncate font-fest-text text-xs italic leading-tight">
-                  {[formatScreeningDatesShort(screening), screening.time]
-                    .filter(Boolean)
-                    .join(", ")}
+                  {screening.status === "screening"
+                    ? [formatScreeningDatesShort(screening), screening.time]
+                        .filter(Boolean)
+                        .join(", ")
+                    : screening.status === "coming-soon"
+                    ? "Coming soon"
+                    : "To be announced"}
                 </span>
 
                 <span className="block truncate font-fest-display text-base font-bold uppercase leading-tight tracking-[-0.005em]">
