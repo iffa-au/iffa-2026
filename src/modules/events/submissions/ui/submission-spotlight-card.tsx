@@ -115,6 +115,7 @@ export function SubmissionSpotlightCard({ film }: SubmissionSpotlightCardProps) 
         onClose={() => setIsTrailerOpen(false)}
         embedUrl={embedUrl}
         videoUrl={videoUrl}
+        sourceUrl={film.trailerUrl}
         title={title}
       />
     </>

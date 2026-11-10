@@ -145,6 +145,7 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
         onClose={() => setIsTrailerOpen(false)}
         embedUrl={embedUrl}
         videoUrl={videoUrl}
+        sourceUrl={film.trailerUrl}
         title={title}
       />
     </>
