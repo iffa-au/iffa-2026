@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-04
+Updated: 2026-11-10
 
 Current state of work across `iffa-2026` and `../cms-hub`. Keep this short —
 delete finished items rather than accumulating a changelog. Git already has
@@ -8,6 +8,13 @@ the history.
 
 ## In flight
 
+- **IFFA trailer player** (branch `feat/iffa-trailer-player`, 2026-11-10, not
+  merged). `TrailerModal` plays `trailerVideoUrl` (our MP4 copy of an
+  @iffaawards Instagram reel, made by cms-hub) in a `<video autoPlay>` ahead of
+  the embed, so it starts on click with no Instagram UI. Wired into the
+  submissions grid, hero carousel, homepage carousel and synopsis page. Also
+  `linkFromEmbedCode`: a pasted Instagram/YouTube embed snippet in
+  `trailerUrl` now plays. Merge cms-hub `feat/iffa-trailer-player` first.
 - **Optional festival and screening dates** (branch
   `claude/elastic-driscoll-d879d8`, 2026-11-04). Dates are both-or-neither.
   An undated festival shows "Dates to be confirmed", takes its year from

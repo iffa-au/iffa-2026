@@ -130,7 +130,7 @@ export function SubmissionsHeroCarousel() {
           )}
 
           <div className="mt-6 flex items-center gap-3">
-            {film.trailerEmbedUrl && (
+            {(film.trailerVideoUrl || film.trailerEmbedUrl) && (
               <button
                 onClick={() => setTrailerFilm(film)}
                 className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-6 py-3 text-sm font-bold uppercase tracking-widest text-black transition-colors hover:bg-yellow-400"
@@ -193,6 +193,7 @@ export function SubmissionsHeroCarousel() {
         isOpen={trailerFilm !== null}
         onClose={() => setTrailerFilm(null)}
         embedUrl={trailerFilm?.trailerEmbedUrl ?? null}
+        videoUrl={trailerFilm?.trailerVideoUrl ?? null}
         title={trailerFilm?.title ?? ""}
       />
     </section>
