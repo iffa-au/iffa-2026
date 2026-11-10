@@ -1,5 +1,5 @@
-import { opportunities } from "../../data/opportunities-data";
 import { pageCopy } from "../../data/talent-lab-edition";
+import type { Opportunity } from "../../lib/types";
 import { CalloutBand } from "../components/callout-band";
 import { CohortCard } from "../components/cohort-card";
 import { PageHeader } from "../components/page-header";
@@ -23,17 +23,13 @@ const callout = pageCopy.registerCallout;
  * reverse — a real destination that tells you there is nothing there.
  */
 
-/**
- * Derived, never typed. Adding a ninth entry to `opportunities-data.ts` changes
- * this line's output with no edit here.
- */
-const PROGRAM_COUNT = opportunities.length;
+export function OpportunitiesPage({ opportunities }: { opportunities: Opportunity[] }) {
+  // Derived, never typed: adding an opportunity in the CMS changes this count.
+  const PROGRAM_COUNT = opportunities.length;
+  const COUNT_LABEL = `${PROGRAM_COUNT} ${
+    PROGRAM_COUNT === 1 ? copy.cohortOne.countNoun : `${copy.cohortOne.countNoun}s`
+  } ${copy.cohortOne.countSuffix}`;
 
-const COUNT_LABEL = `${PROGRAM_COUNT} ${
-  PROGRAM_COUNT === 1 ? copy.cohortOne.countNoun : `${copy.cohortOne.countNoun}s`
-} ${copy.cohortOne.countSuffix}`;
-
-export function OpportunitiesPage() {
   return (
     <div className="bg-black text-white">
       <PageHeader

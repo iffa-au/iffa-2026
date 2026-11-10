@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { events } from "../../data/events-data";
 import { pageCopy, talentLabEdition } from "../../data/talent-lab-edition";
 import { eventBySlug } from "../../lib/filters";
-import type { LabelledFact } from "../../lib/types";
+import type { LabelledFact, TalentLabEvent } from "../../lib/types";
 import { FactGrid } from "../components/fact-grid";
 import { PageHeader } from "../components/page-header";
 import { PlaceholderPanel } from "../components/placeholder-panel";
@@ -14,9 +13,8 @@ import { SpeakerCard } from "../components/speaker-card";
 const copy = pageCopy.eventDetail;
 
 /** Every slug this route serves. Used by `generateStaticParams`. */
-export const eventSlugs = events.map((event) => event.slug);
 
-export function EventDetailPage({ slug }: { slug: string }) {
+export function EventDetailPage({ slug, events }: { slug: string; events: TalentLabEvent[] }) {
   const event = eventBySlug(events, slug);
 
   if (!event) {

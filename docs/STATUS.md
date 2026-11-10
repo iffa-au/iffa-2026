@@ -8,6 +8,14 @@ the history.
 
 ## In flight
 
+- **Talent Lab hub, phase 1** (branch `feat/talent-lab-hub`, 2026-11-10, not
+  merged; needs cms-hub `feat/talent-lab-hub` deployed first). Apply and
+  Register now POST to cms-hub (`lib/form-submit.ts`) and show the server's
+  reference; the success screens' old "Nothing was sent" note is replaced by
+  `receiptNote`. Events, Opportunities and Mentors come from cms-hub via
+  `lib/talent-lab-api.ts` (no-store, falls back to the data files until the CMS
+  holds records); those 5 routes are `force-dynamic` and the event/program
+  `[slug]` routes no longer use `generateStaticParams`.
 - **IFFA trailer player** (branch `feat/iffa-trailer-player`, 2026-11-10, not
   merged). `TrailerModal` plays `trailerVideoUrl` (our MP4 copy of an
   @iffaawards Instagram reel, made by cms-hub) in a `<video autoPlay>` ahead of
