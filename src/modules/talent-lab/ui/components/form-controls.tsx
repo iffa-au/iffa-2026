@@ -186,16 +186,19 @@ export function PrimaryFormButton({
   children,
   type = "submit",
   onClick,
+  disabled = false,
 }: {
   children: React.ReactNode;
   type?: "submit" | "button";
   onClick?: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type={type}
       onClick={onClick}
-      className="inline-flex items-center justify-center rounded-sm border border-yellow-400 bg-yellow-400 px-8 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-black transition-colors hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+      disabled={disabled}
+      className="inline-flex items-center justify-center rounded-sm border border-yellow-400 bg-yellow-400 px-8 py-4 disabled:cursor-wait disabled:opacity-60 text-[11px] font-bold uppercase tracking-[0.2em] text-black transition-colors hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
     >
       {children}
     </button>

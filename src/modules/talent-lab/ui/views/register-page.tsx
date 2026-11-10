@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useId, useState } from "react";
+import { useId, useState, type BaseSyntheticEvent } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -23,6 +23,7 @@ import {
 } from "../components/form-controls";
 import { FormField } from "../components/form-field";
 import { FormSuccess } from "../components/form-success";
+import { honeypotValue, postTalentLabForm, FormSubmitError } from "../../lib/form-submit";
 import { PageHeader } from "../components/page-header";
 
 const copy = formCopy.register;
@@ -79,13 +80,14 @@ const EMPTY_VALUES: RegisterValues = {
 /**
  * The Expression of Interest form.
  *
- * **Frontend only, by decision D4.** It validates with Zod and swaps to the
- * success screen. There is no `fetch`, no server action, and nothing from
- * `src/lib/email/` is imported — see the note on `FormSuccess`, which states
- * that plainly to the person who just filled it in.
+ * It validates with Zod, saves the registration in cms-hub (see
+ * `lib/form-submit.ts`), which emails a confirmation and notifies IFFA, and
+ * swaps to the success screen. On failure the form keeps its answers.
  */
 export function RegisterPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const consentId = useId();
 
   const {
@@ -103,9 +105,24 @@ export function RegisterPage() {
 
   const errorCount = Object.keys(errors).length;
 
-  const onValid = () => {
-    // Deliberately empty of side effects. Nothing leaves the browser (D4).
-    setIsSubmitted(true);
+  const onValid = async (data: RegisterValues, event?: BaseSyntheticEvent) => {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await postTalentLabForm("/talent-lab/registrations", {
+        ...data,
+        homepage: honeypotValue(event),
+      });
+      setIsSubmitted(true);
+    } catch (error) {
+      setSubmitError(
+        error instanceof FormSubmitError
+          ? error.message
+          : "Something went wrong. Please try again — your answers are still here.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -116,7 +133,7 @@ export function RegisterPage() {
           body={copy.successBody}
           panelTitle={copy.successPanelTitle}
           panelLines={copy.successPanelLines}
-          notConnectedNote={copy.notConnectedNote}
+          receiptNote={copy.receiptNote}
           primary={{
             label: "View current opportunities",
             href: "/talent-lab/opportunities",
@@ -148,6 +165,14 @@ export function RegisterPage() {
           noValidate
           className="flex flex-col gap-7"
         >
+          {/* Honeypot: hidden from people and assistive tech, so only a bot
+              fills it in. cms-hub quietly drops any submission that has it set. */}
+          <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+            <label>
+              Homepage
+              <input type="text" name="homepage" tabIndex={-1} autoComplete="off" />
+            </label>
+          </div>
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
             Fields marked <span className="text-yellow-400">*</span> are required.
           </p>
@@ -312,8 +337,15 @@ export function RegisterPage() {
             {copy.privacyNote}
           </p>
 
+          {submitError && (
+            <p role="alert" className="rounded-xl border border-red-400/40 bg-red-500/[0.08] p-4 text-sm text-red-200">
+              {submitError}
+            </p>
+          )}
           <div>
-            <PrimaryFormButton>{copy.submitLabel}</PrimaryFormButton>
+            <PrimaryFormButton disabled={submitting}>
+              {submitting ? "Sending…" : copy.submitLabel}
+            </PrimaryFormButton>
           </div>
         </form>
       </section>

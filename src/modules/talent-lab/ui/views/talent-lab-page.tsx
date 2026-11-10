@@ -2,10 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { alumni } from "../../data/alumni-data";
-import { events } from "../../data/events-data";
 import { faqs } from "../../data/faqs-data";
-import { mentors } from "../../data/mentors-data";
-import { opportunities } from "../../data/opportunities-data";
 import { partnerCategories } from "../../data/partners-data";
 import { resources } from "../../data/resources-data";
 import {
@@ -16,6 +13,7 @@ import {
   talentLabEdition,
 } from "../../data/talent-lab-edition";
 import { partitionEvents } from "../../lib/filters";
+import type { Mentor, Opportunity, TalentLabEvent } from "../../lib/types";
 import { AlumniCard } from "../components/alumni-card";
 import { BenefitCell } from "../components/benefit-cell";
 import { CtaBand } from "../components/cta-band";
@@ -36,13 +34,21 @@ const { sections } = talentLabEdition;
  * separately maintained "featured" list. Reordering `opportunities-data.ts`
  * reorders the landing page, and there is no second place to forget to update.
  */
-const featuredOpportunities = opportunities.slice(0, 3);
-const previewMentors = mentors.slice(0, 5);
 const previewAlumni = alumni.slice(0, 3);
 const previewResources = resources.slice(0, 4);
-const { upcoming: upcomingEvents } = partitionEvents(events);
 
-export function TalentLabPage() {
+export function TalentLabPage({
+  events,
+  mentors,
+  opportunities,
+}: {
+  events: TalentLabEvent[];
+  mentors: Mentor[];
+  opportunities: Opportunity[];
+}) {
+  const featuredOpportunities = opportunities.slice(0, 3);
+  const previewMentors = mentors.slice(0, 5);
+  const { upcoming: upcomingEvents } = partitionEvents(events);
   return (
     <div className="bg-black text-white">
       {/* ----------------------------------------------------- 1. Hero */}

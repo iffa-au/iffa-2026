@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useId, useState } from "react";
+import { useId, useState, type BaseSyntheticEvent } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
@@ -25,6 +25,7 @@ import {
 } from "../components/form-controls";
 import { FormField } from "../components/form-field";
 import { FormSuccess } from "../components/form-success";
+import { honeypotValue, postTalentLabForm, FormSubmitError } from "../../lib/form-submit";
 import { PageHeader } from "../components/page-header";
 import { StepIndicator } from "../components/step-indicator";
 
@@ -191,33 +192,28 @@ const INDICATOR_STEPS = STEPS.map((step, index) => ({
   number: index + 1,
 }));
 
-/**
- * A locally generated reference number.
- *
- * It identifies nothing — no application record exists anywhere, because
- * nothing is transmitted (D4). The success screen says so in as many words.
- */
-const makeReference = (): string =>
-  `${copy.referencePrefix}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
 
 /**
  * The five-step application form.
  *
- * **Frontend only, by decision D4.** It validates each step before letting you
- * past it, validates everything again on submit, and swaps to the success
- * screen. There is no `fetch`, no server action, and nothing from
- * `src/lib/email/` is imported.
+ * It validates each step before letting you past it, validates everything
+ * again on submit, then saves the application in cms-hub (see
+ * `lib/form-submit.ts`) and swaps to the success screen with the server's
+ * reference.
  *
- * That matters most for step 4. It collects optional demographic data under a
- * printed promise about how that data is handled, and today the promise is kept
- * trivially because the data never leaves the browser. See the blocking
- * prerequisite in `talent_lab_progress.md` before wiring a destination.
+ * Step 4 collects optional demographic data under a printed promise
+ * (`privateNotice`): stored securely, seen only by program staff, never used in
+ * assessment, never public. cms-hub keeps those answers out of its list views,
+ * exports and emails, and the CMS hides them behind a "not for assessment"
+ * toggle on the application record. Keep it that way.
  */
 export function ApplyPage() {
   const [step, setStep] = useState(1);
   const [furthest, setFurthest] = useState(1);
   const [stepBlocked, setStepBlocked] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const fieldId = useId();
 
   const {
@@ -274,9 +270,36 @@ export function ApplyPage() {
     setFurthest((reached) => Math.max(reached, next));
   };
 
-  const onValid = () => {
-    // Deliberately empty of side effects. Nothing leaves the browser (D4).
-    setReference(makeReference());
+  /**
+   * Saves the application in cms-hub, which mints the reference, emails the
+   * applicant and notifies IFFA. On failure the form stays as it is, so nothing
+   * typed is lost, and the error says to try again.
+   */
+  const onValid = async (data: ApplyValues, event?: BaseSyntheticEvent) => {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const { termsConsent, conductConsent, privacyConsent, mediaConsent, ...answers } = data;
+      const res = await postTalentLabForm("/talent-lab/applications", {
+        ...answers,
+        consents: {
+          terms: termsConsent,
+          conduct: conductConsent,
+          privacy: privacyConsent,
+          media: mediaConsent,
+        },
+        homepage: honeypotValue(event),
+      });
+      setReference(res.data?.reference ?? "received");
+    } catch (error) {
+      setSubmitError(
+        error instanceof FormSubmitError
+          ? error.message
+          : "Something went wrong. Please try again — your answers are still here.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const onInvalid = () => {
@@ -294,13 +317,14 @@ export function ApplyPage() {
           body={copy.successBody}
           panelTitle={copy.successPanelTitle}
           panelLines={copy.successPanelLines}
-          notConnectedNote={copy.notConnectedNote}
+          receiptNote={copy.receiptNote}
           primary={{ label: "Public masterclasses", href: "/talent-lab/events" }}
           onReset={() => {
             reset(startingValues());
             setStep(1);
             setFurthest(1);
             setStepBlocked(false);
+            setSubmitError(null);
             setReference(null);
           }}
           resetLabel={copy.resetLabel}
@@ -337,6 +361,14 @@ export function ApplyPage() {
           noValidate
           className="flex flex-col gap-8"
         >
+          {/* Honeypot: hidden from people and assistive tech, so only a bot
+              fills it in. cms-hub quietly drops any submission that has it set. */}
+          <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+            <label>
+              Homepage
+              <input type="text" name="homepage" tabIndex={-1} autoComplete="off" />
+            </label>
+          </div>
           <div className="flex flex-col gap-2">
             <h2 className="text-2xl font-semibold text-white">{current.heading}</h2>
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
@@ -740,6 +772,11 @@ export function ApplyPage() {
             <FormErrorSummary count={Object.keys(errors).length} />
           )}
 
+          {submitError && (
+            <p role="alert" className="rounded-xl border border-red-400/40 bg-red-500/[0.08] p-4 text-sm text-red-200">
+              {submitError}
+            </p>
+          )}
           <div className="flex flex-wrap gap-3 border-t border-white/10 pt-7">
             {step > 1 && (
               <SecondaryFormButton onClick={() => void goToStep(step - 1)}>
@@ -755,7 +792,9 @@ export function ApplyPage() {
                 {copy.continueLabel}
               </PrimaryFormButton>
             ) : (
-              <PrimaryFormButton>{copy.submitLabel}</PrimaryFormButton>
+              <PrimaryFormButton disabled={submitting}>
+                {submitting ? "Sending…" : copy.submitLabel}
+              </PrimaryFormButton>
             )}
           </div>
         </form>

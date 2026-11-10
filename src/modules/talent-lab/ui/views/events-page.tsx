@@ -1,6 +1,6 @@
-import { events } from "../../data/events-data";
 import { pageCopy } from "../../data/talent-lab-edition";
 import { partitionEvents } from "../../lib/filters";
+import type { TalentLabEvent } from "../../lib/types";
 import { EventCard } from "../components/event-card";
 import { PageHeader } from "../components/page-header";
 import { PageSection, TINTED } from "../components/page-section";
@@ -8,7 +8,6 @@ import { PageSection, TINTED } from "../components/page-section";
 const copy = pageCopy.events;
 
 /** Both lists come from one partition on `state` — neither is kept by hand. */
-const { upcoming, past } = partitionEvents(events);
 
 function BandHeading({
   children,
@@ -28,7 +27,8 @@ function BandHeading({
   );
 }
 
-export function EventsPage() {
+export function EventsPage({ events }: { events: TalentLabEvent[] }) {
+  const { upcoming, past } = partitionEvents(events);
   return (
     <div className="bg-black text-white">
       <PageHeader

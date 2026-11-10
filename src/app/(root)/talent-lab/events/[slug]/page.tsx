@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 
-import { events } from "@/modules/talent-lab/data/events-data";
+import { fetchEvents } from "@/modules/talent-lab/lib/talent-lab-api";
 import { eventBySlug } from "@/modules/talent-lab/lib/filters";
-import {
-  EventDetailPage,
-  eventSlugs,
-} from "@/modules/talent-lab/ui/views/event-detail-page";
+import { EventDetailPage } from "@/modules/talent-lab/ui/views/event-detail-page";
 
 /**
  * `params` is a Promise in Next 16 and must be awaited — verified in
@@ -15,16 +12,17 @@ type EventRouteProps = {
   params: Promise<{ slug: string }>;
 };
 
-/** All six sessions are prerendered. An unknown slug falls through to notFound(). */
-export function generateStaticParams() {
-  return eventSlugs.map((slug) => ({ slug }));
-}
+/**
+ * Rendered per request: the content comes from cms-hub (see
+ * `talent-lab/lib/talent-lab-api.ts`), and Amplify can't regenerate ISR pages.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
 }: EventRouteProps): Promise<Metadata> {
   const { slug } = await params;
-  const event = eventBySlug(events, slug);
+  const event = eventBySlug(await fetchEvents(), slug);
 
   if (!event) {
     return { title: "Session not found | IFFA Talent Lab" };
@@ -38,5 +36,5 @@ export async function generateMetadata({
 
 export default async function Page({ params }: EventRouteProps) {
   const { slug } = await params;
-  return <EventDetailPage slug={slug} />;
+  return <EventDetailPage slug={slug} events={await fetchEvents()} />;
 }
