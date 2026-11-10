@@ -370,12 +370,10 @@ export const pageCopy = {
  * - `apply.privateNotice` — the promise printed above the optional demographic
  *   questions. It is reproduced verbatim from the approved design, and it is a
  *   commitment about how that data is handled, not reassurance copy.
- * - `notConnectedNote` on both success screens — the forms validate locally and
- *   transmit nothing (plan D4). The design's own success copy says "we have
- *   sent a confirmation to your email" and "a copy has been emailed to you";
- *   both are false today, so both were replaced. Do not restore that wording
- *   until a submission destination actually exists — and read the blocking note
- *   in `talent_lab_progress.md` before building one.
+ * - `receiptNote` on both success screens — states what actually happened:
+ *   the form is saved in the IFFA CMS and a confirmation is emailed. Until
+ *   November 2026 the forms transmitted nothing and this note said so; keep it
+ *   exactly as true as the system behind it.
  */
 export const formCopy = {
   register: {
@@ -404,8 +402,8 @@ export const formCopy = {
       "2. Opportunity alerts — when a matching program opens.",
       "3. Formal application — you apply in the cycle window; registering does not guarantee a place.",
     ],
-    notConnectedNote:
-      "Nothing was sent. This form is not yet connected to a submission destination, so your answers stayed in this browser and were not transmitted, stored or emailed to anyone. Registration opens properly once a destination is wired up.",
+    receiptNote:
+      "Your registration has been received and saved. A confirmation is on its way to your email address — check your junk folder if it hasn't arrived within a few minutes.",
     resetLabel: "Back to the form",
   },
   apply: {
@@ -444,12 +442,6 @@ export const formCopy = {
     submitLabel: "Submit application",
     continueLabel: "Save & continue",
     backLabel: "Back",
-    /**
-     * Prefix for the locally generated reference number on the success screen.
-     * It identifies nothing — no application record exists — and the success
-     * screen says so. Change it when a real numbering scheme arrives.
-     */
-    referencePrefix: "TL-26C2",
     successHeading: "Application submitted",
     successBody:
       "Applications are assessed by an independent panel and every applicant is notified of the outcome — including those who are not selected.",
@@ -460,8 +452,8 @@ export const formCopy = {
       "All applicants notified — selected or not.",
       "Program begins — on the dates listed for the stream.",
     ],
-    notConnectedNote:
-      "Nothing was sent. This form is not yet connected to a submission destination, so your answers — including anything you entered in the optional and private section — stayed in this browser and were not transmitted, stored or emailed to anyone. The reference number above is generated locally and does not identify a real application.",
+    receiptNote:
+      "Your application has been received and saved. A confirmation with this reference is on its way to your email address — keep it, and quote it if you contact us. Anything you entered in the optional and private section is seen only by program staff and is never used in assessment.",
     resetLabel: "Back to the form",
   },
 } as const;
