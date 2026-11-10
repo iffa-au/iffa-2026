@@ -10,13 +10,20 @@ type TrailerModalProps = {
   isOpen: boolean;
   onClose: () => void;
   embedUrl: string | null;
+  /**
+   * A video file in IFFA's own storage. Wins over `embedUrl`: it plays in the
+   * site's own player, starting on open, with no third-party UI over it.
+   */
+  videoUrl?: string | null;
   title: string;
 };
 
 const EXIT_ANIMATION_MS = 200;
 
-const TrailerModal = ({ isOpen, onClose, embedUrl, title }: TrailerModalProps) => {
+const TrailerModal = ({ isOpen, onClose, embedUrl, videoUrl, title }: TrailerModalProps) => {
   const [isMounted, setIsMounted] = useState(false);
+  // Known only once the file's metadata loads; Instagram reels are 9:16.
+  const [videoIsPortrait, setVideoIsPortrait] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -62,7 +69,7 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, title }: TrailerModalProps) =
 
   if (!isMounted || typeof document === "undefined") return null;
 
-  const portrait = isInstagramEmbed(embedUrl);
+  const portrait = videoUrl ? videoIsPortrait : isInstagramEmbed(embedUrl);
 
   return createPortal(
     <div
@@ -113,7 +120,22 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, title }: TrailerModalProps) =
               : "aspect-video w-full bg-black"
           }
         >
-          {embedUrl ? (
+          {videoUrl ? (
+            <video
+              key={videoUrl}
+              src={videoUrl}
+              title={`${title} trailer`}
+              className="h-full w-full bg-black object-contain"
+              controls
+              autoPlay
+              playsInline
+              preload="auto"
+              onLoadedMetadata={(e) => {
+                const { videoWidth, videoHeight } = e.currentTarget;
+                setVideoIsPortrait(videoHeight > videoWidth);
+              }}
+            />
+          ) : embedUrl ? (
             <iframe
               src={embedUrl}
               title={`${title} trailer`}
