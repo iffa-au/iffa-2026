@@ -7,7 +7,6 @@ import {
   MENTOR_TYPE_CLASSES,
   mentorTypeOptions,
 } from "../../data/form-options";
-import { mentors } from "../../data/mentors-data";
 import { pageCopy } from "../../data/talent-lab-edition";
 import {
   chipOptions,
@@ -43,7 +42,7 @@ function TypeLegend({ type }: { type: MentorType }) {
   );
 }
 
-export function MentorsPage() {
+export function MentorsPage({ mentors }: { mentors: Mentor[] }) {
   const [filters, setFilters] = useState<MentorFilters>(EMPTY_MENTOR_FILTERS);
 
   /**

@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { mentors } from "../../data/mentors-data";
-import { opportunities } from "../../data/opportunities-data";
 import { partnerCategories } from "../../data/partners-data";
 import { resources } from "../../data/resources-data";
 import { streams } from "../../data/streams-data";
@@ -14,7 +12,7 @@ import {
   streamBySlug,
 } from "../../lib/filters";
 import { canApply } from "../../lib/status";
-import type { LabelledFact } from "../../lib/types";
+import type { LabelledFact, Mentor, Opportunity } from "../../lib/types";
 import { CurriculumList } from "../components/curriculum-list";
 import { FactGrid } from "../components/fact-grid";
 import { MentorPreviewCard } from "../components/mentor-preview-card";
@@ -24,9 +22,6 @@ import { SidePanel, SideRail } from "../components/side-panel";
 import { StatusPill } from "../components/status-pill";
 
 const copy = pageCopy.programDetail;
-
-/** Every slug this route serves. Used by `generateStaticParams`. */
-export const programSlugs = streams.map((stream) => stream.slug);
 
 const PRIMARY_ACTION =
   "inline-flex items-center justify-center rounded-sm border border-yellow-400 bg-yellow-400 px-6 py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-black transition-colors hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
@@ -40,7 +35,15 @@ function DetailHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ProgramDetailPage({ slug }: { slug: string }) {
+export function ProgramDetailPage({
+  slug,
+  mentors,
+  opportunities,
+}: {
+  slug: string;
+  mentors: Mentor[];
+  opportunities: Opportunity[];
+}) {
   const stream = streamBySlug(streams, slug);
 
   if (!stream) {

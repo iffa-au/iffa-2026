@@ -9,8 +9,8 @@ import {
   disciplineOptions,
   statusFilterOptions,
 } from "../../data/form-options";
-import { opportunities } from "../../data/opportunities-data";
 import { pageCopy } from "../../data/talent-lab-edition";
+import type { Opportunity } from "../../lib/types";
 import {
   chipOptions,
   chipSelection,
@@ -47,7 +47,7 @@ const DISCIPLINE_CHIPS = chipOptions(disciplineOptions);
 const DELIVERY_CHIPS = chipOptions(deliveryModeOptions);
 const STAGE_CHIPS = chipOptions(careerStageOptions);
 
-export function CohortOneOpportunitiesPage() {
+export function CohortOneOpportunitiesPage({ opportunities }: { opportunities: Opportunity[] }) {
   const [filters, setFilters] = useState<OpportunityFilters>(
     EMPTY_OPPORTUNITY_FILTERS
   );

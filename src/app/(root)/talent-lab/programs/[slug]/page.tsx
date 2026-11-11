@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 
 import { streams } from "@/modules/talent-lab/data/streams-data";
 import { streamBySlug } from "@/modules/talent-lab/lib/filters";
-import {
-  ProgramDetailPage,
-  programSlugs,
-} from "@/modules/talent-lab/ui/views/program-detail-page";
+import { ProgramDetailPage } from "@/modules/talent-lab/ui/views/program-detail-page";
+import { fetchMentors, fetchOpportunities } from "@/modules/talent-lab/lib/talent-lab-api";
 
 /**
  * `params` is a Promise in Next 16 and must be awaited — verified in
@@ -15,10 +13,11 @@ type ProgramRouteProps = {
   params: Promise<{ slug: string }>;
 };
 
-/** All ten streams are prerendered. An unknown slug falls through to notFound(). */
-export function generateStaticParams() {
-  return programSlugs.map((slug) => ({ slug }));
-}
+/**
+ * Rendered per request: the content comes from cms-hub (see
+ * `talent-lab/lib/talent-lab-api.ts`), and Amplify can't regenerate ISR pages.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -38,5 +37,6 @@ export async function generateMetadata({
 
 export default async function Page({ params }: ProgramRouteProps) {
   const { slug } = await params;
-  return <ProgramDetailPage slug={slug} />;
+  const [mentors, opportunities] = await Promise.all([fetchMentors(), fetchOpportunities()]);
+  return <ProgramDetailPage slug={slug} mentors={mentors} opportunities={opportunities} />;
 }

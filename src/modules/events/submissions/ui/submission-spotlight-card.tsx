@@ -5,7 +5,7 @@ import { Play } from "lucide-react";
 
 import { RobustBackdropImage } from "@/components/RobustBackdropImage";
 import TrailerModal from "@/modules/home/ui/views/carousel/TrailerModal";
-import { getTrailerEmbedUrl, type FilmCardItem } from "../lib/submissions";
+import { getTrailerEmbedUrl, getTrailerVideoSrc, type FilmCardItem } from "../lib/submissions";
 
 const DESCRIPTION_PLACEHOLDER = "Synopsis coming soon.";
 const MAX_CAST = 4;
@@ -30,6 +30,7 @@ export function SubmissionSpotlightCard({ film }: SubmissionSpotlightCardProps) 
   const directors = Array.isArray(film.directors) ? film.directors : [];
   const cast = Array.isArray(film.cast) ? film.cast : [];
   const embedUrl = getTrailerEmbedUrl(film.trailerUrl);
+  const videoUrl = getTrailerVideoSrc(film.trailerVideoUrl);
   const meta = [film.year, film.genre, film.duration].filter(Boolean);
 
   const openTrailer = (e: React.MouseEvent | React.KeyboardEvent) => {
@@ -113,6 +114,8 @@ export function SubmissionSpotlightCard({ film }: SubmissionSpotlightCardProps) 
         isOpen={isTrailerOpen}
         onClose={() => setIsTrailerOpen(false)}
         embedUrl={embedUrl}
+        videoUrl={videoUrl}
+        sourceUrl={film.trailerUrl}
         title={title}
       />
     </>

@@ -23,6 +23,7 @@ type Film = {
   cast?: string[];
   description?: string;
   trailerUrl?: string;
+  trailerVideoUrl?: string;
 };
 
 type MoviesCardProps = {
@@ -44,6 +45,7 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
   const cast = Array.isArray(film.cast) ? film.cast : [];
   const title = film.title || "Untitled";
   const embedUrl = getTrailerEmbedUrl(film.trailerUrl);
+  const videoUrl = getTrailerVideoSrc(film.trailerVideoUrl);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
@@ -155,6 +157,8 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
         isOpen={isTrailerOpen}
         onClose={() => setIsTrailerOpen(false)}
         embedUrl={embedUrl}
+        videoUrl={videoUrl}
+        sourceUrl={film.trailerUrl}
         title={title}
       />
     </>

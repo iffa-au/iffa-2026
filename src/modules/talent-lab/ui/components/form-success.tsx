@@ -8,8 +8,8 @@ type FormSuccessProps = {
   /** "What happens next" / "Assessment timeline". */
   panelTitle: string;
   panelLines: readonly string[];
-  /** The honest statement that nothing was transmitted (§11.4). Required. */
-  notConnectedNote: string;
+  /** What happened to the submission, stated plainly. Required. */
+  receiptNote: string;
   primary: { label: string; href: string };
   /** "Back to the form" — resets the form rather than navigating. */
   onReset: () => void;
@@ -19,11 +19,9 @@ type FormSuccessProps = {
 /**
  * The screen both forms swap to on a valid submit.
  *
- * `notConnectedNote` is not optional, and that is the point. The forms validate
- * locally and go no further (plan D4), so a success screen that says "we have
- * emailed you" — as the design's copy does — would be the one place in this
- * whole section that tells a user something untrue. The note replaces that
- * claim and says plainly what did and did not happen.
+ * `receiptNote` is not optional: the screen always says plainly what happened
+ * to the submission (saved, and a confirmation emailed), never more than is
+ * true.
  *
  * `role="status"` so the swap from form to confirmation is announced rather
  * than silently replacing the page for anyone not watching.
@@ -34,7 +32,7 @@ export function FormSuccess({
   body,
   panelTitle,
   panelLines,
-  notConnectedNote,
+  receiptNote,
   primary,
   onReset,
   resetLabel,
@@ -85,7 +83,7 @@ export function FormSuccess({
         <span aria-hidden="true" className="pr-2 text-[#7FB2F0]">
           ⓘ
         </span>
-        {notConnectedNote}
+        {receiptNote}
       </p>
 
       <div className="flex flex-wrap justify-center gap-3 pt-1">

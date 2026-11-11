@@ -59,6 +59,8 @@ export type SubmissionApiItem = {
   synopsis?: string;
   logline?: string;
   trailerUrl?: string;
+  /** The trailer copied into IFFA's own storage (CloudFront MP4), when cms-hub has one. */
+  trailerVideoUrl?: string;
   trailer?: string;
   youtubeUrl?: string;
   submissionYear?: number;
@@ -88,6 +90,8 @@ export type FilmCardItem = {
   cast?: string[];
   description?: string;
   trailerUrl?: string;
+  /** Played in the site's own player, ahead of `trailerUrl`'s embed. */
+  trailerVideoUrl?: string;
 };
 
 export const formatDuration = (
@@ -167,6 +171,21 @@ const getInstagramEmbedUrl = (parsed: URL): string | null => {
     : null;
 };
 
+/**
+ * The public page of an Instagram post or reel — where a visitor can like it
+ * and follow the account — from whatever the CMS holds: a link, or a pasted
+ * embed snippet. Null for anything that isn't an Instagram post.
+ */
+export const getInstagramPostUrl = (value?: string | null): string | null => {
+  if (!value) return null;
+  try {
+    const embed = getInstagramEmbedUrl(new URL(linkFromEmbedCode(value)));
+    return embed ? embed.replace(/\/embed$/, "/") : null;
+  } catch {
+    return null;
+  }
+};
+
 /** Instagram embeds are portrait, so the trailer modal sizes for them differently. */
 export const isInstagramEmbed = (embedUrl?: string | null): boolean =>
   !!embedUrl && embedUrl.startsWith("https://www.instagram.com/");
@@ -189,6 +208,23 @@ export const isInstagramEmbed = (embedUrl?: string | null): boolean =>
 // };
 
 /**
+ * Staff sometimes paste a site's whole embed snippet into the trailer field
+ * instead of the link — Instagram's "Copy embed code" gives a
+ * `<blockquote data-instgrm-permalink="…">` plus a <script>, YouTube's gives an
+ * `<iframe src="…">`. Pull the link back out so those still play. The snippet
+ * itself is never rendered, only the URL found in it.
+ */
+const linkFromEmbedCode = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("<")) return trimmed;
+
+  const match =
+    trimmed.match(/data-instgrm-permalink="([^"]+)"/) ??
+    trimmed.match(/\b(?:src|href)="(https?:\/\/[^"]+)"/);
+  return match ? match[1].replace(/&amp;/g, "&") : trimmed;
+};
+
+/**
  * Resolves whatever the CMS holds in `trailerUrl` into something an <iframe>
  * can play, or null when the link isn't embeddable (a Dropbox or WeTransfer
  * download, say) — callers hide their trailer button on null.
@@ -199,7 +235,7 @@ export const getTrailerEmbedUrl = (url?: string): string | null => {
   if (!url) return null;
 
   try {
-    const parsed = new URL(url);
+    const parsed = new URL(linkFromEmbedCode(url));
     return (
       getYouTubeEmbedUrl(parsed) ??
       getGoogleDriveEmbedUrl(parsed) ??
@@ -208,6 +244,17 @@ export const getTrailerEmbedUrl = (url?: string): string | null => {
   } catch {
     return null;
   }
+};
+
+/**
+ * A trailer cms-hub copied into IFFA's own storage — for an @iffaawards
+ * Instagram reel, the actual video file fetched through Meta's API. Played in a
+ * plain <video>, so it starts on click with none of Instagram's embed UI. https
+ * only: this ends up as a media src.
+ */
+export const getTrailerVideoSrc = (value?: string | null): string | null => {
+  const trimmed = value?.trim();
+  return trimmed && /^https:\/\//i.test(trimmed) ? trimmed : null;
 };
 
 export const isObjectId = (value?: string | null): value is string =>
@@ -270,6 +317,7 @@ export const mapSubmissionFilmListItem = (
     cast: Array.isArray(item.cast) ? item.cast : undefined,
     description: item.description ?? item.synopsis ?? item.logline,
     trailerUrl: item.trailerUrl ?? item.trailer ?? item.youtubeUrl,
+    trailerVideoUrl: item.trailerVideoUrl,
   };
 };
 
@@ -342,6 +390,9 @@ export type CarouselFilmItem = {
   description?: string;
   duration?: string;
   trailerEmbedUrl: string | null;
+  trailerVideoUrl: string | null;
+  /** The stored trailer link, for the popup's "Like on Instagram". */
+  trailerSourceUrl?: string;
 };
 
 const mapSubmissionToCarouselItem = (item: SubmissionApiItem): CarouselFilmItem => {
@@ -359,6 +410,8 @@ const mapSubmissionToCarouselItem = (item: SubmissionApiItem): CarouselFilmItem 
     description: item.description ?? item.synopsis ?? item.logline,
     duration: formatDuration(item.durationHours, item.durationMinutes),
     trailerEmbedUrl: getTrailerEmbedUrl(item.trailerUrl ?? item.trailer ?? item.youtubeUrl),
+    trailerVideoUrl: getTrailerVideoSrc(item.trailerVideoUrl),
+    trailerSourceUrl: item.trailerUrl ?? item.trailer ?? item.youtubeUrl,
   };
 };
 
