@@ -33,10 +33,8 @@ the history.
   `clip-path` traces the top and bottom curves. The box, curve and aspect
   ratio in `TrailerVideo.tsx` were measured from that exact image —
   re-measure if it is replaced.
-  **Seat light (uncommitted):** a 32×1 canvas, redrawn from the video at
-  10 fps, is blurred and color-dodge-blended over the seats, so the seat backs
-  pick up the screen's colours while the gaps stay black. Off below `md`,
-  off-screen and under reduced motion; strength is `brightness-150`.
+  The seat light (a video-driven canvas glow on the seats) was tried and
+  removed on request, 2026-11-11; it was never committed.
 
 - **Homepage weight** (committed in `3fce0c0`, 2026-11-11). Featured
   Selection and `MoviesCard` posters use `next/image` (CMS originals were up

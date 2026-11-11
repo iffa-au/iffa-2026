@@ -2,7 +2,7 @@
 
 import { Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
+import { useFieldArray, useFormState, useWatch, type UseFormReturn } from "react-hook-form";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
@@ -19,7 +19,7 @@ import {
   type FilmValues,
   type PersonEntry,
 } from "@/utils/FilmSubmission.utils";
-import { L, I, HELP, ERR } from "./form-tokens";
+import { L, I, HELP, ERR, REQ, OPTIONAL_PILL } from "./form-tokens";
 
 const CREW_LABEL: Record<CrewField, string> = {
   actors: "Cast",
@@ -86,7 +86,10 @@ export function NominationList({ form, categories, hideActors, loading }: Nomina
   const chosenIds = new Set(nominations.map((n) => n.categoryId).filter(Boolean));
   const allChosen = open.length > 0 && open.every((c) => chosenIds.has(c._id));
 
-  const rootError = (form.formState.errors.nominations as { message?: string } | undefined)?.message;
+  // useFormState, not form.formState: this component is memoized on props
+  // that never change, so it has to subscribe to errors itself.
+  const { errors } = useFormState({ control: form.control, name: "nominations" });
+  const rootError = (errors.nominations as { message?: string } | undefined)?.message;
 
   const nomineeOptions = (category: AwardCategoryOption) =>
     NOMINEE_FIELDS[category.nomineeType].flatMap((field) =>
@@ -142,13 +145,13 @@ export function NominationList({ form, categories, hideActors, loading }: Nomina
               else cardRefs.current.delete(field.id);
             }}
             className={cn(
-              "rounded-xl border bg-[#080706] overflow-hidden transition-[border-color,box-shadow] duration-700",
+              "rounded-xl border bg-transparent overflow-hidden transition-[border-color,box-shadow] duration-700",
               highlighted === i
                 ? "border-[#e6ba35]/60 shadow-[0_0_0_3px_rgba(230,186,53,0.15)]"
-                : "border-[#1e1c14]"
+                : "border-[#26241d]"
             )}
           >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#12110e]">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#26241d]">
               <span className="text-[#cbc0a0] text-[16px] font-medium truncate">
                 {category?.name || `Nomination ${i + 1}`}
               </span>
@@ -171,7 +174,7 @@ export function NominationList({ form, categories, hideActors, loading }: Nomina
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className={L}>
-                      Award Category <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                      Award Category <span aria-hidden="true" className={REQ}>*</span>
                     </FormLabel>
                     <Select
                       value={field.value}
@@ -235,7 +238,7 @@ export function NominationList({ form, categories, hideActors, loading }: Nomina
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className={L}>
-                        Nominee(s) <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                        Nominee(s) <span aria-hidden="true" className={REQ}>*</span>
                       </FormLabel>
                       <FormControl>
                         <MultiSelectDropdown
@@ -250,7 +253,7 @@ export function NominationList({ form, categories, hideActors, loading }: Nomina
                                 ? "Add them in the Crew section first"
                                 : "Select one or more crew members"
                           }
-                          error={form.formState.errors.nominations?.[i]?.nomineeUids?.message}
+                          error={errors.nominations?.[i]?.nomineeUids?.message}
                         />
                       </FormControl>
                     </FormItem>
