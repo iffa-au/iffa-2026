@@ -17,7 +17,8 @@ export default function Home() {
 
         {/* Five fixed trailer slots, filled in order from cms-hub (Site
             content → Homepage trailers). See modules/home/ui/homepage-trailers.tsx. */}
-        <TrailerSlot index={0} />
+        {/* From `md` up the first trailer plays on a cinema screen. */}
+        <TrailerSlot index={0} theater />
 
         <TrailerSlot index={1} />
 

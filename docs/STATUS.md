@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-10
+Updated: 2026-11-11
 
 Current state of work across `iffa-2026` and `../cms-hub`. Keep this short —
 delete finished items rather than accumulating a changelog. Git already has
@@ -23,6 +23,32 @@ the history.
   submissions grid, hero carousel, homepage carousel and synopsis page. Also
   `linkFromEmbedCode`: a pasted Instagram/YouTube embed snippet in
   `trailerUrl` now plays. Merge cms-hub `feat/iffa-trailer-player` first.
+- **Theatre mockup for the first homepage trailer** (uncommitted on `main`,
+  2026-11-11). From `md` up, trailer slot 0 plays on the screen of
+  `public/assets/mockups/theater.webp` (a CSS background, so phones never
+  download it); phones keep the plain 16:9 player. A gradient overlay fades
+  the photo's four edges into the section's black, under the video only.
+  Playback is unchanged (muted, looping, plays in view). The screen in the
+  image is curved, so the video box is its bounding rectangle and a
+  `clip-path` traces the top and bottom curves. The box, curve and aspect
+  ratio in `TrailerVideo.tsx` were measured from that exact image —
+  re-measure if it is replaced. Frontend only; `theater.webp` must be
+  committed with it.
+
+- **Homepage weight** (uncommitted on `main`, 2026-11-11). Featured
+  Selection and `MoviesCard` posters use `next/image` (CMS originals were up
+  to 5.6 MB; a 2× card now gets ~70–120 KB). `canOptimizeImage` in
+  `submissions.ts` sends only CloudFront/local raster URLs through the
+  optimiser — any other host or the SVG fallback is `unoptimized`, since
+  next/image throws for hosts outside `remotePatterns`. `MoviesCard` is also
+  used on the submissions and nominations pages. hls.js (~155 KB gz) is now a
+  dynamic import, fetched only when an HLS trailer comes into view;
+  confirmed absent from the homepage's initial scripts in a production
+  build. The footer `IFFA_logo.png` (shown at 96–112px) is now 256×256,
+  40 KB, down from a 6250×6250 5 MB original. Still open from the audit: the
+  22 MB / 12 MB MP4 trailers, and the marquee fetching all of a year's
+  submissions to show 10.
+
 - **Optional festival and screening dates** (branch
   `claude/elastic-driscoll-d879d8`, 2026-11-04). Dates are both-or-neither.
   An undated festival shows "Dates to be confirmed", takes its year from
@@ -193,6 +219,12 @@ into the new shape — which is what opening and saving one does.
   must include `OPTIONS`, cache methods tick `OPTIONS`, origin request policy
   `CORS-S3Origin`. Then invalidate `/*`.
   Fixes homepage HLS videos, which currently fail preflight in production.
+  Also put the `Origin` header in the behavior's **cache key** (a cache
+  policy that includes it): today the first requester's
+  `Access-Control-Allow-Origin` is cached for everyone (checked 2026-11-11 —
+  a `localhost:3000` value was served to other origins). The site answers on
+  both `iffa.com.au` and `www.iffa.com.au` without redirecting, so whichever
+  warms a file's cache breaks HLS for visitors on the other domain.
 - **S3 CORS** — remove the trailing slash from the
   `https://main.dyxfgriwrgezw.amplifyapp.com/` origin entry. Partner logo
   uploads from the live CMS fail until this is done.
@@ -255,3 +287,7 @@ redeployed. Note `revalidate: 300` caches fetches in dev too — clear
   `prod-aws` merge needing a lockfile resync.
 - Submissions page heading is now static `New Submissions`, so the 2022–2025
   archive pages no longer show their year.
+- Synopsis page tries `/submissions/:id/overview` first, which is staff-only
+  since cms-hub `61596cb`, so every visit logs a 401 before the fallback
+  (renders correctly). Drop that attempt or add a public overview.
+- `/podcast/<unknown-slug>` shows the not-found UI with HTTP 200, not 404.
