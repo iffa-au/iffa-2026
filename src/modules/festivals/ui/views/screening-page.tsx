@@ -55,7 +55,6 @@ export function ScreeningPage({
   const statusLabel =
     SCREENING_STATUS_LABEL[screening.status];
 
-    // Session details only exist once the screening is on; until then, show its status.
   const ifScreening = (value: string) => screening.status === "screening" ? value : statusLabel;
 
   const facts = [
@@ -149,6 +148,7 @@ export function ScreeningPage({
                   // New version: also blank while the screening has no dates;
                   // the panel above already says "Coming soon".
                   when={showsFilmSlot(film, screening) ? filmScreeningWhen(film, screening) : ""}
+                  screeningStatus={screening.status}
                 />
               ))}
             </div>

@@ -1,11 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { Play } from "lucide-react";
 
 import { getYouTubeEmbedUrl } from "@/lib/youtube";
 import TrailerModal from "./TrailerModal";
-import { getTrailerEmbedUrl } from "@/modules/events/submissions/lib/submissions";
+import {
+  canOptimizeImage,
+  getTrailerEmbedUrl,
+} from "@/modules/events/submissions/lib/submissions";
 
 type Film = {
   posterUrl?: string;
@@ -28,10 +32,13 @@ type MoviesCardProps = {
 const GENRE_PLACEHOLDER = "Genre TBA";
 const DURATION_PLACEHOLDER = "Duration TBA";
 const DESCRIPTION_PLACEHOLDER = "Synopsis coming soon.";
+const FALLBACK_POSTER = "/fallbacks/no-poster.svg";
 
 const MoviesCard = ({ film }: MoviesCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
+  const posterSrc = !imageFailed && film.posterUrl ? film.posterUrl : FALLBACK_POSTER;
 
   const directors = Array.isArray(film.directors) ? film.directors : [];
   const cast = Array.isArray(film.cast) ? film.cast : [];
@@ -42,9 +49,11 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
     setImageLoaded(true);
   };
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.onerror = null;
-    e.currentTarget.src = "/fallbacks/no-poster.svg";
+  // Through state, not `currentTarget.src`: React owns next/image's src and
+  // would put the broken URL back on the next render. A failing fallback
+  // can't loop — it sets the same state again.
+  const handleImageError = () => {
+    setImageFailed(true);
     setImageLoaded(true);
   };
 
@@ -69,16 +78,23 @@ const MoviesCard = ({ film }: MoviesCardProps) => {
           </div>
         )}
 
-        <img
-          src={film.posterUrl || "/fallbacks/no-poster.svg"}
-          alt={`${title} poster`}
-          className="absolute -inset-px object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-          loading="lazy"
-          decoding="async"
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          style={{ opacity: imageLoaded ? 1 : 0 }}
-        />
+        {/* next/image, not <img>: CMS posters are uploaded at full size (up to
+            ~2.5 MB, 2160×2880) and this card is never wider than 340px. The
+            wrapper keeps the old 1px overhang, which `fill`'s inline inset:0
+            would otherwise override. */}
+        <div className="absolute -inset-px">
+          <Image
+            src={posterSrc}
+            alt={`${title} poster`}
+            fill
+            sizes="340px"
+            unoptimized={!canOptimizeImage(posterSrc)}
+            className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            style={{ opacity: imageLoaded ? 1 : 0 }}
+          />
+        </div>
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/80 via-55% to-transparent" />
 

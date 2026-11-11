@@ -20,6 +20,26 @@ export const pickImageUrl = (
   return FALLBACK_POSTER;
 };
 
+/** The only remote host in next.config.ts `images.remotePatterns` — keep in sync. */
+const OPTIMIZABLE_IMAGE_HOST = "dhbdzeb2cbayq.cloudfront.net";
+
+/**
+ * Whether next/image may resize this URL. CMS image fields accept any http(s)
+ * URL, but next/image throws at render for a host outside `remotePatterns`, and
+ * doesn't optimise SVGs (the fallback poster). Anything that fails this check
+ * gets `unoptimized` — served exactly as the plain <img> used to.
+ */
+export const canOptimizeImage = (src: string): boolean => {
+  if (/\.svg(\?|#|$)/i.test(src)) return false;
+  if (src.startsWith("/")) return !src.startsWith("//");
+  try {
+    const url = new URL(src);
+    return url.protocol === "https:" && url.hostname === OPTIMIZABLE_IMAGE_HOST;
+  } catch {
+    return false;
+  }
+};
+
 export type SubmissionApiItem = {
   id?: unknown;
   contentId?: unknown;

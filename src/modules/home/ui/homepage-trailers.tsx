@@ -42,7 +42,15 @@ export function HomepageTrailersProvider({ children }: { children: ReactNode }) 
  * Keyed on the video so a changed URL remounts the player — TrailerSection
  * reads `videoUrl` into state once, at mount.
  */
-export function TrailerSlot({ index, className }: { index: number; className?: string }) {
+export function TrailerSlot({
+  index,
+  className,
+  theater,
+}: {
+  index: number;
+  className?: string;
+  theater?: boolean;
+}) {
   const state = useContext(TrailersContext);
   const trailer = state.status === "ready" ? state.trailers[index] : undefined;
   if (state.status === "ready" && !trailer) return null;
@@ -54,9 +62,10 @@ export function TrailerSlot({ index, className }: { index: number; className?: s
       title={trailer.title || undefined}
       youtubeUrl={trailer.youtubeUrl}
       learnMoreUrl={trailer.learnMoreUrl}
+      theater={theater}
     />
   ) : (
-    <TrailerSection />
+    <TrailerSection theater={theater} />
   );
 
   return className ? <div className={className}>{section}</div> : section;
