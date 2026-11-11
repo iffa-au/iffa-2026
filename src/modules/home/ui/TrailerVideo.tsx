@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Hls from "hls.js";
+import type Hls from "hls.js";
 import { memo, useEffect, useRef, useState } from "react";
 import { fetchJsonCached } from "@/lib/media-cache";
 
@@ -11,7 +11,21 @@ type TrailerSectionProps = {
   title?: string;
   youtubeUrl?: string;
   learnMoreUrl?: string;
+  /** From `md` up, play the video on the screen of a cinema photo. Phones keep the plain player. */
+  theater?: boolean;
 };
+
+/*
+  The screen in theater.webp (1672×941) is curved: straight sides at x 276.8
+  and 1392.8, a top edge from y 140.0 at the corners to 158.4 at the centre,
+  and a bottom edge from 792.6 at the corners to 779.7 at the centre (both
+  parabolas, measured from the pixels to within ~0.3px). The box is the
+  bounding rectangle and the clip-path traces the two curves, everything 1px
+  outside the white so no edge of the printed screen shows.
+  Replace the image → re-measure the box, the curve and the aspect ratio.
+*/
+const THEATER_SCREEN =
+  "md:absolute md:left-[16.495%] md:top-[14.770%] md:w-[66.866%] md:h-[69.561%] md:aspect-auto md:rounded-none md:border-0 md:shadow-none md:[clip-path:polygon(0%_0%,8.333%_0.851%,16.667%_1.556%,25%_2.105%,33.333%_2.497%,41.667%_2.734%,50%_2.814%,58.333%_2.738%,66.667%_2.505%,75%_2.117%,83.333%_1.572%,91.667%_0.871%,100%_0.024%,100%_99.983%,91.667%_99.392%,83.333%_98.903%,75%_98.523%,66.667%_98.252%,58.333%_98.09%,50%_98.037%,41.667%_98.092%,33.333%_98.257%,25%_98.531%,16.667%_98.914%,8.333%_99.406%,0%_100%)]";
 
 type MediaApiResponse = {
   s3Key?: string;
@@ -38,6 +52,7 @@ const TrailerSection = ({
   title,
   youtubeUrl,
   learnMoreUrl,
+  theater = false,
 }: TrailerSectionProps) => {
   const [loading, setLoading] = useState(Boolean(videoslug && !videoUrl));
   const [src, setSrc] = useState<string | null>(videoUrl ?? null);
@@ -106,23 +121,50 @@ const TrailerSection = ({
       video.play().catch(() => {});
     };
 
-    const isHls = src.endsWith(".m3u8");
+    const playNative = () => {
+      video.src = src;
+      video.load();
+      video.addEventListener("loadedmetadata", onLoaded);
+    };
+    const stopNative = () => video.removeEventListener("loadedmetadata", onLoaded);
 
-    if (isHls && Hls.isSupported()) {
-      const hls = new Hls({ autoStartLoad: false });
-      hls.loadSource(src);
-      hls.attachMedia(video);
-      hls.once(Hls.Events.MANIFEST_PARSED, () => {
-        hls.startLoad();
-        onLoaded();
-      });
-      return () => hls.destroy();
+    if (!src.endsWith(".m3u8")) {
+      playNative();
+      return stopNative;
     }
 
-    video.src = src;
-    video.load();
-    video.addEventListener("loadedmetadata", onLoaded);
-    return () => video.removeEventListener("loadedmetadata", onLoaded);
+    // hls.js is ~160 KB gzipped, so it is fetched when the first HLS trailer
+    // comes into view rather than with the page; MP4 trailers never load it.
+    // Same engine choice as before: hls.js wherever it is supported, the
+    // browser's own HLS (Safari/iOS) otherwise.
+    let cancelled = false;
+    let hls: Hls | null = null;
+    import("hls.js")
+      .then(({ default: HlsPlayer }) => {
+        if (cancelled) return;
+        if (!HlsPlayer.isSupported()) {
+          playNative();
+          return;
+        }
+        const player = new HlsPlayer({ autoStartLoad: false });
+        hls = player;
+        player.loadSource(src);
+        player.attachMedia(video);
+        player.once(HlsPlayer.Events.MANIFEST_PARSED, () => {
+          player.startLoad();
+          onLoaded();
+        });
+      })
+      .catch(() => {
+        // The chunk failed to load (offline, deploy mid-visit): try native.
+        if (!cancelled) playNative();
+      });
+
+    return () => {
+      cancelled = true;
+      hls?.destroy();
+      stopNative();
+    };
   }, [isVisible, src]);
 
   useEffect(() => {
@@ -153,24 +195,48 @@ const TrailerSection = ({
           </div>
         )}
 
-        <div className="relative aspect-video w-full overflow-hidden rounded-sm bg-zinc-900 shadow-2xl border border-white/5">
-          {(!isReady || loading) && (
-            <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 z-10">
-              <div className="w-8 h-8 border-2 border-yellow-600 border-t-transparent animate-spin rounded-full" />
-            </div>
+        {/* A CSS background rather than next/image: it only exists from `md`
+            up, so phones never download it (a hidden <img> still loads). */}
+        <div
+          className={
+            theater
+              ? "relative md:aspect-[1672/941] md:bg-[url('/assets/mockups/theater.webp')] md:bg-cover"
+              : undefined
+          }
+        >
+          {/* Fades the photo's edges into the section's black, like the hero
+              banner's bottom fade. It sits under the screen box (which comes
+              later in the DOM), and every stop ends before the screen's edges,
+              so the trailer itself is never dimmed. */}
+          {theater && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 hidden md:block bg-[linear-gradient(to_right,#000,transparent_12%,transparent_88%,#000),linear-gradient(to_bottom,#000,transparent_10%,transparent_86%,#000)]"
+            />
           )}
-
-          <video
-            ref={videoRef}
-            muted
-            loop
-            playsInline
-            preload="none"
-            poster={posterSrc ?? undefined}
-            className={`w-full h-full object-cover transition-opacity duration-700 ${
-              isReady ? "opacity-100" : "opacity-0"
+          <div
+            className={`relative aspect-video w-full overflow-hidden rounded-sm bg-zinc-900 shadow-2xl border border-white/5 ${
+              theater ? THEATER_SCREEN : ""
             }`}
-          />
+          >
+            {(!isReady || loading) && (
+              <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 z-10">
+                <div className="w-8 h-8 border-2 border-yellow-600 border-t-transparent animate-spin rounded-full" />
+              </div>
+            )}
+
+            <video
+              ref={videoRef}
+              muted
+              loop
+              playsInline
+              preload="none"
+              poster={posterSrc ?? undefined}
+              className={`w-full h-full object-cover transition-opacity duration-700 ${
+                isReady ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          </div>
         </div>
 
         {youtubeUrl && (

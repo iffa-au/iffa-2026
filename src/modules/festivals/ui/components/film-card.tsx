@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import type { Film } from "../../lib/types";
-import { filmHref, formatRuntime } from "../../lib/festival-utils";
+import type { Film, ScreeningStatus } from "../../lib/types";
+import { filmHref, formatRuntime, ifScreening, SCREENING_STATUS_LABEL } from "../../lib/festival-utils";
 import { PosterFrame } from "./poster-frame";
 
 /**
@@ -31,8 +31,18 @@ import { PosterFrame } from "./poster-frame";
  * printed programme, and eight identical bordered boxes would flatten a
  * lineup into eight equal blocks.
  */
-export function FilmCard({ film, when = "" }: { film: Film; when?: string }) {
-  const meta = [
+export function FilmCard({ 
+  film, 
+  when = "", 
+  screeningStatus
+}: { 
+    film: Film; 
+    when?: string; 
+    screeningStatus: ScreeningStatus;
+  }) {
+
+    // The metadata is the one that we use in the film card to show the country, year, genre and runtime. We filter out any falsy values to avoid displaying empty metadata.
+    const meta = [
     film.country,
     film.year || null,
     film.genre,
@@ -72,7 +82,7 @@ export function FilmCard({ film, when = "" }: { film: Film; when?: string }) {
               that differs between two shorts in the same block. */}
           {when && (
             <p className="mt-1 font-fest-text text-[0.9375rem] text-fest-ink/70">
-              {when}
+              {ifScreening(screeningStatus, when)}
             </p>
           )}
 

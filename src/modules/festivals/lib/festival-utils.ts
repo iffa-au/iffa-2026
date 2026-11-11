@@ -1,9 +1,9 @@
 import type {
-  Festival,
-  Film,
-  Screening,
-  ScreeningStatus,
-  SeatStatus,
+	Festival,
+	Film,
+	Screening,
+	ScreeningStatus,
+	SeatStatus,
 } from "./types";
 
 /**
@@ -18,46 +18,54 @@ import type {
  */
 
 const MONTHS_LONG = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+	"January",
+	"February",
+	"March",
+	"April",
+	"May",
+	"June",
+	"July",
+	"August",
+	"September",
+	"October",
+	"November",
+	"December",
 ] as const;
 
 const MONTHS_SHORT = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
 ] as const;
 
 const WEEKDAYS_LONG = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
+	"Sunday",
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
 ] as const;
 
-const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const WEEKDAYS_SHORT = [
+	"Sun",
+	"Mon",
+	"Tue",
+	"Wed",
+	"Thu",
+	"Fri",
+	"Sat",
+] as const;
 
 /**
  * Parses "2026-10-14" without going through `new Date(string)`.
@@ -69,41 +77,41 @@ const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as cons
  * everywhere.
  */
 const parseIsoDate = (iso: string) => {
-  const [year, month, day] = iso.split("-").map(Number);
-  return { year, month, day };
+	const [year, month, day] = iso.split("-").map(Number);
+	return { year, month, day };
 };
 
 const weekdayIndex = (iso: string): number => {
-  const { year, month, day } = parseIsoDate(iso);
-  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+	const { year, month, day } = parseIsoDate(iso);
+	return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 };
 
 /** "2026-10-14" -> "Wednesday, 14 October" */
 export const formatDayHeading = (iso: string): string => {
-  const { month, day } = parseIsoDate(iso);
-  return `${WEEKDAYS_LONG[weekdayIndex(iso)]}, ${day} ${MONTHS_LONG[month - 1]}`;
+	const { month, day } = parseIsoDate(iso);
+	return `${WEEKDAYS_LONG[weekdayIndex(iso)]}, ${day} ${MONTHS_LONG[month - 1]}`;
 };
 
 /** "2026-10-14" -> "Wed 14 Oct" */
 export const formatShortDate = (iso: string): string => {
-  const { month, day } = parseIsoDate(iso);
-  return `${WEEKDAYS_SHORT[weekdayIndex(iso)]} ${day} ${MONTHS_SHORT[month - 1]}`;
+	const { month, day } = parseIsoDate(iso);
+	return `${WEEKDAYS_SHORT[weekdayIndex(iso)]} ${day} ${MONTHS_SHORT[month - 1]}`;
 };
 
 /** "2026-10-14" -> "14 October 2026" */
 export const formatFullDate = (iso: string): string => {
-  const { year, month, day } = parseIsoDate(iso);
-  return `${day} ${MONTHS_LONG[month - 1]} ${year}`;
+	const { year, month, day } = parseIsoDate(iso);
+	return `${day} ${MONTHS_LONG[month - 1]} ${year}`;
 };
 
 /** "2026-10-14" -> { day: "14", month: "Oct", weekday: "Wed" } */
 export const splitDateParts = (iso: string) => {
-  const { month, day } = parseIsoDate(iso);
-  return {
-    day: String(day).padStart(2, "0"),
-    month: MONTHS_SHORT[month - 1],
-    weekday: WEEKDAYS_SHORT[weekdayIndex(iso)],
-  };
+	const { month, day } = parseIsoDate(iso);
+	return {
+		day: String(day).padStart(2, "0"),
+		month: MONTHS_SHORT[month - 1],
+		weekday: WEEKDAYS_SHORT[weekdayIndex(iso)],
+	};
 };
 
 /**
@@ -114,9 +122,9 @@ export const splitDateParts = (iso: string) => {
  * still has a runtime worth printing.
  */
 export const formatRuntime = (minutes: number, seconds = 0): string =>
-  [minutes ? `${minutes} min` : "", seconds ? `${seconds} sec` : ""]
-    .filter(Boolean)
-    .join(" ");
+	[minutes ? `${minutes} min` : "", seconds ? `${seconds} sec` : ""]
+		.filter(Boolean)
+		.join(" ");
 
 /** 1-12 -> "October" */
 export const monthName = (month: number): string => MONTHS_LONG[month - 1];
@@ -133,38 +141,38 @@ export const monthName = (month: number): string => MONTHS_LONG[month - 1];
  * the two quietly drift apart.
  */
 export const formatDateRange = (startIso: string, endIso: string): string => {
-  const start = parseIsoDate(startIso);
-  const end = parseIsoDate(endIso);
+	const start = parseIsoDate(startIso);
+	const end = parseIsoDate(endIso);
 
-  if (startIso === endIso) return formatFullDate(startIso);
+	if (startIso === endIso) return formatFullDate(startIso);
 
-  if (start.year === end.year && start.month === end.month) {
-    return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]} ${end.year}`;
-  }
+	if (start.year === end.year && start.month === end.month) {
+		return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]} ${end.year}`;
+	}
 
-  if (start.year === end.year) {
-    return `${start.day} ${MONTHS_LONG[start.month - 1]} - ${end.day} ${MONTHS_LONG[end.month - 1]} ${end.year}`;
-  }
+	if (start.year === end.year) {
+		return `${start.day} ${MONTHS_LONG[start.month - 1]} - ${end.day} ${MONTHS_LONG[end.month - 1]} ${end.year}`;
+	}
 
-  return `${formatFullDate(startIso)} - ${formatFullDate(endIso)}`;
+	return `${formatFullDate(startIso)} - ${formatFullDate(endIso)}`;
 };
 
 /** A festival's dates, collapsed. */
 export const formatFestivalDates = (festival: Festival): string =>
-  formatDateRange(festival.startDate, festival.endDate);
+	formatDateRange(festival.startDate, festival.endDate);
 
 /** The same range without the year, for use beside a year set as display type. */
 export const formatFestivalDatesShort = (festival: Festival): string => {
-  const start = parseIsoDate(festival.startDate);
-  const end = parseIsoDate(festival.endDate);
+	const start = parseIsoDate(festival.startDate);
+	const end = parseIsoDate(festival.endDate);
 
-  if (festival.startDate === festival.endDate) {
-    return `${start.day} ${MONTHS_LONG[start.month - 1]}`;
-  }
-  if (start.month === end.month) {
-    return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]}`;
-  }
-  return `${start.day} ${MONTHS_SHORT[start.month - 1]} - ${end.day} ${MONTHS_SHORT[end.month - 1]}`;
+	if (festival.startDate === festival.endDate) {
+		return `${start.day} ${MONTHS_LONG[start.month - 1]}`;
+	}
+	if (start.month === end.month) {
+		return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]}`;
+	}
+	return `${start.day} ${MONTHS_SHORT[start.month - 1]} - ${end.day} ${MONTHS_SHORT[end.month - 1]}`;
 };
 
 /**
@@ -175,21 +183,21 @@ export const formatFestivalDatesShort = (festival: Festival): string => {
  * 17 October" is already four words longer than the date it is replacing.
  */
 export const formatScreeningDates = (screening: Screening): string => {
-  if (!screening.startDate) {
-    return SCREENING_STATUS_LABEL[screening.status] ?? "To be announced";
-  }
+	if (!screening.startDate) {
+		return SCREENING_STATUS_LABEL[screening.status] ?? "To be announced";
+	}
 
-  if (screening.startDate === screening.endDate) {
-    return formatDayHeading(screening.startDate);
-  }
+	if (screening.startDate === screening.endDate) {
+		return formatDayHeading(screening.startDate);
+	}
 
-  const start = parseIsoDate(screening.startDate);
-  const end = parseIsoDate(screening.endDate);
+	const start = parseIsoDate(screening.startDate);
+	const end = parseIsoDate(screening.endDate);
 
-  if (start.month === end.month && start.year === end.year) {
-    return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]}`;
-  }
-  return `${formatShortDate(screening.startDate)} - ${formatShortDate(screening.endDate)}`;
+	if (start.month === end.month && start.year === end.year) {
+		return `${start.day}-${end.day} ${MONTHS_LONG[end.month - 1]}`;
+	}
+	return `${formatShortDate(screening.startDate)} - ${formatShortDate(screening.endDate)}`;
 };
 
 /**
@@ -201,22 +209,31 @@ export const formatScreeningDates = (screening: Screening): string => {
  * festival that runs a fortnight at most.
  */
 export const formatScreeningDatesShort = (screening: Screening): string => {
-  if (!screening.startDate) {
-    return SCREENING_STATUS_LABEL[screening.status] ?? "To be announced";
-  }
+	if (!screening.startDate) {
+		return SCREENING_STATUS_LABEL[screening.status] ?? "To be announced";
+	}
 
-  if (screening.startDate === screening.endDate) {
-    return formatShortDate(screening.startDate);
-  }
+	if (screening.startDate === screening.endDate) {
+		return formatShortDate(screening.startDate);
+	}
 
-  const start = parseIsoDate(screening.startDate);
-  const end = parseIsoDate(screening.endDate);
+	const start = parseIsoDate(screening.startDate);
+	const end = parseIsoDate(screening.endDate);
 
-  if (start.month === end.month && start.year === end.year) {
-    return `${start.day}-${end.day} ${MONTHS_SHORT[end.month - 1]}`;
-  }
-  return `${start.day} ${MONTHS_SHORT[start.month - 1]} - ${end.day} ${MONTHS_SHORT[end.month - 1]}`;
+	if (start.month === end.month && start.year === end.year) {
+		return `${start.day}-${end.day} ${MONTHS_SHORT[end.month - 1]}`;
+	}
+	return `${start.day} ${MONTHS_SHORT[start.month - 1]} - ${end.day} ${MONTHS_SHORT[end.month - 1]}`;
 };
+
+// Returns the value if the screening is currently running, otherwise returns its label / value
+export const ifScreening = (
+	screeningStatus: ScreeningStatus,
+	value: string,
+): string =>
+	screeningStatus === "screening"
+		? value
+		: (SCREENING_STATUS_LABEL[screeningStatus] ?? "To be confirmed");
 
 /**
  * When a film plays, written for a programme tile: "Wed 16 Oct, 7:45 PM".
@@ -244,34 +261,34 @@ export const formatScreeningDatesShort = (screening: Screening): string => {
 // film's slot stays stored in cms-hub and shows again once the screening is
 // given a date.
 export const filmScreeningWhen = (film: Film, screening: Screening): string => {
-  if (!screening.startDate) return formatScreeningDatesShort(screening);
+	if (!screening.startDate) return formatScreeningDatesShort(screening);
 
-  const date = film.startDate
-    ? formatShortDate(film.startDate)
-    : formatScreeningDatesShort(screening);
+	const date = film.startDate
+		? formatShortDate(film.startDate)
+		: formatScreeningDatesShort(screening);
 
-  return [date, film.startTime || screening.time].filter(Boolean).join(", ");
+	return [date, film.startTime || screening.time].filter(Boolean).join(", ");
 };
 
 /** Whether a film's own date and time should be shown — only inside a dated screening. */
 export const showsFilmSlot = (film: Film, screening: Screening): boolean =>
-  Boolean(screening.startDate) && Boolean(film.startDate || film.startTime);
+	Boolean(screening.startDate) && Boolean(film.startDate || film.startTime);
 
 /** Every ISO date a span covers, inclusive of both ends. */
 const datesInRange = (startIso: string, endIso: string): string[] => {
-  const { year, month, day } = parseIsoDate(startIso);
-  const cursor = new Date(Date.UTC(year, month - 1, day));
-  const dates: string[] = [];
+	const { year, month, day } = parseIsoDate(startIso);
+	const cursor = new Date(Date.UTC(year, month - 1, day));
+	const dates: string[] = [];
 
-  // Bounded rather than a bare while: a mis-entered end date decades out
-  // would otherwise spin here, and no festival runs longer than a year.
-  for (let guard = 0; guard < 366; guard += 1) {
-    const iso = cursor.toISOString().slice(0, 10);
-    if (iso > endIso) break;
-    dates.push(iso);
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
-  }
-  return dates;
+	// Bounded rather than a bare while: a mis-entered end date decades out
+	// would otherwise spin here, and no festival runs longer than a year.
+	for (let guard = 0; guard < 366; guard += 1) {
+		const iso = cursor.toISOString().slice(0, 10);
+		if (iso > endIso) break;
+		dates.push(iso);
+		cursor.setUTCDate(cursor.getUTCDate() + 1);
+	}
+	return dates;
 };
 
 /** Number of distinct dates a festival actually screens on. */
@@ -290,37 +307,41 @@ const datesInRange = (startIso: string, endIso: string): string[] => {
 // datesInRange builds an invalid Date and throws "Invalid time value", which
 // took down the archive band and archive page.
 export const countFestivalDays = (festival: Festival): number => {
-  const days = new Set<string>();
-  for (const screening of festival.screenings) {
-    if (!screening.startDate) continue;
-    for (const date of datesInRange(screening.startDate, screening.endDate)) {
-      days.add(date);
-    }
-  }
-  return days.size;
+	const days = new Set<string>();
+	for (const screening of festival.screenings) {
+		if (!screening.startDate) continue;
+		for (const date of datesInRange(screening.startDate, screening.endDate)) {
+			days.add(date);
+		}
+	}
+	return days.size;
 };
 
 /** Every film in a festival, in programme order, across all its screenings. */
 export const festivalFilms = (festival: Festival) =>
-  festival.screenings.flatMap((screening) => screening.films);
+	festival.screenings.flatMap((screening) => screening.films);
 
 /** How many films a festival programmes in total. */
 export const countFestivalFilms = (festival: Festival): number =>
-  festivalFilms(festival).length;
+	festivalFilms(festival).length;
 
 /** Countries represented in a festival, first-seen order, no duplicates, blanks dropped. */
 export const festivalCountries = (festival: Festival): string[] => [
-  ...new Set(festivalFilms(festival).map((film) => film.country).filter(Boolean)),
+	...new Set(
+		festivalFilms(festival)
+			.map((film) => film.country)
+			.filter(Boolean),
+	),
 ];
 
 /** Today in Melbourne, as an ISO date — the festival's own timezone, not the server's. */
 export const melbourneToday = (): string =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Australia/Melbourne",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+	new Intl.DateTimeFormat("en-CA", {
+		timeZone: "Australia/Melbourne",
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	}).format(new Date());
 
 /**
  * The programme's display order: exactly the order staff arranged in the CMS.
@@ -336,7 +357,7 @@ export const melbourneToday = (): string =>
  * the festival they were handed.
  */
 export const orderScreenings = (festival: Festival): Screening[] => [
-  ...festival.screenings,
+	...festival.screenings,
 ];
 
 /**
@@ -348,7 +369,8 @@ export const orderScreenings = (festival: Festival): Screening[] => [
  * rewrites the embedded array and issues fresh ids, which would break every
  * shared link.
  */
-export const screeningHref = (id: string): string => `/festivals/screening/${id}`;
+export const screeningHref = (id: string): string =>
+	`/festivals/screening/${id}`;
 
 /**
  * Where a film's own page lives.
@@ -365,26 +387,26 @@ export const filmHref = (id: string): string => `/festivals/film/${id}`;
  * colour with this text label.
  */
 export const SCREENING_STATUS_LABEL: Record<ScreeningStatus, string> = {
-  upcoming: "Upcoming",
-  screening: "Screening",
-  "to-be-announced": "To be announced",
-  "coming-soon": "Coming soon",
+	upcoming: "Upcoming",
+	screening: "Screening",
+	"to-be-announced": "To be announced",
+	"coming-soon": "Coming soon",
 };
 
 /** Festival year label for archive and page headings, e.g. "2026". */
 export const festivalYearLabel = (festival: Festival): string =>
-  festival.year ? String(festival.year) : "";
+	festival.year ? String(festival.year) : "";
 
 /** The festival's display title, with the year if the name itself is not already branded. */
 export const festivalTitle = (festival: Festival): string => {
-  const trimmed = festival.name.trim();
-  if (!trimmed) return "IFFA";
-  if (/IFFA/i.test(trimmed)) return trimmed;
-  return festival.year ? `IFFA ${festival.year}` : trimmed;
+	const trimmed = festival.name.trim();
+	if (!trimmed) return "IFFA";
+	if (/IFFA/i.test(trimmed)) return trimmed;
+	return festival.year ? `IFFA ${festival.year}` : trimmed;
 };
 
 export const SEAT_STATUS_LABEL: Record<SeatStatus, string> = {
-  available: "Seats available",
-  limited: "Seats limited",
-  "sold-out": "Sold out",
+	available: "Seats available",
+	limited: "Seats limited",
+	"sold-out": "Sold out",
 };

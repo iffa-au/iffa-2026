@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { canOptimizeImage } from "@/modules/events/submissions/lib/submissions";
 import type { FeaturedFilm } from "@/modules/home/data/featured-films";
 import { fetchFeaturedFilms } from "@/modules/home/lib/featured-films-api";
 
@@ -28,13 +30,17 @@ function SlideContent({ film }: { film: FeaturedFilm }) {
     // height rather than from half the row — a half-width portrait poster
     // was ~900px tall.
     <div className="flex flex-col items-center gap-8 lg:h-[clamp(420px,calc(100svh-var(--header-h)-220px),600px)] lg:flex-row lg:items-stretch lg:gap-10">
-      <div className="group aspect-[2/3] w-full max-w-xs shrink-0 overflow-hidden rounded-sm shadow-2xl lg:h-full lg:w-auto lg:max-w-none">
-        <img
+      {/* next/image, not <img>: CMS posters are uploaded at full size (up to
+          ~5 MB, 2000px+). The box is at most 320px wide below `lg`, and from
+          `lg` it is 2/3 of a 420–600px-tall row, so at most 400px. */}
+      <div className="group relative aspect-[2/3] w-full max-w-xs shrink-0 overflow-hidden rounded-sm shadow-2xl lg:h-full lg:w-auto lg:max-w-none">
+        <Image
           src={film.posterUrl}
           alt={title}
-          loading="lazy"
-          decoding="async"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          fill
+          sizes="(min-width: 1024px) 400px, 320px"
+          unoptimized={!canOptimizeImage(film.posterUrl)}
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
         />
       </div>
       <div className="flex w-full min-w-0 flex-col justify-center overflow-hidden rounded-sm border border-white/5 bg-zinc-900/30 p-6 md:p-8 lg:flex-1 xl:p-10">
