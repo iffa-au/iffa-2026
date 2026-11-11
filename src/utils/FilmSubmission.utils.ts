@@ -178,6 +178,53 @@ const nominationSchema = z.object({
   nomineeUids: z.array(z.string()),
 });
 
+// ─── Video podcast ───────────────────────────────────────────────────────────
+// Every field is a plain string here; name and email become required only
+// once the submitter says yes and picks someone — see the superRefine.
+const podcastContactSchema = z.object({
+  name: z.string(),
+  email: z.string(),
+  relationship: z.string(),
+  phone: z.string(),
+  timezone: z.string(),
+  preferredDate: z.string(),
+  preferredTime: z.string(),
+  notes: z.string(),
+});
+export type PodcastContact = z.infer<typeof podcastContactSchema>;
+
+export const BLANK_PODCAST_CONTACT: PodcastContact = {
+  name: "", email: "", relationship: "", phone: "", timezone: "",
+  preferredDate: "", preferredTime: "", notes: "",
+};
+
+/** Offered only when no crew member has a name yet. */
+const PODCAST_FALLBACK = [
+  "Director", "Lead Actor", "Lead Actress", "Supporting Cast",
+  "Producer", "Cinematographer", "Writer", "Other Crew Member",
+];
+
+const CREW_FIELDS: readonly CrewField[] = ["actors", "directors", "producers", "writers"];
+
+/**
+ * Who can be picked for the podcast. A crew member is identified by uid, so a
+ * rename relabels the choice rather than orphaning it, and a removed crew
+ * card drops out of the options (and so out of validation and the payload).
+ */
+export function podcastOptions(crew: Record<CrewField, PersonEntry[]>) {
+  const named = CREW_FIELDS.flatMap((f) =>
+    crew[f]
+      .filter((p) => p.fullName.trim())
+      .map((p) => ({
+        id: p.uid,
+        label: p.role.trim() ? `${p.fullName.trim()} — ${p.role.trim()}` : p.fullName.trim(),
+      })),
+  );
+  return named.length ? named : PODCAST_FALLBACK.map((l) => ({ id: l, label: l }));
+}
+
+const isEmail = (v: string) => z.string().trim().email().safeParse(v).success;
+
 export function buildFilmSchema(
   contentTypes: { _id: string; name: string }[],
   awardCategories: AwardCategoryOption[],
@@ -254,6 +301,11 @@ export function buildFilmSchema(
       ),
       nominations: z.array(nominationSchema),
       notes: z.string().max(1000, "Notes must be 1000 characters or less").optional(),
+      // "" = question skipped (it's optional).
+      podcastInterest: z.enum(["", "yes", "no"]),
+      podcastParticipants: z.array(z.object({ id: z.string(), contact: podcastContactSchema })),
+      podcastSameContact: z.boolean(),
+      podcastSharedContact: podcastContactSchema,
       contactEmail: requiredEmail("Must be a valid email"),
       // `z.boolean().refine(...)`, not `z.literal(true)`: a failing literal
       // aborts the whole object parse and takes every `.superRefine` check
@@ -326,6 +378,32 @@ export function buildFilmSchema(
               path: ["writers", index, ...(issue.path ?? [])],
             });
           }
+        }
+      }
+
+      if (data.podcastInterest === "yes") {
+        const ids = new Set(podcastOptions(data).map((o) => o.id));
+        const picked = data.podcastParticipants
+          .map((p, index) => ({ p, index }))
+          .filter(({ p }) => ids.has(p.id));
+        const checkContact = (c: PodcastContact, path: (string | number)[]) => {
+          if (!c.name.trim()) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: [...path, "name"], message: "Contact name is required" });
+          }
+          if (!isEmail(c.email)) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: [...path, "email"], message: "A valid contact email is required" });
+          }
+        };
+        if (picked.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["podcastParticipants"],
+            message: "Select at least one cast or crew member",
+          });
+        } else if (data.podcastSameContact) {
+          checkContact(data.podcastSharedContact, ["podcastSharedContact"]);
+        } else {
+          for (const { p, index } of picked) checkContact(p.contact, ["podcastParticipants", index, "contact"]);
         }
       }
 

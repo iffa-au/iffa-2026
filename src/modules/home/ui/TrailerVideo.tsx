@@ -27,21 +27,6 @@ type TrailerSectionProps = {
 const THEATER_SCREEN =
   "md:absolute md:left-[16.495%] md:top-[14.770%] md:w-[66.866%] md:h-[69.561%] md:aspect-auto md:rounded-none md:border-0 md:shadow-none md:[clip-path:polygon(0%_0%,8.333%_0.851%,16.667%_1.556%,25%_2.105%,33.333%_2.497%,41.667%_2.734%,50%_2.814%,58.333%_2.738%,66.667%_2.505%,75%_2.117%,83.333%_1.572%,91.667%_0.871%,100%_0.024%,100%_99.983%,91.667%_99.392%,83.333%_98.903%,75%_98.523%,66.667%_98.252%,58.333%_98.09%,50%_98.037%,41.667%_98.092%,33.333%_98.257%,25%_98.531%,16.667%_98.914%,8.333%_99.406%,0%_100%)]";
 
-/*
-  Light from the screen falling on the seats. The playing video is drawn into
-  a 32×1 canvas, so each pixel is one column of the frame averaged top to
-  bottom (letterbox bars only dim it), and that strip is stretched over the
-  whole frame and blurred. Color-dodge scales each photo pixel by its own
-  brightness, so the seat backs light up while the black gaps between them
-  stay black (screen-blend lit the gaps too). `brightness-150` is the
-  strength knob. The mask puts the light where it lands: brightest on the
-  front rows just below the screen (bottom edge at ~84%), gone at the photo's
-  edges. Only drawn, never read back, so a cross-origin video can't break it.
-*/
-const GLOW_FPS = 10;
-const GLOW_MASK =
-  "radial-gradient(ellipse 50% 30% at 50% 86%, #000 20%, transparent 100%), linear-gradient(to bottom, #000 85%, transparent)";
-
 type MediaApiResponse = {
   s3Key?: string;
   videoS3Key?: string;
@@ -76,7 +61,6 @@ const TrailerSection = ({
   const [isReady, setIsReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLElement | null>(null);
-  const glowRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -185,30 +169,6 @@ const TrailerSection = ({
 
   useEffect(() => {
     const video = videoRef.current;
-    const ctx = glowRef.current?.getContext("2d");
-    // checked once a window resized across `md` keeps whatever it
-    // started with (the canvas itself is CSS-hidden below `md` either way).
-    // Reduced motion gets no glow: it flickers with every cut.
-    if (
-      !theater ||
-      !isVisible ||
-      !isReady ||
-      !video ||
-      !ctx ||
-      !matchMedia("(min-width: 768px)").matches ||
-      matchMedia("(prefers-reduced-motion: reduce)").matches
-    )
-      return;
-
-    ctx.imageSmoothingQuality = "high";
-    const timer = setInterval(() => {
-      if (video.readyState >= 2) ctx.drawImage(video, 0, 0, 32, 1);
-    }, 1000 / GLOW_FPS);
-    return () => clearInterval(timer);
-  }, [theater, isVisible, isReady]);
-
-  useEffect(() => {
-    const video = videoRef.current;
     if (!video) return;
 
     if (isVisible) video.play().catch(() => {});
@@ -252,18 +212,6 @@ const TrailerSection = ({
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 hidden md:block bg-[linear-gradient(to_right,#000,transparent_12%,transparent_88%,#000),linear-gradient(to_bottom,#000,transparent_10%,transparent_86%,#000)]"
-            />
-          )}
-          {/* After the fade so the light reaches the front rows; its own mask
-            keeps it off the photo's edges. */}
-          {theater && (
-            <canvas
-              ref={glowRef}
-              width={32}
-              height={1}
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 hidden h-full w-full mix-blend-color-dodge blur-2xl brightness-150 md:block [mask-composite:intersect]"
-              style={{ maskImage: GLOW_MASK }}
             />
           )}
           <div

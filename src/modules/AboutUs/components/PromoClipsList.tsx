@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BLANK_PROMO_CLIP, type FilmValues } from "@/utils/FilmSubmission.utils";
 import { YesNoToggle } from "./YesNoToggle";
-import { L, I, HELP, ERR } from "./form-tokens";
+import { L, I, HELP, ERR, REQ, OPTIONAL_PILL } from "./form-tokens";
 
 const DESCRIPTION =
   "Share links to very short clips from your film that can be shared on social media to build hype, promote the film, and capture audience attention. Choose your best dialogue, a standout scene, or a memorable moment with the potential to go viral. Please provide downloadable video links and include English subtitles for dialogue in other languages.";
@@ -85,7 +85,7 @@ export function PromoClipsList({ form }: { form: UseFormReturn<FilmValues> }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className={L}>
           Short Promotional Clips{" "}
-          <span className="ml-2 align-middle rounded-full border border-[#2a2418] px-2 py-[1px] text-[11px] font-medium uppercase tracking-wider text-[#6b6347]">
+          <span className={OPTIONAL_PILL}>
             Optional
           </span>
         </p>
@@ -107,7 +107,7 @@ export function PromoClipsList({ form }: { form: UseFormReturn<FilmValues> }) {
       {fields.map((item, i) => {
         const hasPassword = clips?.[i]?.hasPassword ?? false;
         return (
-          <div key={item.id} className="rounded-xl border border-[#1a1810] bg-[#080706] p-6 space-y-5">
+          <div key={item.id} className={cn("space-y-5", i > 0 && "border-t border-[#26241d] pt-5")}>
             <FormField
               control={form.control}
               name={`promoClips.${i}.url` as const}
@@ -157,7 +157,7 @@ export function PromoClipsList({ form }: { form: UseFormReturn<FilmValues> }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className={L}>
-                      Clip link password <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                      Clip link password <span aria-hidden="true" className={REQ}>*</span>
                     </FormLabel>
                     <FormControl>
                       <Input {...field} autoComplete="off" spellCheck={false}
