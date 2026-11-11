@@ -23,7 +23,7 @@ the history.
   submissions grid, hero carousel, homepage carousel and synopsis page. Also
   `linkFromEmbedCode`: a pasted Instagram/YouTube embed snippet in
   `trailerUrl` now plays. Merge cms-hub `feat/iffa-trailer-player` first.
-- **Theatre mockup for the first homepage trailer** (uncommitted on `main`,
+- **Theatre mockup for the first homepage trailer** (committed in `3fce0c0`,
   2026-11-11). From `md` up, trailer slot 0 plays on the screen of
   `public/assets/mockups/theater.webp` (a CSS background, so phones never
   download it); phones keep the plain 16:9 player. A gradient overlay fades
@@ -32,10 +32,13 @@ the history.
   image is curved, so the video box is its bounding rectangle and a
   `clip-path` traces the top and bottom curves. The box, curve and aspect
   ratio in `TrailerVideo.tsx` were measured from that exact image —
-  re-measure if it is replaced. Frontend only; `theater.webp` must be
-  committed with it.
+  re-measure if it is replaced.
+  **Seat light (uncommitted):** a 32×1 canvas, redrawn from the video at
+  10 fps, is blurred and color-dodge-blended over the seats, so the seat backs
+  pick up the screen's colours while the gaps stay black. Off below `md`,
+  off-screen and under reduced motion; strength is `brightness-150`.
 
-- **Homepage weight** (uncommitted on `main`, 2026-11-11). Featured
+- **Homepage weight** (committed in `3fce0c0`, 2026-11-11). Featured
   Selection and `MoviesCard` posters use `next/image` (CMS originals were up
   to 5.6 MB; a 2× card now gets ~70–120 KB). `canOptimizeImage` in
   `submissions.ts` sends only CloudFront/local raster URLs through the
