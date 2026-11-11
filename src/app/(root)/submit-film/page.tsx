@@ -10,7 +10,6 @@ export default function SubmitFilm() {
   return (
     <div>
         <SubmitFilmForm />
-      
     </div>
   )
 }

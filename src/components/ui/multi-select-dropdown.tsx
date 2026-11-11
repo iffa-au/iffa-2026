@@ -15,6 +15,8 @@ type MultiSelectDropdownProps = {
   placeholder?: string;
   error?: string;
   disabled?: boolean;
+  /** Extra trigger classes (merged last). */
+  className?: string;
 };
 
 export function MultiSelectDropdown({
@@ -24,6 +26,7 @@ export function MultiSelectDropdown({
   placeholder = "Select options",
   error,
   disabled = false,
+  className,
 }: MultiSelectDropdownProps) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -118,6 +121,7 @@ export function MultiSelectDropdown({
           open ? "border-[#e6ba35]/50" : "border-[#2a2418] hover:border-[#3d3520]",
           error && "border-red-500/50",
           disabled && "opacity-60 cursor-not-allowed",
+          className,
         )}
       >
         <div className="flex flex-wrap gap-1.5 flex-1">

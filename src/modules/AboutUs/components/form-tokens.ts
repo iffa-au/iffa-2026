@@ -12,7 +12,7 @@
 // page on focus for any input whose text is under 16px, which every field on
 // this form used to trigger.
 
-export const L = "text-[14px] font-semibold tracking-[0.01em] text-[#cbc0a0]";
+export const L = "text-[14px] font-bold tracking-[0.01em] text-[#e8b830]";
 
 // `md:text-[16px]` is not redundant with the unprefixed size, and removing it
 // silently shrinks every input on desktop to 12px.
@@ -24,8 +24,22 @@ export const L = "text-[14px] font-semibold tracking-[0.01em] text-[#cbc0a0]";
 // the `md:` level too is what actually lets the merge drop theirs. (SelectTrigger
 // uses an unprefixed `text-xs/relaxed`, which the bare class already handles.)
 export const I =
-  "bg-[#0a0908] border-[#2a2418] text-white text-[16px] md:text-[16px] placeholder-[#4a4436] focus:border-[#e6ba35]/50 focus-visible:ring-[#e6ba35]/20 focus-visible:ring-2 rounded-lg h-12 px-4";
+  "bg-[#161613] border-[#26241d] text-[#e9e6dc] text-[16px] md:text-[16px] placeholder:text-[#5e5a4c] focus:border-[#9a7a1e] focus-visible:ring-[#e8b830]/20 focus-visible:ring-2 rounded-md h-11 px-3.5";
 
-export const HELP = "text-[14px] text-[#8a8268] leading-relaxed mt-2";
+export const HELP = "text-[14px] text-[#8a8470] leading-relaxed mt-2";
+
+// Decorative red-orange asterisk — the schema carries the actual rule.
+export const REQ = "text-[#e86a3a] ml-0.5";
+
+export const OPTIONAL_PILL =
+  "ml-2 align-middle rounded-full border border-[#26241d] px-2 py-[1px] text-[11px] font-medium uppercase tracking-wider text-[#8a8470]";
 
 export const ERR = "text-red-400 text-[14px] mt-1.5";
+
+// Radio / checkbox row from the mockup: the native input is visually hidden
+// (still focusable, arrow keys still move between radios of one name) and the
+// label's ::before draws the gold circle. Add PICK_CHECK for a tick.
+export const PICK =
+  "relative flex items-center gap-3 cursor-pointer text-[15px] font-semibold text-[#8a8470] hover:text-[#e9e6dc] has-[:checked]:text-[#e8b830] before:content-[''] before:flex-none before:grid before:place-items-center before:size-[22px] before:rounded-full before:border-2 before:border-[#9a7a1e] before:text-[13px] before:font-bold before:text-[#16120a] before:transition-[background-color,border-color,box-shadow] hover:before:border-[#e8b830] has-[:checked]:before:bg-[#e8b830] has-[:checked]:before:border-[#e8b830] has-[:checked]:before:shadow-[0_0_10px_#e8b83066] has-[:focus-visible]:before:outline-2 has-[:focus-visible]:before:outline-[#e8b830] has-[:focus-visible]:before:outline-offset-[3px]";
+
+export const PICK_CHECK = "has-[:checked]:before:content-['✓']";

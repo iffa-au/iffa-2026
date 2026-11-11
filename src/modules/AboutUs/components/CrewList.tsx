@@ -2,7 +2,7 @@
 
 import { AlertCircle, Plus, Trash2, ChevronDown, ChevronUp, User, Copy } from "lucide-react";
 import { useState } from "react";
-import { useFieldArray, UseFormReturn } from "react-hook-form";
+import { useFieldArray, useFormState, useWatch, UseFormReturn } from "react-hook-form";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { newPerson, type FilmValues, type PersonEntry } from "@/utils/FilmSubmission.utils";
 import { WebpImageUpload } from "./WebpImageUpload";
-import { L, I, HELP, ERR } from "./form-tokens";
+import { L, I, HELP, ERR, REQ, OPTIONAL_PILL } from "./form-tokens";
 
 type CrewField = "actors" | "directors" | "producers" | "writers";
 
@@ -21,7 +21,9 @@ interface CrewListProps {
   title: string;
   label: string;
   defaultEntry: PersonEntry;
-  roleInput: { type: "select"; options: string[] } | { type: "text"; placeholder: string };
+  roleOptions: string[];
+  /** Bumped by the parent on every failed Next or submit; reopens collapsed cards with errors. */
+  attempt: number;
   error?: string;
   minEntries?: number;
   onDuplicateEntry?: (entry: PersonEntry) => void;
@@ -36,7 +38,8 @@ export function CrewList({
   title,
   label,
   defaultEntry,
-  roleInput,
+  roleOptions,
+  attempt,
   error,
   minEntries = 1,
   onDuplicateEntry,
@@ -48,7 +51,11 @@ export function CrewList({
 
   const canRemove = fields.length > minEntries;
 
-  const { errors, submitCount } = form.formState;
+  // Subscribed here (useFormState/useWatch): the React Compiler memoizes this
+  // component on a `form` prop that never changes, so form.formState and
+  // form.watch() reads go stale — card headers kept saying "Actor 1".
+  const { errors } = useFormState({ control: form.control, name: fieldName });
+  const entries = useWatch({ control: form.control, name: fieldName });
   // Indices whose card holds at least one invalid field.
   const entryErrors = (errors[fieldName] ?? undefined) as Record<string, unknown> | undefined;
   const erroredIndexes = entryErrors
@@ -57,16 +64,16 @@ export function CrewList({
 
   // A collapsed card hides its own error messages *and* unmounts its inputs,
   // so react-hook-form can't focus the offending one either — a rejected
-  // submit would look like nothing happened. Rather than syncing that into
+  // Next or submit would look like nothing happened. Rather than syncing that into
   // `collapsed` from an effect (which costs a second render pass), the open
   // state is derived: a card with an error forces itself open unless the
   // user has since chosen to collapse it, which `collapsedAt` records by
-  // submit attempt.
+  // attempt.
   const [collapsedAt, setCollapsedAt] = useState<Record<number, number>>({});
 
   const toggle = (i: number) => {
     setCollapsed((p) => ({ ...p, [i]: !p[i] }));
-    setCollapsedAt((p) => ({ ...p, [i]: submitCount }));
+    setCollapsedAt((p) => ({ ...p, [i]: attempt }));
   };
 
   return (
@@ -92,20 +99,20 @@ export function CrewList({
       )}
 
       {fields.map((field, i) => {
-        const name = form.watch(`${fieldName}.${i}.fullName` as const);
-        const role = form.watch(`${fieldName}.${i}.role` as const);
+        const name = entries?.[i]?.fullName;
+        const role = entries?.[i]?.role;
         const hasError = erroredIndexes.includes(i);
-        const collapseIsStale = (collapsedAt[i] ?? -1) < submitCount;
+        const collapseIsStale = (collapsedAt[i] ?? -1) < attempt;
         const open = !collapsed[i] || (hasError && collapseIsStale);
         return (
           <div
             key={field.id}
             className={cn(
-              "rounded-xl border bg-[#080706] overflow-hidden transition-colors",
-              hasError ? "border-red-500/40" : "border-[#1e1c14]"
+              "rounded-xl border bg-transparent overflow-hidden transition-colors",
+              hasError ? "border-red-500/40" : "border-[#26241d]"
             )}
           >
-            <div className="flex items-center px-5 py-3.5 gap-3 border-b border-[#12110e]">
+            <div className="flex items-center px-5 py-3.5 gap-3 border-b border-[#26241d]">
               <button
                 type="button"
                 aria-expanded={open}
@@ -149,14 +156,14 @@ export function CrewList({
             </div>
 
             {open && (
-              <div className="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+              <div className="p-5 md:p-6 grid grid-cols-1 gap-y-6">
                 <FormField
                   control={form.control}
                   name={`${fieldName}.${i}.fullName` as const}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className={L}>
-                        Full Name <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                        Full Name <span aria-hidden="true" className={REQ}>*</span>
                       </FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Full name" className={I} />
@@ -172,29 +179,25 @@ export function CrewList({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className={L}>
-                        Role <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                        Role <span aria-hidden="true" className={REQ}>*</span>
                       </FormLabel>
                       <FormControl>
-                        {roleInput.type === "select" ? (
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger className={cn(I, "w-full")}>
-                              <SelectValue placeholder="Select role" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#0e0d0a] border-[#2a2418] text-white">
-                              {roleInput.options.map((o) => (
-                                <SelectItem
-                                  key={o}
-                                  value={o}
-                                  className="focus:bg-[#e6ba35]/10 focus:text-[#e6ba35]"
-                                >
-                                  {o}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Input {...field} placeholder={roleInput.placeholder} className={I} />
-                        )}
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className={cn(I, "w-full")}>
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#0e0d0a] border-[#2a2418] text-white">
+                            {roleOptions.map((o) => (
+                              <SelectItem
+                                key={o}
+                                value={o}
+                                className="focus:bg-[#e6ba35]/10 focus:text-[#e6ba35]"
+                              >
+                                {o}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage className={ERR} />
                     </FormItem>
@@ -205,9 +208,9 @@ export function CrewList({
                   control={form.control}
                   name={`${fieldName}.${i}.imageUrl` as const}
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem>
                       <FormLabel className={L}>
-                        Photo <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                        Photo <span aria-hidden="true" className={REQ}>*</span>
                       </FormLabel>
                       <FormControl>
                         <WebpImageUpload value={field.value} onChange={field.onChange} />
@@ -222,9 +225,9 @@ export function CrewList({
                   control={form.control}
                   name={`${fieldName}.${i}.biography` as const}
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem>
                       <FormLabel className={L}>
-                        Biography <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                        Biography <span aria-hidden="true" className={REQ}>*</span>
                       </FormLabel>
                       <FormControl>
                         <Textarea
@@ -242,7 +245,7 @@ export function CrewList({
                 {/* The four contact fields below all describe the
                     representative, not the credited person — the heading
                     keeps "Name" here from reading as a repeat of Full Name. */}
-                <div className="md:col-span-2 border-t border-[#12110e] pt-5 -mb-1">
+                <div className="border-t border-[#26241d] pt-5 -mb-1">
                   <h4 className="text-[#cbc0a0] text-[15px] font-semibold">Representative</h4>
                   <p className={HELP}>Who we should contact about this credit — the person themselves, or their agent, manager, etc.</p>
                 </div>
@@ -253,7 +256,7 @@ export function CrewList({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className={L}>
-                        Representative Name <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                        Representative Name <span aria-hidden="true" className={REQ}>*</span>
                       </FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Full name" className={I} />
@@ -269,7 +272,7 @@ export function CrewList({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className={L}>
-                        Relationship to {relationshipTo} <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                        Relationship to {relationshipTo} <span aria-hidden="true" className={REQ}>*</span>
                       </FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="e.g. Self, Agent, Manager, Publicist, Family member" className={I} />
@@ -285,7 +288,7 @@ export function CrewList({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className={L}>
-                        Representative Email Address <span aria-hidden="true" className="text-[#e6ba35]">*</span>
+                        Representative Email Address <span aria-hidden="true" className={REQ}>*</span>
                       </FormLabel>
                       <FormControl>
                         <Input {...field} type="email" placeholder="name@example.com" className={I} />
@@ -304,7 +307,7 @@ export function CrewList({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className={L}>
-                        Contact (Phone) <span className="ml-2 align-middle rounded-full border border-[#2a2418] px-2 py-[1px] text-[11px] font-medium uppercase tracking-wider text-[#6b6347]">Optional</span>
+                        Contact (Phone) <span className={OPTIONAL_PILL}>Optional</span>
                       </FormLabel>
                       <FormControl>
                         <Input {...field} type="tel" placeholder="+61 400 000 000" className={I} />
@@ -317,9 +320,9 @@ export function CrewList({
                   control={form.control}
                   name={`${fieldName}.${i}.instagram` as const}
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem>
                       <FormLabel className={L}>
-                        Instagram <span className="ml-2 align-middle rounded-full border border-[#2a2418] px-2 py-[1px] text-[11px] font-medium uppercase tracking-wider text-[#6b6347]">Optional</span>
+                        Instagram <span className={OPTIONAL_PILL}>Optional</span>
                       </FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="@handle or profile URL" className={I} />
@@ -332,9 +335,9 @@ export function CrewList({
                   control={form.control}
                   name={`${fieldName}.${i}.notes` as const}
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem>
                       <FormLabel className={L}>
-                        Notes <span className="ml-2 align-middle rounded-full border border-[#2a2418] px-2 py-[1px] text-[11px] font-medium uppercase tracking-wider text-[#6b6347]">Optional</span>
+                        Notes <span className={OPTIONAL_PILL}>Optional</span>
                       </FormLabel>
                       <FormControl>
                         <Textarea
@@ -349,7 +352,7 @@ export function CrewList({
                 />
 
                 {onDuplicateEntry && duplicateLabel && (
-                  <div className="md:col-span-2">
+                  <div>
                     <Button
                       type="button"
                       variant="ghost"
