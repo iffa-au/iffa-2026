@@ -219,6 +219,12 @@ into the new shape — which is what opening and saving one does.
   must include `OPTIONS`, cache methods tick `OPTIONS`, origin request policy
   `CORS-S3Origin`. Then invalidate `/*`.
   Fixes homepage HLS videos, which currently fail preflight in production.
+  Also put the `Origin` header in the behavior's **cache key** (a cache
+  policy that includes it): today the first requester's
+  `Access-Control-Allow-Origin` is cached for everyone (checked 2026-11-11 —
+  a `localhost:3000` value was served to other origins). The site answers on
+  both `iffa.com.au` and `www.iffa.com.au` without redirecting, so whichever
+  warms a file's cache breaks HLS for visitors on the other domain.
 - **S3 CORS** — remove the trailing slash from the
   `https://main.dyxfgriwrgezw.amplifyapp.com/` origin entry. Partner logo
   uploads from the live CMS fail until this is done.
@@ -281,3 +287,7 @@ redeployed. Note `revalidate: 300` caches fetches in dev too — clear
   `prod-aws` merge needing a lockfile resync.
 - Submissions page heading is now static `New Submissions`, so the 2022–2025
   archive pages no longer show their year.
+- Synopsis page tries `/submissions/:id/overview` first, which is staff-only
+  since cms-hub `61596cb`, so every visit logs a 401 before the fallback
+  (renders correctly). Drop that attempt or add a public overview.
+- `/podcast/<unknown-slug>` shows the not-found UI with HTTP 200, not 404.

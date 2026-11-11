@@ -9,6 +9,7 @@ import TrailerModal from "./TrailerModal";
 import {
   canOptimizeImage,
   getTrailerEmbedUrl,
+  getTrailerVideoSrc,
 } from "@/modules/events/submissions/lib/submissions";
 
 type Film = {
