@@ -35,10 +35,13 @@ function SelectValue({
 function SelectTrigger({
   className,
   size = "default",
+  icon,
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default"
+  /** Replaces the default up/down icon. */
+  icon?: React.ReactElement
 }) {
   return (
     <SelectPrimitive.Trigger
@@ -52,7 +55,7 @@ function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <HugeiconsIcon icon={UnfoldMoreIcon} strokeWidth={2} className="pointer-events-none size-3.5 text-muted-foreground" />
+        {icon ?? <HugeiconsIcon icon={UnfoldMoreIcon} strokeWidth={2} className="pointer-events-none size-3.5 text-muted-foreground" />}
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   )

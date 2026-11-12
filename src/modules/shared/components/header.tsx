@@ -99,13 +99,13 @@ export default function Header() {
       <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-5 py-3 lg:grid-cols-[1fr_auto_1fr]">
         <Link href="/" aria-label="IFFA home" onClick={closeMenu} className="block">
           <Image
-  src="/iffa-logo.webp"
-  alt="IFFA Logo"
-  width={472}
-  height={316}
-  loading="eager"
-  className="h-auto w-16 lg:w-24"
-/>
+            src="/iffa-logo.webp"
+            alt="IFFA Logo"
+            width={472}
+            height={316}
+            loading="eager"
+            className="h-auto w-16 lg:w-24"
+          />
         </Link>
 
         <div className="flex min-w-0 flex-col items-center lg:gap-1">

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { newPerson, type FilmValues, type PersonEntry } from "@/utils/FilmSubmission.utils";
 import { WebpImageUpload } from "./WebpImageUpload";
-import { L, I, HELP, ERR, REQ, OPTIONAL_PILL } from "./form-tokens";
+import { L, I, HELP, ERR, REQ, OPTIONAL_PILL, SELECT_TRIGGER, SELECT_CHEVRON, SELECT_PANEL, SELECT_ITEM } from "./form-tokens";
 
 type CrewField = "actors" | "directors" | "producers" | "writers";
 
@@ -183,15 +183,15 @@ export function CrewList({
                       </FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className={cn(I, "w-full")}>
+                          <SelectTrigger className={SELECT_TRIGGER} icon={<ChevronDown size={13} className={SELECT_CHEVRON} />}>
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
-                          <SelectContent className="bg-[#0e0d0a] border-[#2a2418] text-white">
+                          <SelectContent position="popper" sideOffset={2} className={SELECT_PANEL}>
                             {roleOptions.map((o) => (
                               <SelectItem
                                 key={o}
                                 value={o}
-                                className="focus:bg-[#e6ba35]/10 focus:text-[#e6ba35]"
+                                className={SELECT_ITEM}
                               >
                                 {o}
                               </SelectItem>

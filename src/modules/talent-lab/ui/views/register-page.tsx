@@ -42,7 +42,8 @@ const PROGRAM_OPTIONS = streams.map((stream) => ({
  */
 const optionalUrl = z.union([
   z.literal(""),
-  z.url("Enter a full link, starting with https://"),
+  // http(s) only, matching cms-hub: bare `z.url()` takes any scheme.
+  z.url({ protocol: /^https?$/, message: "Enter a full link, starting with https://" }),
 ]);
 
 const registerSchema = z.object({
