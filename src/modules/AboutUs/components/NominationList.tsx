@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2, Users } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFieldArray, useFormState, useWatch, type UseFormReturn } from "react-hook-form";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -19,7 +19,10 @@ import {
   type FilmValues,
   type PersonEntry,
 } from "@/utils/FilmSubmission.utils";
-import { L, I, HELP, ERR, REQ, OPTIONAL_PILL } from "./form-tokens";
+import {
+  L, HELP, ERR, REQ, OPTIONAL_PILL,
+  MULTI_BOX, SELECT_TRIGGER, SELECT_CHEVRON, SELECT_PANEL, SELECT_ITEM,
+} from "./form-tokens";
 
 const CREW_LABEL: Record<CrewField, string> = {
   actors: "Cast",
@@ -186,11 +189,12 @@ export function NominationList({ form, categories, hideActors, loading }: Nomina
                       disabled={loading || !contentTypeId}
                     >
                       <FormControl>
-                        <SelectTrigger className={cn(I, "w-full")}>
+                        <SelectTrigger className={SELECT_TRIGGER} icon={<ChevronDown size={13} className={SELECT_CHEVRON} />}>
                           <SelectValue placeholder={loading ? "Loading…" : "Select category"} />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-[#0e0d0a] border-[#2a2418] text-white max-h-72">
+                      {/* Taller than the token's max-h-52: a grouped list of awards. */}
+                      <SelectContent position="popper" sideOffset={2} className={cn(SELECT_PANEL, "max-h-72")}>
                         {groups.map((group) => (
                           <SelectGroup key={group}>
                             <SelectLabel className="text-[#6b6347] text-[12px] uppercase tracking-wider">
@@ -205,7 +209,7 @@ export function NominationList({ form, categories, hideActors, loading }: Nomina
                                     key={c._id}
                                     value={c._id}
                                     disabled={takenElsewhere}
-                                    className="focus:bg-[#e6ba35]/10 focus:text-[#e6ba35]"
+                                    className={SELECT_ITEM}
                                   >
                                     {c.name}
                                     {takenElsewhere && (
@@ -242,6 +246,7 @@ export function NominationList({ form, categories, hideActors, loading }: Nomina
                       </FormLabel>
                       <FormControl>
                         <MultiSelectDropdown
+                          className={MULTI_BOX}
                           options={options}
                           value={field.value}
                           onChange={field.onChange}

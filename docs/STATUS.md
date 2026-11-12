@@ -16,13 +16,14 @@ the history.
   `lib/talent-lab-api.ts` (no-store, falls back to the data files until the CMS
   holds records); those 5 routes are `force-dynamic` and the event/program
   `[slug]` routes no longer use `generateStaticParams`.
-- **IFFA trailer player** (branch `feat/iffa-trailer-player`, 2026-11-10, not
-  merged). `TrailerModal` plays `trailerVideoUrl` (our MP4 copy of an
+- **IFFA trailer player** (merged via PR #116, 2026-11-10; verified locally
+  2026-11-12 with SATLUJ — MP4 plays, no iframe — and North to Paradise —
+  embed fallback + "Like on Instagram"; cms-hub flow mapped in `docs/GRAPH.md`). `TrailerModal` plays `trailerVideoUrl` (our MP4 copy of an
   @iffaawards Instagram reel, made by cms-hub) in a `<video autoPlay>` ahead of
   the embed, so it starts on click with no Instagram UI. Wired into the
   submissions grid, hero carousel, homepage carousel and synopsis page. Also
   `linkFromEmbedCode`: a pasted Instagram/YouTube embed snippet in
-  `trailerUrl` now plays. Merge cms-hub `feat/iffa-trailer-player` first.
+  `trailerUrl` now plays. Festival film pages (`film-page.tsx`) stay embed-only.
 - **Theatre mockup for the first homepage trailer** (committed in `3fce0c0`,
   2026-11-11). From `md` up, trailer slot 0 plays on the screen of
   `public/assets/mockups/theater.webp` (a CSS background, so phones never
