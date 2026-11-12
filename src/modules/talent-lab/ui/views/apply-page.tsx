@@ -72,7 +72,9 @@ const applySchema = z.object({
     .string()
     .trim()
     .min(1, "Tell us why this program would benefit you."),
-  portfolioLink: z.url("Enter a full link, starting with https://"),
+  // http(s) only: bare `z.url()` takes any scheme (javascript:, ftp:…),
+  // which cms-hub then rejects on submit, two steps after the field.
+  portfolioLink: z.url({ protocol: /^https?$/, message: "Enter a full link, starting with https://" }),
   availability: z.string().min(1, "Select your availability."),
   previousPrograms: z.string(),
 

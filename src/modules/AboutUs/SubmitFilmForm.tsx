@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
-  CheckCircle2, Loader2, AlertCircle,
+  CheckCircle2, Loader2, AlertCircle, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +44,10 @@ import { NominationList } from "./components/NominationList";
 import { VideoPodcast } from "./components/VideoPodcast";
 import { YesNoToggle } from "./components/YesNoToggle";
 import { WebpImageUpload, uploadWebpImage, createSubmissionRef } from "./components/WebpImageUpload";
-import { L, I, HELP, ERR, REQ, OPTIONAL_PILL, PICK } from "./components/form-tokens";
+import {
+  L, I, HELP, ERR, REQ, OPTIONAL_PILL, PICK,
+  MULTI_BOX, SELECT_TRIGGER, SELECT_CHEVRON, SELECT_PANEL, SELECT_ITEM,
+} from "./components/form-tokens";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const API_BASE = process.env.NEXT_PUBLIC_SUBMIT_FILM_URL ||
@@ -55,10 +58,7 @@ const DIRECTOR_ROLES = ["Director", "Co-Director"];
 const PRODUCER_ROLES = ["Producer", "Executive Producer"];
 const OTHER_ROLES = ["DOP", "Editor", "Writer", "Music", "Other"];
 
-// Runtime boxes: no browser spin buttons, which crowded the centred digit
-// in one box and not the other (they only show on hover/focus).
-const NUM =
-  "w-24 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
+const NUM = "w-24 text-center";
 
 // Style tokens are shared with the CrewList cards embedded below — see
 // ./components/form-tokens.
@@ -67,9 +67,10 @@ const NUM =
 const Req = () => <span aria-hidden="true" className={REQ}>*</span>;
 const Optional = () => <span className={OPTIONAL_PILL}>Optional</span>;
 
-// Keeps duration inputs digit-only and within range as the user types,
-// rather than relying on <input type="number"> alone (which still lets
-// browsers accept "e", "-", "+", or out-of-range values).
+// Keeps duration inputs digit-only and within range as the user types.
+// The boxes are type="text", not "number": a number input reports "" for a
+// partial value like "6e", which used to wipe the field's value while "6e"
+// stayed on screen, so the runtime silently went out as 0 minutes.
 //
 // Clearing the box yields "" rather than "0": a pre-filled zero reads as an
 // answered question, which is exactly why runtimes were arriving as 0h 0m.
@@ -706,10 +707,8 @@ export function SubmitFilmForm() {
                           <div className="flex items-center gap-2">
                             <FormControl>
                               <Input
-                                type="number"
+                                type="text"
                                 inputMode="numeric"
-                                min={0}
-                                max={10}
                                 placeholder="0"
                                 aria-label="Runtime hours"
                                 className={cn(I, NUM)}
@@ -727,10 +726,8 @@ export function SubmitFilmForm() {
                           <div className="flex items-center gap-2">
                             <FormControl>
                               <Input
-                                type="number"
+                                type="text"
                                 inputMode="numeric"
-                                min={0}
-                                max={59}
                                 placeholder="0"
                                 aria-label="Runtime minutes"
                                 className={cn(I, NUM)}
@@ -792,12 +789,12 @@ export function SubmitFilmForm() {
                       <FormLabel className={L}>Country of Origin <Req /></FormLabel>
                       <Select value={field.value} onValueChange={field.onChange} disabled={loading}>
                         <FormControl>
-                          <SelectTrigger className={cn(I, "w-full")}>
+                          <SelectTrigger className={SELECT_TRIGGER} icon={<ChevronDown size={13} className={SELECT_CHEVRON} />}>
                             <SelectValue placeholder={loading ? "Loading…" : "Select country"} />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-[#0e0d0a] border-[#2a2418] text-white max-h-60">
-                          {countries.map(c => <SelectItem key={c._id} value={c._id} className="focus:bg-[#e6ba35]/10 focus:text-[#e6ba35]">{c.name}</SelectItem>)}
+                        <SelectContent position="popper" sideOffset={2} className={SELECT_PANEL}>
+                          {countries.map(c => <SelectItem key={c._id} value={c._id} className={SELECT_ITEM}>{c.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
                       <FormMessage className={ERR} />
@@ -811,6 +808,7 @@ export function SubmitFilmForm() {
                         <FormLabel className={L}>Country of Release <Req /></FormLabel>
                         <FormControl>
                           <MultiSelectDropdown
+                            className={MULTI_BOX}
                             options={countries.map(c => ({ value: c._id, label: c.name }))}
                             value={field.value}
                             onChange={field.onChange}
@@ -830,6 +828,7 @@ export function SubmitFilmForm() {
                         <FormLabel className={L}>Viewing Platform <Req /></FormLabel>
                         <FormControl>
                           <MultiSelectDropdown
+                            className={MULTI_BOX}
                             options={WATCH_FORMAT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
                             value={field.value}
                             onChange={field.onChange}
@@ -860,12 +859,12 @@ export function SubmitFilmForm() {
                       <FormLabel className={L}>Primary Language <Req /></FormLabel>
                       <Select value={field.value} onValueChange={field.onChange} disabled={loading}>
                         <FormControl>
-                          <SelectTrigger className={cn(I, "w-full")}>
+                          <SelectTrigger className={SELECT_TRIGGER} icon={<ChevronDown size={13} className={SELECT_CHEVRON} />}>
                             <SelectValue placeholder={loading ? "Loading…" : "Select language"} />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-[#0e0d0a] border-[#2a2418] text-white max-h-60">
-                          {languages.map(l => <SelectItem key={l._id} value={l._id} className="focus:bg-[#e6ba35]/10 focus:text-[#e6ba35]">{l.name}</SelectItem>)}
+                        <SelectContent position="popper" sideOffset={2} className={SELECT_PANEL}>
+                          {languages.map(l => <SelectItem key={l._id} value={l._id} className={SELECT_ITEM}>{l.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
                       <FormMessage className={ERR} />
@@ -897,6 +896,7 @@ export function SubmitFilmForm() {
                         <FormLabel className={L}>Genres <Req /></FormLabel>
                         <FormControl>
                           <MultiSelectDropdown
+                            className={MULTI_BOX}
                             options={genres.map(g => ({ value: g._id, label: g.name }))}
                             value={field.value}
                             onChange={field.onChange}

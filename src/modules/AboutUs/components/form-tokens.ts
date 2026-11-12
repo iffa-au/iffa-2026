@@ -26,7 +26,40 @@ export const L = "text-[14px] font-bold tracking-[0.01em] text-[#e8b830]";
 export const I =
   "bg-[#161613] border-[#26241d] text-[#e9e6dc] text-[16px] md:text-[16px] placeholder:text-[#5e5a4c] focus:border-[#9a7a1e] focus-visible:ring-[#e8b830]/20 focus-visible:ring-2 rounded-md h-11 px-3.5";
 
-export const HELP = "text-[14px] text-[#8a8470] leading-relaxed mt-2";
+// ─── Dropdowns ────────────────────────────────────────────────────────────────
+// Single-choice fields use the Radix Select; multi-choice ones use
+// MultiSelectDropdown. These make the two read as one control: the same input
+// box (I), and the multi-select's panel, rows and chevron on the Radix side.
+// Pair SELECT_PANEL with `position="popper" sideOffset={2}` on SelectContent so
+// the list drops below the box like the multi-select's, rather than over it.
+
+/**
+ * MultiSelectDropdown's `className`: its box, in the form's input colours.
+ * `dark:bg-input/30` is what the Input primitive actually renders with here —
+ * it outranks I's own bg-[#161613].
+ */
+export const MULTI_BOX = "bg-[#161613] dark:bg-input/30 rounded-md px-3.5";
+
+// `data-[size=default]:h-11`: the primitive's data-[size=default]:h-7
+// outranks I's plain h-11, which left these boxes 28px tall beside 44px ones.
+export const SELECT_TRIGGER = `${I} data-[size=default]:h-11 group w-full data-placeholder:text-[14px] data-placeholder:text-[#8a8168]`;
+
+/** For `<ChevronDown size={13} />` passed as SelectTrigger's `icon`. */
+export const SELECT_CHEVRON = "text-[#4a4232] transition-transform group-data-[state=open]:rotate-180";
+
+/**
+ * Radix hides its viewport scrollbar and adds scroll arrows; undo both. The
+ * scrollbar rules need `!`: Radix injects its own as an unlayered <style>,
+ * which outranks anything in Tailwind's utilities layer regardless of
+ * specificity.
+ */
+export const SELECT_PANEL =
+  "rounded-xl border border-[#2a2418] bg-[#0e0d0a] text-white ring-0 shadow-2xl shadow-black/80 max-h-52 w-(--radix-select-trigger-width) data-open:animate-none data-closed:animate-none [&_[data-slot^=select-scroll]]:hidden [&_[data-radix-select-viewport]]:[scrollbar-width:auto]! [&_[data-radix-select-viewport]::-webkit-scrollbar]:block!";
+
+export const SELECT_ITEM =
+  "rounded-none px-4 py-2.5 text-sm text-[#9a9278] focus:bg-[#141210] focus:text-white not-data-[variant=destructive]:focus:**:text-inherit data-[state=checked]:bg-[#e6ba35]/8 data-[state=checked]:text-[#e6ba35] data-[state=checked]:focus:text-[#e6ba35] [&_svg:not([class*='size-'])]:size-3 [&_svg]:text-[#e6ba35]";
+
+export const HELP ="text-[14px] text-[#8a8470] leading-relaxed mt-2";
 
 // Decorative red-orange asterisk — the schema carries the actual rule.
 export const REQ = "text-[#e86a3a] ml-0.5";
