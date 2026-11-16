@@ -13,6 +13,7 @@ frontend:
     build:
       commands:
         - pnpm run build
+        - env | grep -E '^(GEMINI_|GROQ_|CHATBOT_)' >> .env.production
   artifacts:
     baseDirectory: .next
     files:
