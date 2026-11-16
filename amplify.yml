@@ -12,8 +12,8 @@ frontend:
         - pnpm install --frozen-lockfile
     build:
       commands:
-        - pnpm run build
         - env | grep -E '^(GEMINI_|GROQ_|CHATBOT_)' >> .env.production
+        - pnpm run build
   artifacts:
     baseDirectory: .next
     files:
