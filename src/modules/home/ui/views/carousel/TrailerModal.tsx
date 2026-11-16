@@ -32,12 +32,65 @@ const FOLLOW_LINKS = IFFA_SOCIAL_LINKS.filter((link) => link.followable);
 
 const EXIT_ANIMATION_MS = 200;
 
+/**
+ * Instagram's /embed page, measured: a 54px header (avatar, handle, "Original
+ * audio", View profile), the media at the iframe's full width in the post's own
+ * shape (4:5 portrait, 16:9 landscape, square…), a 44px "View more on
+ * Instagram" row, then 109px of like/comment/share icons and a comment box.
+ *
+ * The iframe is cross-origin, so none of it can be styled. It sits in a
+ * clipping box that ends right after the "View more" row instead. The media's
+ * height differs per post, so the box is sized from the MEASURE message the
+ * embed posts to its parent with its full height (the same one Instagram's
+ * embed.js uses to size its own iframes): visible = full height - 109px. Until
+ * that arrives, a 4:5 reel is assumed.
+ * ponytail: tied to Instagram's current layout; if they change these sizes the
+ * crop drifts — re-measure on instagram.com/reel/<code>/embed.
+ */
+const IG_CHROME_PX = 54 + 44;
+const IG_BELOW_CTA_PX = 109;
+const IG_FALLBACK_HEIGHT = `calc(125% + ${IG_CHROME_PX}px)`;
+
+type InstagramMeasure = { embedUrl: string; height: number; landscape: boolean };
+
 const TrailerModal = ({ isOpen, onClose, embedUrl, videoUrl, sourceUrl, title }: TrailerModalProps) => {
   const [isMounted, setIsMounted] = useState(false);
   // Known only once the file's metadata loads; Instagram reels are 9:16.
   const [videoIsPortrait, setVideoIsPortrait] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const instagramFrameRef = useRef<HTMLIFrameElement>(null);
+  const [instagramMeasure, setInstagramMeasure] = useState<InstagramMeasure | null>(null);
+  const instagramEmbed = !videoUrl && isInstagramEmbed(embedUrl);
+
+  // Keyed to the embed it measured, so a modal reused for another film never
+  // sizes itself from the previous reel.
+  const igMeasure = instagramMeasure?.embedUrl === embedUrl ? instagramMeasure : null;
+
+  useEffect(() => {
+    if (!instagramEmbed || !embedUrl) return;
+
+    const handleMessage = (e: MessageEvent) => {
+      const frame = instagramFrameRef.current;
+      if (!frame || e.source !== frame.contentWindow) return;
+      try {
+        const message = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+        const height = Number(message?.details?.height);
+        if (message?.type !== "MEASURE" || !(height > IG_CHROME_PX)) return;
+        const mediaHeight = height - IG_CHROME_PX;
+        setInstagramMeasure({
+          embedUrl,
+          height,
+          landscape: mediaHeight < frame.offsetWidth,
+        });
+      } catch {
+        // Not one of Instagram's JSON messages.
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [instagramEmbed, embedUrl]);
 
   // Mount immediately, then flip to visible a frame later so the
   // opacity/scale transition actually has something to animate from.
@@ -84,6 +137,25 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, videoUrl, sourceUrl, title }:
   const portrait = videoUrl ? videoIsPortrait : isInstagramEmbed(embedUrl);
   const instagramPostUrl = getInstagramPostUrl(sourceUrl);
 
+  // On an Instagram embed the card's top-right corner is Instagram's "View
+  // profile" button, so the close button moves out to the corner of the screen.
+  const closeButton = (
+    <button
+      ref={closeButtonRef}
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
+      aria-label="Close trailer"
+      className={`absolute ${
+        instagramEmbed ? "right-4 top-4" : "right-3 top-3"
+      } z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-yellow-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400`}
+    >
+      <X className="h-4 w-4" />
+    </button>
+  );
+
   return createPortal(
     <div
       role="dialog"
@@ -97,29 +169,25 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, videoUrl, sourceUrl, title }:
         onClose();
       }}
     >
+      {instagramEmbed && closeButton}
       {/* Original version kept for reference:
       <div
         className={`relative w-full max-w-3xl overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl transition-all duration-200 ${
       */}
       {/* New version: narrower for a portrait Instagram embed. */}
       <div
-        className={`relative w-full ${portrait ? "max-w-[400px]" : "max-w-3xl"} overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl transition-all duration-200 ${
+        className={`relative w-full ${
+          instagramEmbed && !igMeasure?.landscape
+            ? "max-w-[min(400px,58vh)]"
+            : portrait && !igMeasure?.landscape
+              ? "max-w-[400px]"
+              : "max-w-3xl"
+        } overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl transition-all duration-200 ${
           isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          ref={closeButtonRef}
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          aria-label="Close trailer"
-          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-yellow-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        {!instagramEmbed && closeButton}
 
         {/* Original version kept for reference:
         <div className="aspect-video w-full bg-black">
@@ -128,9 +196,11 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, videoUrl, sourceUrl, title }:
             header and caption, so it gets a tall box capped to the screen. */}
         <div
           className={
-            portrait
-              ? "h-[min(80vh,720px)] w-full bg-black"
-              : "aspect-video w-full bg-black"
+            instagramEmbed
+              ? "w-full bg-black"
+              : portrait
+                ? "h-[min(80vh,720px)] w-full bg-black"
+                : "aspect-video w-full bg-black"
           }
         >
           {videoUrl ? (
@@ -148,6 +218,26 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, videoUrl, sourceUrl, title }:
                 setVideoIsPortrait(videoHeight > videoWidth);
               }}
             />
+          ) : instagramEmbed && embedUrl ? (
+            <div
+              className="relative w-full overflow-hidden bg-white"
+              style={
+                igMeasure
+                  ? { height: igMeasure.height }
+                  : { paddingTop: IG_FALLBACK_HEIGHT }
+              }
+            >
+              <iframe
+                ref={instagramFrameRef}
+                src={embedUrl}
+                title={`${title} trailer`}
+                className="absolute inset-x-0 top-0 w-full"
+                style={{ height: igMeasure ? igMeasure.height : "calc(100% + 400px)" }}
+                scrolling="no"
+                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
           ) : embedUrl ? (
             <iframe
               src={embedUrl}

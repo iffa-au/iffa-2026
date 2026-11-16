@@ -45,11 +45,11 @@ export function HomepageTrailersProvider({ children }: { children: ReactNode }) 
 export function TrailerSlot({
   index,
   className,
-  theater,
+  curved,
 }: {
   index: number;
   className?: string;
-  theater?: boolean;
+  curved?: boolean;
 }) {
   const state = useContext(TrailersContext);
   const trailer = state.status === "ready" ? state.trailers[index] : undefined;
@@ -62,10 +62,10 @@ export function TrailerSlot({
       title={trailer.title || undefined}
       youtubeUrl={trailer.youtubeUrl}
       learnMoreUrl={trailer.learnMoreUrl}
-      theater={theater}
+      curved={curved}
     />
   ) : (
-    <TrailerSection theater={theater} />
+    <TrailerSection curved={curved} />
   );
 
   return className ? <div className={className}>{section}</div> : section;
