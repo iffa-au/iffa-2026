@@ -3,6 +3,7 @@ import { Raleway, Geist_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { GoogleAnalyticsProvider } from "@/modules/shared/components/google-analytics";
+import { ChatWidget } from "@/modules/chatbot/ui/chat-widget";
 
 const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
 
@@ -37,6 +38,8 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#0d0d0d] overflow-x-hidden">
         {children}
+        {/* Site chatbot (src/modules/chatbot). Set NEXT_PUBLIC_CHATBOT_ENABLED=false to hide it. */}
+        {process.env.NEXT_PUBLIC_CHATBOT_ENABLED !== "false" && <ChatWidget />}
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalyticsProvider
             gaId={process.env.NEXT_PUBLIC_GA_ID}
