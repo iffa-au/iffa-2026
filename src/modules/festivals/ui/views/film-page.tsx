@@ -233,6 +233,7 @@ export function FilmPage({
         isOpen={isTrailerOpen}
         onClose={() => setIsTrailerOpen(false)}
         embedUrl={embedUrl}
+        sourceUrl={film.trailerUrl}
         title={film.title}
       />
     </div>
