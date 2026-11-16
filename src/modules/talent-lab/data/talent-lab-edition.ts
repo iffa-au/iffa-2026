@@ -1,5 +1,9 @@
 import type { Benefit, StatTileData, StepBlock } from "../lib/types";
 
+const COUNT_WORDS = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve"];
+/** "Ten", or the digits beyond twelve — for copy that states how many programs there are. */
+const countWord = (n: number) => COUNT_WORDS[n] ?? String(n);
+
 /**
  * PLACEHOLDER CONTENT — pending real data.
  *
@@ -284,9 +288,9 @@ export const pageCopy = {
   },
   programs: {
     title: "Programs & Streams",
-    /** Reads "Ten" — kept beside the 10-entry `streams` array it describes. */
-    intro:
-      "Ten streams run across the two annual cycles. Each stream has its own eligibility, delivery mode and mentor group — open one to see the full program detail, curriculum and dates.",
+    /** Takes the live program count, since staff can add and remove programs in the CMS. */
+    intro: (count: number) =>
+      `${countWord(count)} ${count === 1 ? "stream runs" : "streams run"} across the two annual cycles. Each stream has its own eligibility, delivery mode and mentor group — open one to see the full program detail, curriculum and dates.`,
   },
   programDetail: {
     aboutHeading: "About this program",

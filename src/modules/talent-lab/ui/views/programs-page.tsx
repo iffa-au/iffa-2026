@@ -1,19 +1,19 @@
-import { streams } from "../../data/streams-data";
 import { pageCopy } from "../../data/talent-lab-edition";
 import { PageHeader } from "../components/page-header";
 import { PageSection } from "../components/page-section";
 import { StreamCard } from "../components/stream-card";
+import type { Stream } from "../../lib/types";
 
 const copy = pageCopy.programs;
 
 /**
  * The stream index.
  *
- * Renders the whole `streams` array — there is no "featured" subset and no
- * hand-kept order, so adding a stream to the data file adds a card and a detail
- * page in one edit.
+ * Renders every published program, in the order staff set in the CMS (or the
+ * built-in data file's order) — there is no "featured" subset, so adding a
+ * program adds a card and a detail page in one edit.
  */
-export function ProgramsPage() {
+export function ProgramsPage({ streams }: { streams: Stream[] }) {
   return (
     <div className="bg-black text-white">
       <PageHeader
@@ -22,7 +22,7 @@ export function ProgramsPage() {
           { label: "Programs & Streams" },
         ]}
         title={copy.title}
-        intro={copy.intro}
+        intro={copy.intro(streams.length)}
       />
 
       <PageSection bordered={false}>

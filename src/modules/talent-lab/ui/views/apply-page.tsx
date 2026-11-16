@@ -12,7 +12,6 @@ import {
   formCareerStages,
   formDisciplines,
 } from "../../data/form-options";
-import { streams } from "../../data/streams-data";
 import { formCopy } from "../../data/talent-lab-edition";
 import {
   CheckboxRow,
@@ -31,7 +30,6 @@ import { StepIndicator } from "../components/step-indicator";
 
 const copy = formCopy.apply;
 
-const PROGRAM_NAMES = streams.map((stream) => stream.name);
 
 const countWords = (value: string): number =>
   value.trim().split(/\s+/).filter(Boolean).length;
@@ -209,7 +207,8 @@ const INDICATOR_STEPS = STEPS.map((step, index) => ({
  * exports and emails, and the CMS hides them behind a "not for assessment"
  * toggle on the application record. Keep it that way.
  */
-export function ApplyPage() {
+/** `programNames` comes from the CMS (built-in data as fallback), via the route. */
+export function ApplyPage({ programNames }: { programNames: string[] }) {
   const [step, setStep] = useState(1);
   const [furthest, setFurthest] = useState(1);
   const [stepBlocked, setStepBlocked] = useState(false);
@@ -392,7 +391,7 @@ export function ApplyPage() {
                   <SelectControl
                     {...props}
                     {...register("program")}
-                    options={PROGRAM_NAMES}
+                    options={programNames}
                     placeholder="Select a program…"
                   />
                 )}
