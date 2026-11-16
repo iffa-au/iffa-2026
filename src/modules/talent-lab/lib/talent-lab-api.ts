@@ -1,11 +1,12 @@
 import { events as builtInEvents } from "../data/events-data";
 import { mentors as builtInMentors } from "../data/mentors-data";
 import { opportunities as builtInOpportunities } from "../data/opportunities-data";
-import type { Mentor, Opportunity, TalentLabEvent } from "./types";
+import { streams as builtInStreams } from "../data/streams-data";
+import type { Mentor, Opportunity, Stream, TalentLabEvent } from "./types";
 
 /**
- * Talent Lab Events, Opportunities and Mentors, as curated in cms-hub under
- * Talent Lab → Events / Opportunities / Mentors. The API returns these in
+ * Talent Lab Events, Opportunities, Mentors and Programs, as curated in cms-hub
+ * under Talent Lab → Events / Opportunities / Mentors / Programs. The API returns these in
  * exactly the shapes of `types.ts`, which is why that file was written "like an
  * API response".
  *
@@ -46,3 +47,5 @@ export const fetchEvents = () => fetchList<TalentLabEvent>("/talent-lab/events",
 export const fetchOpportunities = () =>
   fetchList<Opportunity>("/talent-lab/opportunities", builtInOpportunities);
 export const fetchMentors = () => fetchList<Mentor>("/talent-lab/mentors", builtInMentors);
+/** Programs are called "streams" in this codebase; the CMS calls them programs. */
+export const fetchPrograms = () => fetchList<Stream>("/talent-lab/programs", builtInStreams);

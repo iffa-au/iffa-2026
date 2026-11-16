@@ -11,7 +11,6 @@ import {
   formCareerStages,
   formDisciplines,
 } from "../../data/form-options";
-import { streams } from "../../data/streams-data";
 import { formCopy } from "../../data/talent-lab-edition";
 import {
   CheckboxRow,
@@ -28,11 +27,6 @@ import { PageHeader } from "../components/page-header";
 
 const copy = formCopy.register;
 
-/** Built from `streams-data`, so a new stream appears here with no edit. */
-const PROGRAM_OPTIONS = streams.map((stream) => ({
-  value: stream.slug,
-  label: stream.name,
-}));
 
 /**
  * An optional URL field. Left empty it is valid; filled in it must be a URL.
@@ -85,7 +79,8 @@ const EMPTY_VALUES: RegisterValues = {
  * `lib/form-submit.ts`), which emails a confirmation and notifies IFFA, and
  * swaps to the success screen. On failure the form keeps its answers.
  */
-export function RegisterPage() {
+/** `programs` comes from the CMS (built-in data as fallback), via the route. */
+export function RegisterPage({ programs }: { programs: { value: string; label: string }[] }) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -277,7 +272,7 @@ export function RegisterPage() {
                 name="programs"
                 render={({ field }) => (
                   <MultiSelectDropdown
-                    options={PROGRAM_OPTIONS}
+                    options={programs}
                     value={field.value}
                     onChange={field.onChange}
                     placeholder="Select any programs you are interested in"
