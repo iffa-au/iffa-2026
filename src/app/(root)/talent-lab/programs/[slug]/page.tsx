@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 
-import { streams } from "@/modules/talent-lab/data/streams-data";
 import { streamBySlug } from "@/modules/talent-lab/lib/filters";
 import { ProgramDetailPage } from "@/modules/talent-lab/ui/views/program-detail-page";
-import { fetchMentors, fetchOpportunities } from "@/modules/talent-lab/lib/talent-lab-api";
+import { fetchMentors, fetchOpportunities, fetchPrograms } from "@/modules/talent-lab/lib/talent-lab-api";
 
 /**
  * `params` is a Promise in Next 16 and must be awaited — verified in
@@ -23,7 +22,7 @@ export async function generateMetadata({
   params,
 }: ProgramRouteProps): Promise<Metadata> {
   const { slug } = await params;
-  const stream = streamBySlug(streams, slug);
+  const stream = streamBySlug(await fetchPrograms(), slug);
 
   if (!stream) {
     return { title: "Program not found | IFFA Talent Lab" };
@@ -37,6 +36,12 @@ export async function generateMetadata({
 
 export default async function Page({ params }: ProgramRouteProps) {
   const { slug } = await params;
-  const [mentors, opportunities] = await Promise.all([fetchMentors(), fetchOpportunities()]);
-  return <ProgramDetailPage slug={slug} mentors={mentors} opportunities={opportunities} />;
+  const [streams, mentors, opportunities] = await Promise.all([
+    fetchPrograms(),
+    fetchMentors(),
+    fetchOpportunities(),
+  ]);
+  return (
+    <ProgramDetailPage slug={slug} streams={streams} mentors={mentors} opportunities={opportunities} />
+  );
 }

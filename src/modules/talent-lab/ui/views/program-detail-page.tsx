@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 
 import { partnerCategories } from "../../data/partners-data";
 import { resources } from "../../data/resources-data";
-import { streams } from "../../data/streams-data";
 import { pageCopy, talentLabEdition } from "../../data/talent-lab-edition";
 import {
   mentorsBySlug,
@@ -12,7 +11,7 @@ import {
   streamBySlug,
 } from "../../lib/filters";
 import { canApply } from "../../lib/status";
-import type { LabelledFact, Mentor, Opportunity } from "../../lib/types";
+import type { LabelledFact, Mentor, Opportunity, Stream } from "../../lib/types";
 import { CurriculumList } from "../components/curriculum-list";
 import { FactGrid } from "../components/fact-grid";
 import { MentorPreviewCard } from "../components/mentor-preview-card";
@@ -37,10 +36,12 @@ function DetailHeading({ children }: { children: React.ReactNode }) {
 
 export function ProgramDetailPage({
   slug,
+  streams,
   mentors,
   opportunities,
 }: {
   slug: string;
+  streams: Stream[];
   mentors: Mentor[];
   opportunities: Opportunity[];
 }) {
