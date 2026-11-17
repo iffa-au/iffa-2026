@@ -31,6 +31,8 @@ export type Discipline =
 export type CareerStage = "Emerging" | "Early career";
 export type DeliveryMode = "Online" | "Hybrid" | "In person";
 
+export type ApplicationsOverride = "auto" | "open" | "closed";
+
 export type Opportunity = {
   id: string;
   /** Links to `Stream.slug` — powers the "Program details" button. */
@@ -58,6 +60,12 @@ export type Opportunity = {
   cycle: string;
   /** "Apply now" | "Notify me" | "Register interest" | … */
   ctaLabel: string;
+  /**
+   * Staff's "Applications" setting in the CMS. "auto" (or missing, as in the
+   * built-in data) closes applications after `closesOn`; "open" / "closed"
+   * override that by hand. See `effectiveStatus`.
+   */
+  applicationsOverride?: ApplicationsOverride;
 };
 
 export type CurriculumWeek = { week: string; title: string; body: string };
