@@ -2,6 +2,7 @@ import { events as builtInEvents } from "../data/events-data";
 import { mentors as builtInMentors } from "../data/mentors-data";
 import { opportunities as builtInOpportunities } from "../data/opportunities-data";
 import { streams as builtInStreams } from "../data/streams-data";
+import { effectiveStatus } from "./status";
 import type { Mentor, Opportunity, Stream, TalentLabEvent } from "./types";
 
 /**
@@ -44,8 +45,16 @@ async function fetchList<T>(path: string, fallback: T[]): Promise<T[]> {
 }
 
 export const fetchEvents = () => fetchList<TalentLabEvent>("/talent-lab/events", builtInEvents);
-export const fetchOpportunities = () =>
-  fetchList<Opportunity>("/talent-lab/opportunities", builtInOpportunities);
+/**
+ * Opportunities with their status brought up to date: one whose close date has
+ * passed shows as closed even if the CMS still says open (see `effectiveStatus`).
+ * Every page reads opportunities through here, so the pill, the card button and
+ * the program page all agree.
+ */
+export const fetchOpportunities = async (): Promise<Opportunity[]> =>
+  (await fetchList<Opportunity>("/talent-lab/opportunities", builtInOpportunities)).map(
+    (opportunity) => ({ ...opportunity, status: effectiveStatus(opportunity) })
+  );
 export const fetchMentors = () => fetchList<Mentor>("/talent-lab/mentors", builtInMentors);
 /** Programs are called "streams" in this codebase; the CMS calls them programs. */
 export const fetchPrograms = () => fetchList<Stream>("/talent-lab/programs", builtInStreams);
