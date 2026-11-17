@@ -97,3 +97,54 @@ export const STATUS_ORDER: OpportunityStatus[] = [
  */
 export const canApply = (status: OpportunityStatus): boolean =>
   status === "open" || status === "closing-soon";
+
+/** Statuses that still invite people in, so a passed close date overrides them. */
+const STILL_INVITING: readonly OpportunityStatus[] = ["eoi", "opening-soon", "open", "closing-soon"];
+
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+/**
+ * The last day applications are accepted, as "YYYY-MM-DD", read from the
+ * display string staff type in the CMS: "29 Aug 2026" is that day; "Feb 2027"
+ * is the last day of that month. Anything else ("Rolling", "TBC") is null, so
+ * it never closes on its own.
+ */
+export function closingDay(closesOn: string): string | null {
+  const text = closesOn.trim().toLowerCase();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const full = /^(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]{3})[a-z]*\.?,?\s+(\d{4})$/.exec(text);
+  if (full) {
+    const month = MONTHS.indexOf(full[2]);
+    const day = Number(full[1]);
+    if (month < 0 || day < 1 || day > 31) return null;
+    return `${full[3]}-${pad(month + 1)}-${pad(day)}`;
+  }
+  const monthOnly = /^([a-z]{3})[a-z]*\.?\s+(\d{4})$/.exec(text);
+  if (monthOnly) {
+    const month = MONTHS.indexOf(monthOnly[1]);
+    if (month < 0) return null;
+    const year = Number(monthOnly[2]);
+    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    return `${year}-${pad(month + 1)}-${pad(lastDay)}`;
+  }
+  return null;
+}
+
+/** Today in Sydney as "YYYY-MM-DD": applications close at the end of the day, Australian time. */
+const todayInAustralia = (now: Date) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney" }).format(now);
+
+/**
+ * The status to show. Staff set it by hand in the CMS, which goes stale once
+ * the close date passes; past that date an "open"-type status reads as closed,
+ * so the site never invites applications for a round that has ended. Later
+ * stages ("in-progress", "completed") are left as staff set them.
+ */
+export function effectiveStatus(
+  opportunity: { status: OpportunityStatus; closesOn: string },
+  now: Date = new Date()
+): OpportunityStatus {
+  if (!STILL_INVITING.includes(opportunity.status)) return opportunity.status;
+  const day = closingDay(opportunity.closesOn);
+  return day && todayInAustralia(now) > day ? "closed" : opportunity.status;
+}
