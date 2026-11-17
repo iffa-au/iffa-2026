@@ -1,4 +1,4 @@
-import type { OpportunityStatus } from "./types";
+import type { ApplicationsOverride, OpportunityStatus } from "./types";
 
 /**
  * The seven opportunity states, each carrying an icon, a text label and a
@@ -135,15 +135,29 @@ const todayInAustralia = (now: Date) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney" }).format(now);
 
 /**
- * The status to show. Staff set it by hand in the CMS, which goes stale once
- * the close date passes; past that date an "open"-type status reads as closed,
- * so the site never invites applications for a round that has ended. Later
+ * The status to show.
+ *
+ * Staff's "Applications" setting in the CMS decides first: "closed" always
+ * shows closed; "open" always shows open (keeping "Closing soon" if that is
+ * what staff chose), whatever the dates say.
+ *
+ * Otherwise ("auto", or no setting): the status staff set goes stale once the
+ * close date passes, so past that date an "open"-type status reads as closed
+ * and the site never invites applications for a round that has ended. Later
  * stages ("in-progress", "completed") are left as staff set them.
  */
 export function effectiveStatus(
-  opportunity: { status: OpportunityStatus; closesOn: string },
+  opportunity: {
+    status: OpportunityStatus;
+    closesOn: string;
+    applicationsOverride?: ApplicationsOverride;
+  },
   now: Date = new Date()
 ): OpportunityStatus {
+  if (opportunity.applicationsOverride === "closed") return "closed";
+  if (opportunity.applicationsOverride === "open") {
+    return opportunity.status === "closing-soon" ? "closing-soon" : "open";
+  }
   if (!STILL_INVITING.includes(opportunity.status)) return opportunity.status;
   const day = closingDay(opportunity.closesOn);
   return day && todayInAustralia(now) > day ? "closed" : opportunity.status;
