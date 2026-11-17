@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import type { Opportunity } from "../../lib/types";
+import type { Opportunity, OpportunityStatus } from "../../lib/types";
 import { StatusPill } from "./status-pill";
 
 /**
@@ -13,6 +13,10 @@ import { StatusPill } from "./status-pill";
  */
 const ctaHrefFor = (opportunity: Opportunity): string =>
   opportunity.status === "eoi" ? "/talent-lab/register" : "/talent-lab/apply";
+
+/** Past the application stage: the card offers no way in, only the program details. */
+const isClosed = (status: OpportunityStatus) =>
+  status === "closed" || status === "in-progress" || status === "completed";
 
 function MetaCell({ label, value }: { label: string; value: string }) {
   return (
@@ -58,12 +62,21 @@ export function OpportunityCard({ opportunity }: { opportunity: Opportunity }) {
       </div>
 
       <div className="mt-auto flex flex-wrap gap-2.5 pt-2">
-        <Link
-          href={ctaHrefFor(opportunity)}
-          className="inline-flex items-center justify-center rounded-sm border border-yellow-400 bg-yellow-400 px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-black transition-colors hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-        >
-          {opportunity.ctaLabel}
-        </Link>
+        {isClosed(opportunity.status) ? (
+          <span
+            aria-disabled="true"
+            className="inline-flex cursor-not-allowed items-center justify-center rounded-sm border border-white/15 bg-white/5 px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/45"
+          >
+            Applications closed
+          </span>
+        ) : (
+          <Link
+            href={ctaHrefFor(opportunity)}
+            className="inline-flex items-center justify-center rounded-sm border border-yellow-400 bg-yellow-400 px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-black transition-colors hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          >
+            {opportunity.ctaLabel}
+          </Link>
+        )}
 
         <Link
           href={`/talent-lab/programs/${opportunity.streamSlug}`}
