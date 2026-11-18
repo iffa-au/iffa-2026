@@ -58,7 +58,7 @@ export function Footer() {
               <Link href="/" className="group block relative mb-3">
                 <div className="absolute -inset-3 bg-gradient-to-br from-yellow-400/10 to-transparent rounded-2xl blur-lg opacity-20 group-hover:opacity-80 transition-opacity duration-700"></div>
                 <img
-                  src="/IFFA_logo.png"
+                  src="/iffa-logo.webp"
                   alt="IFFA Logo"
                   className="w-24 sm:w-28 h-auto group-hover:scale-110 transition-all duration-700 filter drop-shadow-2xl relative z-10"
                 />
