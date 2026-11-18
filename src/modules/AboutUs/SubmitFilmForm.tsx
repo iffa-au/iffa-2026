@@ -86,8 +86,8 @@ function sanitizeDurationInput(raw: string, max: number, onChange: (value: strin
 }
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
-// `fields` are what Next validates before leaving a step (form.trigger), and
-// how a failed submit finds the step holding an error.
+// `fields` are how a failed submit finds the step holding an error. Moving
+// between steps never validates — everything is checked on Submit.
 const STEPS: {
   id: string; title: string; desc: string; side: string; fields: FieldPath<FilmValues>[];
 }[] = [
@@ -137,6 +137,32 @@ function reveal(sectionId: string, toError: boolean) {
   el?.focus({ preventScroll: true });
   (el ?? section)?.scrollIntoView({ behavior: "smooth", block: el ? "center" : "start" });
 }
+
+// ─── Draft storage ────────────────────────────────────────────────────────────
+// IndexedDB, not localStorage: the draft holds staged posters and crew photos
+// as File objects, which IndexedDB stores as-is and localStorage can't.
+type Draft = { values: FilmValues; savedAt: number };
+const DRAFT_KEY = "film-submission";
+
+function draftStore(mode: IDBTransactionMode) {
+  return new Promise<IDBObjectStore>((resolve, reject) => {
+    const req = indexedDB.open("iffa-drafts", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("drafts");
+    req.onsuccess = () => resolve(req.result.transaction("drafts", mode).objectStore("drafts"));
+    req.onerror = () => reject(req.error);
+  });
+}
+function idb<T>(req: IDBRequest<T>) {
+  return new Promise<T>((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+const loadDraft = async () => idb<Draft | undefined>((await draftStore("readonly")).get(DRAFT_KEY));
+const saveDraft = async (draft: Draft) => idb((await draftStore("readwrite")).put(draft, DRAFT_KEY));
+const clearDraft = async () => idb((await draftStore("readwrite")).delete(DRAFT_KEY));
+
+const timeOf = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 // Every section stays mounted (only `hidden`), so values, staged uploads and
@@ -208,12 +234,12 @@ export function SubmitFilmForm() {
   // re-renders without causing one, and a retried submit should reuse the
   // same folder rather than orphan the first attempt's files in another.
   const submissionRefRef = useRef(createSubmissionRef());
-  // Which sections a failed submit left errors in. The form is long enough
-  // that an invalid field is routinely off-screen — without this, pressing
-  // Submit looks like it did nothing at all.
-  const [invalidSteps, setInvalidSteps] = useState<number[]>([]);
   const [step, setStep] = useState(0);
-  // Bumped on every failed Next or submit, so crew cards collapsed earlier
+  // Draft save state: autosave only starts once any saved draft has been
+  // restored, or the first tick would overwrite it with a blank form.
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [saveNote, setSaveNote] = useState("");
+  // Bumped on every failed submit, so crew cards collapsed earlier
   // re-open to show their errors (see CrewList).
   const [attempt, setAttempt] = useState(0);
   const { awardCategories, genres, contentTypes, countries, languages, loading, error: optionsError } =
@@ -259,18 +285,36 @@ export function SubmitFilmForm() {
     }
   }, [hideActors, form]);
 
-  // Next shows a step's errors before any submit, when react-hook-form
-  // doesn't re-validate on change yet, so a fixed field would keep its
-  // message until the next press. Re-check whatever is showing an error on
-  // every change (after a submit, reValidateMode already does this).
+  const save = async () => {
+    const savedAt = Date.now();
+    try {
+      await saveDraft({ values: form.getValues(), savedAt });
+      setSaveNote(`Draft saved at ${timeOf(savedAt)}`);
+    } catch {
+      setSaveNote("Couldn't save a draft in this browser");
+    }
+  };
+
+  // Restore the saved draft once. Spread over the defaults so a draft saved
+  // before a field existed still gets that field.
   useEffect(() => {
-    const { unsubscribe } = form.watch(() => {
-      if (form.formState.isSubmitted) return;
-      const names = Object.keys(form.formState.errors) as FieldPath<FilmValues>[];
-      if (names.length) void form.trigger(names);
-    });
-    return unsubscribe;
+    loadDraft()
+      .then((draft) => {
+        if (!draft) return;
+        form.reset({ ...form.getValues(), ...draft.values });
+        setSaveNote(`Restored your draft saved at ${timeOf(draft.savedAt)}`);
+      })
+      .catch(() => {}) // no IndexedDB (e.g. some private modes): the form still works, just unsaved
+      .finally(() => setDraftLoaded(true));
   }, [form]);
+
+  // Autosave every minute while the form is being filled in.
+  useEffect(() => {
+    if (!draftLoaded || status === "submitting" || status === "success") return;
+    const timer = setInterval(() => void save(), 60_000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftLoaded, status]);
 
   // Scrolling waits for the render that shows the step: after an `await`
   // React commits in a later task, so scrolling straight away (or in the
@@ -298,34 +342,25 @@ export function SubmitFilmForm() {
 
   if (status === "success") return <SuccessScreen />;
 
+  // Which sections hold errors. Errors only exist after a Submit, and
+  // re-validate on change from then on, so a fixed step clears itself.
+  const invalidSteps = [...new Set(Object.keys(form.formState.errors).map(stepForField))].sort((a, b) => a - b);
+
   const show = (i: number, toError = false) => {
     setStep(i);
     setScrollReq({ step: i, toError });
   };
 
-  /** Moving forward validates every step on the way; going back never does. */
-  const goTo = async (target: number) => {
-    for (let i = step; i < target; i++) {
-      if (!(await form.trigger(STEPS[i].fields))) {
-        setAttempt((a) => a + 1);
-        show(i, true);
-        return;
-      }
-      setInvalidSteps((prev) => prev.filter((s) => s !== i));
-    }
-    show(target);
-  };
+  /** Any step, any time. Landing on one with errors focuses its first one. */
+  const goTo = (target: number) => show(target, invalidSteps.includes(target));
 
   /** Zod rejected the whole form: jump to the first step holding an error. */
   const onInvalid = (errors: Record<string, unknown>) => {
-    const steps = [...new Set(Object.keys(errors).map(stepForField))].sort();
-    setInvalidSteps(steps);
     setAttempt((a) => a + 1);
-    show(steps[0] ?? LAST, true);
+    show(Math.min(...Object.keys(errors).map(stepForField)), true);
   };
 
   const onSubmit = async (values: FilmValues) => {
-    setInvalidSteps([]);
     setStatus("submitting");
 
     // Every image field holds a confirmed File at this point (Zod already
@@ -522,6 +557,7 @@ export function SubmitFilmForm() {
         },
       });
 
+      await clearDraft().catch(() => {});
       setStatus("success");
     } catch (err) {
       console.error(err);
@@ -551,8 +587,7 @@ export function SubmitFilmForm() {
 
       {/* Step tabs. The fixed site header measures 121px, while the shared
           layout pads `main` by only 88px -- so this offset is deliberately
-          not 88. A finished step's tab goes back to it; a later one walks
-          forward through Next's validation. */}
+          not 88. Every tab opens its step directly. */}
       <div className="sticky top-[121px] z-30 bg-[#0a0a09]">
         <nav aria-label="Form steps" className="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 pt-[18px] pb-3.5 flex gap-2.5">
           {STEPS.map((s, i) => {
@@ -561,7 +596,7 @@ export function SubmitFilmForm() {
               <button
                 key={s.id}
                 type="button"
-                onClick={() => void goTo(i)}
+                onClick={() => goTo(i)}
                 aria-current={i === step ? "step" : undefined}
                 className={cn(
                   "flex-1 flex flex-col gap-[9px] text-left text-[11px] sm:text-[13px] font-semibold",
@@ -595,13 +630,14 @@ export function SubmitFilmForm() {
             <button
               key={s.id}
               type="button"
-              onClick={() => void goTo(i)}
+              onClick={() => goTo(i)}
               aria-current={i === step ? "step" : undefined}
               className={cn(
                 "group flex items-center gap-3 w-full text-left rounded-lg border-l-[3px] p-3 text-[14px] font-semibold transition-colors",
                 i === step
                   ? "bg-[#1c1707] border-[#e8b830] text-[#e9e6dc]"
                   : "border-transparent text-[#8a8470] hover:bg-[#161613] hover:text-[#e9e6dc]",
+                invalidSteps.includes(i) && "text-red-300",
               )}
             >
               <span
@@ -614,6 +650,7 @@ export function SubmitFilmForm() {
               </span>
               <span>
                 {s.title}
+                {invalidSteps.includes(i) && <AlertCircle className="inline h-3.5 w-3.5 ml-1.5 -mt-0.5" />}
                 <small className={cn("block text-[12px] font-medium", i === step ? "text-[#8a8470]" : "text-[#6b6544]")}>
                   {s.side}
                 </small>
@@ -628,7 +665,7 @@ export function SubmitFilmForm() {
             onSubmit={(e) => {
               if (step < LAST) {
                 e.preventDefault();
-                void goTo(step + 1);
+                goTo(step + 1);
               } else {
                 void form.handleSubmit(onSubmit, onInvalid)(e);
               }
@@ -1129,18 +1166,28 @@ export function SubmitFilmForm() {
               </Alert>
             )}
 
-            <div className="flex items-center">
+            <div className="flex flex-wrap items-center gap-3">
               {step > 0 && (
-                <Button type="button" onClick={() => show(step - 1)} className={NAV_BTN}>
+                <Button type="button" onClick={() => goTo(step - 1)} className={NAV_BTN}>
                   Back
                 </Button>
               )}
+              <p role="status" className="ml-auto text-[13px] text-[#8a8470]">{saveNote}</p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void save()}
+                disabled={!draftLoaded || status === "submitting"}
+                className="h-12 rounded px-[22px] border-[#9a7a1e] bg-transparent text-[#e8b830] hover:bg-[#e8b830]/10 hover:text-[#e8b830] font-bold uppercase tracking-[0.12em] text-[13px]"
+              >
+                Save
+              </Button>
               {step < LAST ? (
-                <Button type="button" onClick={() => void goTo(step + 1)} className={cn(NAV_BTN, "ml-auto")}>
+                <Button type="button" onClick={() => goTo(step + 1)} className={NAV_BTN}>
                   Next
                 </Button>
               ) : (
-                <Button type="submit" disabled={status === "submitting"} className={cn(NAV_BTN, "ml-auto")}>
+                <Button type="submit" disabled={status === "submitting"} className={NAV_BTN}>
                   {status === "submitting"
                     ? <><Loader2 className="animate-spin mr-2 h-4 w-4" />Submitting…</>
                     : "Submit Film"}
