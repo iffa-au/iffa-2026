@@ -306,6 +306,7 @@ export function buildFilmSchema(
       podcastParticipants: z.array(z.object({ id: z.string(), contact: podcastContactSchema })),
       podcastSameContact: z.boolean(),
       podcastSharedContact: podcastContactSchema,
+      contactName: requiredText("Submitter name is required"),
       contactEmail: requiredEmail("Must be a valid email"),
       // `z.boolean().refine(...)`, not `z.literal(true)`: a failing literal
       // aborts the whole object parse and takes every `.superRefine` check
