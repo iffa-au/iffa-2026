@@ -13,7 +13,7 @@ export function Footer() {
   const navLinks = [
     { name: "About Us", path: "/AboutUs" },
     { name: "Contact", path: "/contact" },
-    { name: "IFFA Global", path: "/iffa-global" },
+    // { name: "IFFA Global", path: "/iffa-global" },
     { name: "Podcast", path: "/podcast" },
     { name: "Partner with us", path: "/partnerwithus" },
     { name: "Education & Training", path: "/education-training" },
@@ -56,7 +56,7 @@ export function Footer() {
             {/* Logo & Navigation Section */}
             <div className="lg:col-span-4 flex flex-col items-center justify-center gap-6">
               <Link href="/" className="group block relative mb-3">
-                <div className="absolute -inset-3 bg-gradient-to-br from-yellow-400/20 to-transparent rounded-2xl blur-lg opacity-20 group-hover:opacity-100 transition-opacity duration-700"></div>
+                <div className="absolute -inset-3 bg-gradient-to-br from-yellow-400/10 to-transparent rounded-2xl blur-lg opacity-20 group-hover:opacity-80 transition-opacity duration-700"></div>
                 <img
                   src="/IFFA_logo.png"
                   alt="IFFA Logo"
@@ -87,12 +87,12 @@ export function Footer() {
 
             {/* Social Media Section */}
             <div className="lg:col-span-4 flex flex-col items-center lg:items-end justify-center gap-6">
-              <div className="text-center lg:text-right relative group">
-                <div className="absolute -inset-5 bg-gradient-to-br from-yellow-400/12 to-transparent rounded-2xl blur-lg opacity-30 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <h3 className="text-xl font-bold text-white mb-4 tracking-wide relative z-10 group-hover:text-yellow-400 transition-colors duration-500">
+              <div className="text-center lg:text-right relative">
+                {/* <div className="absolute -inset-5 bg-gradient-to-br from-yellow-400/12 to-transparent rounded-2xl blur-lg opacity-30 transition-opacity duration-500"></div> */}
+                <h3 className="text-xl font-bold text-white mb-4 tracking-wide relative z-10 hover:text-yellow-400 transition-colors duration-500">
                   Connect With Us
                 </h3>
-                <p className="text-sm text-neutral-100 font-light mb-8 relative z-10 group-hover:text-white transition-colors duration-500">
+                <p className="text-sm text-neutral-100 font-light mb-8 relative z-10 hover:text-white transition-colors duration-500">
                   Stay updated with our latest news and announcements
                 </p>
               </div>

@@ -57,6 +57,7 @@ homepage_banner_progress.md
 build-graph.mjs
 graph.json
 GRAPH.md
+design-audit*.md
 
 # local agent tooling (dev-server launch config, local settings)
 .claude/
