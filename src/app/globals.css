@@ -186,3 +186,8 @@
   }
 }
 
+.news-page,
+.news-page :not(.news-page-title) {
+  font-family: var(--font-assistant), sans-serif;
+}
+
