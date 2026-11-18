@@ -113,7 +113,7 @@ const STEPS: {
     fields: [
       "potraitImageUrl", "landscapeImageUrl", "imdbUrl", "trailerUrl", "trailerHasPassword", "trailerPassword",
       "promoClips", "notes", "podcastInterest", "podcastParticipants", "podcastSameContact", "podcastSharedContact",
-      "contactEmail", "agreeRights",
+      "contactName", "contactEmail", "agreeRights",
     ],
   },
 ];
@@ -268,6 +268,7 @@ export function SubmitFilmForm() {
       podcastParticipants: [],
       podcastSameContact: true,
       podcastSharedContact: { ...BLANK_PODCAST_CONTACT },
+      contactName: "",
       contactEmail: "",
       agreeRights: false,
     },
@@ -285,7 +286,12 @@ export function SubmitFilmForm() {
     }
   }, [hideActors, form]);
 
+  // Set once the API has stored the film, so no later save can bring the
+  // cleared draft back (e.g. an autosave tick after a failed email).
+  const filmSavedRef = useRef(false);
+
   const save = async () => {
+    if (filmSavedRef.current) return;
     const savedAt = Date.now();
     try {
       await saveDraft({ values: form.getValues(), savedAt });
@@ -509,10 +515,12 @@ export function SubmitFilmForm() {
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json?.success === false) throw new Error(json?.message || "Failed");
 
-      const submitterName =
-        values.directors[0]?.fullName?.trim() ||
-        values.producers[0]?.fullName?.trim() ||
-        "Filmmaker";
+      // The film is saved: drop the draft now, before the emails, so a failed
+      // email can't leave a stale draft behind.
+      filmSavedRef.current = true;
+      await clearDraft().catch(() => {});
+
+      const submitterName = values.contactName.trim();
 
       await sendConfirmationEmails({
         formType: "film-submission",
@@ -557,7 +565,6 @@ export function SubmitFilmForm() {
         },
       });
 
-      await clearDraft().catch(() => {});
       setStatus("success");
     } catch (err) {
       console.error(err);
@@ -1116,14 +1123,24 @@ export function SubmitFilmForm() {
 
                 <div className="border-t border-[#26241d]" />
 
-                <FormField control={form.control} name="contactEmail"
-                  render={({ field }: { field: any }) => (
-                    <FormItem className="max-w-sm">
-                      <FormLabel className={L}>Contact Email <Req /></FormLabel>
-                      <FormControl><Input {...field} type="email" placeholder="you@example.com" className={I} /></FormControl>
-                      <FormMessage className={ERR} />
-                    </FormItem>
-                  )} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                  <FormField control={form.control} name="contactName"
+                    render={({ field }: { field: any }) => (
+                      <FormItem>
+                        <FormLabel className={L}>Submitter Name <Req /></FormLabel>
+                        <FormControl><Input {...field} autoComplete="name" placeholder="Your full name" className={I} /></FormControl>
+                        <FormMessage className={ERR} />
+                      </FormItem>
+                    )} />
+                  <FormField control={form.control} name="contactEmail"
+                    render={({ field }: { field: any }) => (
+                      <FormItem>
+                        <FormLabel className={L}>Submitter Email <Req /></FormLabel>
+                        <FormControl><Input {...field} type="email" autoComplete="email" placeholder="you@example.com" className={I} /></FormControl>
+                        <FormMessage className={ERR} />
+                      </FormItem>
+                    )} />
+                </div>
 
                 <div>
                   <FormField control={form.control} name="agreeRights"
