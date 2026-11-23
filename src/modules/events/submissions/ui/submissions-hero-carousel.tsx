@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { preload } from "react-dom";
+import { getImageProps } from "next/image";
 import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { RobustBackdropImage } from "@/components/RobustBackdropImage";
 import TrailerModal from "@/modules/home/ui/views/carousel/TrailerModal";
-import { synopsisHrefForFilm } from "../lib/submissions";
-import { fetchCarouselFilms, type CarouselFilmItem } from "../lib/submissions";
+import { canOptimizeImage, synopsisHrefForFilm, type CarouselFilmItem } from "../lib/submissions";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -19,35 +20,28 @@ function hrefFor(film: CarouselFilmItem): string | null {
   });
 }
 
-export function SubmissionsHeroCarousel() {
-  const [films, setFilms] = useState<CarouselFilmItem[]>([]);
+export function SubmissionsHeroCarousel({ films }: { films: CarouselFilmItem[] }) {
   const [index, setIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [paused, setPaused] = useState(false);
   const [trailerFilm, setTrailerFilm] = useState<CarouselFilmItem | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Warm only the slide the timer shows next, so it isn't blank when it lands.
+  // It used to fetch every slide's original up front, competing with the first
+  // slide (the LCP). Same srcset/sizes as RobustBackdropImage, so the browser
+  // reuses this download instead of fetching another width.
+  const upcoming = films.length > 1 ? films[(index + 1) % films.length] : undefined;
   useEffect(() => {
-    const controller = new AbortController();
-    (async () => {
-      try {
-        const items = await fetchCarouselFilms(controller.signal);
-        setFilms(items);
-        // Auto-rotation is unattended — without this, whichever slide the
-        // timer lands on next would show a blank backdrop for however long
-        // its image takes to load over the network.
-        for (const item of items) {
-          const preload = new Image();
-          preload.src = item.backdropUrl;
-        }
-      } catch {
-        setFilms([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => controller.abort();
-  }, []);
+    if (!upcoming?.backdropUrl) return;
+    const { props } = getImageProps({
+      src: upcoming.backdropUrl,
+      alt: "",
+      fill: true,
+      sizes: "100vw",
+      unoptimized: !canOptimizeImage(upcoming.backdropUrl),
+    });
+    preload(props.src, { as: "image", imageSrcSet: props.srcSet, imageSizes: props.sizes });
+  }, [upcoming?.backdropUrl]);
 
   const goTo = useCallback(
     (next: number) => {
@@ -75,7 +69,7 @@ export function SubmissionsHeroCarousel() {
     setTimeout(() => setPaused(false), 50);
   };
 
-  if (loading || films.length === 0) return null;
+  if (films.length === 0) return null;
 
   const film = films[index];
   const href = hrefFor(film);
@@ -92,6 +86,7 @@ export function SubmissionsHeroCarousel() {
         src={film.backdropUrl}
         fallbackSrc={film.posterUrl}
         className="absolute inset-0"
+        priority={index === 0}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-black/10 sm:via-black/55 sm:to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-black/30" />

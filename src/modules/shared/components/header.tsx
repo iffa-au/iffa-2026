@@ -103,6 +103,7 @@ export default function Header() {
             alt="IFFA Logo"
             width={472}
             height={316}
+            sizes="(min-width: 1024px) 96px, 64px"
             loading="eager"
             className="h-auto w-16 lg:w-24"
           />

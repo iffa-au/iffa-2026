@@ -1,171 +1,20 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
 import { Trophy } from "lucide-react";
 import Link from "next/link";
 
 import { WinnerCard } from "@/modules/events/winners/ui/winner-card";
-import { isObjectId, pickImageUrl } from "@/modules/events/submissions/lib/submissions";
-
-type WinnerApiItem = {
-  id?: string | number;
-  contentId?: string | number;
-  editionYear?: number;
-  awardCategoryName?: string;
-  title?: string;
-  landscapeImageUrl?: string;
-  portraitImageUrl?: string;
-  crewMemberName?: string;
-};
-
-type WinnerUiItem = {
-  winnerId: string;
-  movieId?: string;
-  awardYear?: number;
-  category: string;
-  movieName: string;
-  photoUrl: string;
-  winnerName: string;
-};
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-
-const winnerPriority = [
-  "Best Actor in a Leading Role",
-  "Best Actor in a Supporting Role",
-  "Best Actress in a Leading Role",
-  "Best Actress in a Supporting Role",
-  "Best Animated Film",
-  "Best Cinematography",
-  "Best Direction",
-  "Best Documentary Film",
-  "Best International Feature Film",
-  "Best International Short Film",
-  "Best Screenplay Writing",
-  "Best Original Web Series",
-  "Best Short Film (Under 18 Category)",
-  "Best TV Series",
-];
+import { isObjectId } from "@/modules/events/submissions/lib/submissions";
+import type { WinnerUiItem } from "@/modules/events/winners/lib/winners";
 
 type WinnersPageProps = {
   year: string;
+  /** Already in award order (see fetchWinnersForYear). */
+  winners: WinnerUiItem[];
+  hasNominations: boolean;
 };
 
-export function WinnersPage({ year }: WinnersPageProps) {
+// A server component now: the route fetches and caches the data.
+export function WinnersPage({ year, winners, hasNominations }: WinnersPageProps) {
   const targetYear = parseInt(year, 10);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [winners, setWinners] = useState<WinnerUiItem[]>([]);
-  const [hasNominations, setHasNominations] = useState(false);
-
-  useEffect(() => {
-    if (!year || Number.isNaN(targetYear)) {
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const normalizedBase = API_BASE_URL.endsWith("/")
-          ? API_BASE_URL.slice(0, -1)
-          : API_BASE_URL;
-        const url = `${normalizedBase}/submissions/fetchWinnerDetailed?year=${encodeURIComponent(String(targetYear))}`;
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) {
-          throw new Error(`Failed to fetch winners (${res.status})`);
-        }
-        const data: unknown = await res.json();
-        const items = Array.isArray(data) ? (data as WinnerApiItem[]) : [];
-        const mapped: WinnerUiItem[] = items.map((w) => {
-          const movieId =
-            typeof w.id === "string"
-              ? w.id
-              : typeof w.contentId === "string"
-                ? w.contentId
-                : undefined;
-          return {
-            winnerId: String(w.id ?? ""),
-            movieId,
-            awardYear: w.editionYear,
-            category: w.awardCategoryName ?? "",
-            movieName: w.title ?? "",
-            photoUrl: pickImageUrl(w.landscapeImageUrl, w.portraitImageUrl),
-            winnerName: w.crewMemberName ?? "",
-          };
-        });
-        setWinners(mapped);
-      } catch (e) {
-        if (e instanceof Error && e.name !== "AbortError") {
-          setError(e.message || "Failed to load winners");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void load();
-    return () => controller.abort();
-  }, [targetYear]);
-
-  useEffect(() => {
-    if (loading || winners.length > 0) return;
-    if (!year || Number.isNaN(targetYear)) return;
-
-    const controller = new AbortController();
-
-    const checkNominations = async () => {
-      try {
-        const normalizedBase = API_BASE_URL.endsWith("/")
-          ? API_BASE_URL.slice(0, -1)
-          : API_BASE_URL;
-        const url = `${normalizedBase}/nominations/fetchNomination?year=${encodeURIComponent(String(targetYear))}`;
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) return;
-        const data: unknown = await res.json();
-        setHasNominations(Array.isArray(data) && data.length > 0);
-      } catch {
-        // Leave hasNominations at its default (false) — the CTA falls back
-        // to the submission enquiry link, which is always valid.
-      }
-    };
-
-    void checkNominations();
-    return () => controller.abort();
-  }, [loading, winners.length, targetYear, year]);
-
-  const sortedWinners = useMemo(() => {
-    return [...winners].sort((a, b) => {
-      const indexA = winnerPriority.indexOf(a.category);
-      const indexB = winnerPriority.indexOf(b.category);
-      if (indexA === -1 && indexB === -1) return 0;
-      if (indexA === -1) return 1;
-      if (indexB === -1) return -1;
-      return indexA - indexB;
-    });
-  }, [winners]);
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-[#0E0C15] px-4 py-12 text-white">
-        <div className="container mx-auto flex justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
-        </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className="min-h-screen bg-[#0E0C15] px-4 py-12 text-white">
-        <div className="container mx-auto text-center text-red-400">{error}</div>
-      </main>
-    );
-  }
-
   const isUpcomingOrCurrentYear = targetYear >= new Date().getFullYear();
 
   return (
@@ -182,9 +31,9 @@ export function WinnersPage({ year }: WinnersPageProps) {
           <div className="mx-auto mt-6 h-px w-32 bg-gradient-to-r from-transparent via-yellow-500 to-transparent" />
         </div>
 
-        {sortedWinners.length > 0 ? (
+        {winners.length > 0 ? (
           <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-2">
-            {sortedWinners.map((winner) => (
+            {winners.map((winner) => (
               <WinnerCard
                 key={winner.winnerId}
                 photoUrl={winner.photoUrl}

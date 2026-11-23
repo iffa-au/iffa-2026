@@ -1,5 +1,13 @@
+"use client";
+
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+
+import { canOptimizeImage } from "@/modules/events/submissions/lib/submissions";
+
+const FALLBACK_POSTER = "/fallbacks/no-poster.svg";
 
 type WinnerCardProps = {
   photoUrl: string;
@@ -16,17 +24,22 @@ export function WinnerCard({
   winnerName,
   href,
 }: WinnerCardProps) {
+  // Through state, not `currentTarget.src`: React owns next/image's src.
+  const [failed, setFailed] = useState(false);
+  const src = failed ? FALLBACK_POSTER : photoUrl;
+
   const card = (
     <div className="group relative flex min-h-[340px] items-end overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-yellow-500/40 hover:shadow-2xl hover:shadow-yellow-500/10 sm:min-h-[400px]">
-      <img
-        src={photoUrl}
+      {/* next/image, not <img>: the 2025 winner images are the CMS originals
+          on S3. The grid is two columns from lg inside max-w-6xl. */}
+      <Image
+        src={src}
         alt={movieName}
-        className="absolute inset-0 h-full w-full object-cover opacity-80 transition-transform duration-500 ease-out group-hover:scale-105"
-        loading="lazy"
-        onError={(e) => {
-          e.currentTarget.onerror = null;
-          e.currentTarget.src = "/fallbacks/no-poster.svg";
-        }}
+        fill
+        sizes="(min-width: 1024px) 576px, 100vw"
+        unoptimized={!canOptimizeImage(src)}
+        className="object-cover opacity-80 transition-transform duration-500 ease-out group-hover:scale-105"
+        onError={() => setFailed(true)}
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/75 via-50% to-black/10" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/90 via-black/20 to-transparent" />
