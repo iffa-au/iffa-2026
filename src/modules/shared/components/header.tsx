@@ -104,6 +104,7 @@ export default function Header() {
             width={472}
             height={316}
             loading="eager"
+            unoptimized
             className="h-auto w-16 lg:w-24"
           />
         </Link>
