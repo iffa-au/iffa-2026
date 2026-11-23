@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
-import { Raleway, Geist_Mono, Playfair_Display } from "next/font/google";
+import {
+  Assistant,
+  Raleway,
+  Geist_Mono,
+  Playfair_Display,
+} from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { GoogleAnalyticsProvider } from "@/modules/shared/components/google-analytics";
 import { ChatWidget } from "@/modules/chatbot/ui/chat-widget";
 
 const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
+
+const assistant = Assistant({
+  subsets: ["latin"],
+  weight: "variable",
+  variable: "--font-assistant",
+});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -34,9 +45,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", raleway.variable, geistMono.variable, playfairDisplay.variable, "font-sans", "dark")}
+      className={cn("h-full", "antialiased", raleway.variable, assistant.variable, geistMono.variable, playfairDisplay.variable, "font-sans", "dark")}
     >
-      <body className="min-h-full flex flex-col bg-[#0d0d0d] overflow-x-hidden">
+      <body className="min-h-full flex flex-col bg-[#0d0d0d] overflow-x-clip">
         {children}
         {/* Site chatbot (src/modules/chatbot). Set NEXT_PUBLIC_CHATBOT_ENABLED=false to hide it. */}
         {process.env.NEXT_PUBLIC_CHATBOT_ENABLED !== "false" && <ChatWidget />}
