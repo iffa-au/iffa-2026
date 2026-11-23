@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import type Hls from "hls.js";
-import { memo, useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { memo, useEffect, useId, useRef, useState, useCallback, type CSSProperties } from "react";
 import { fetchJsonCached } from "@/lib/media-cache";
+import { Pause, Play, Volume2, VolumeX, Maximize } from "lucide-react";
+import TrailerModal from "./views/carousel/TrailerModal";
+import { getTrailerEmbedUrl } from "@/modules/events/submissions/lib/submissions";
 
 type TrailerSectionProps = {
   videoslug?: string;
@@ -70,6 +73,11 @@ const TrailerSection = ({
   const [posterSrc, setPosterSrc] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isTrailerOpen, setIsTrailerOpen] = useState(false);
+  const userPausedRef = useRef(false);
+  const modalOpenRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLElement | null>(null);
   const glowRef = useRef<HTMLCanvasElement | null>(null);
@@ -80,6 +88,28 @@ const TrailerSection = ({
     "--clip-md": `url(#${clipId})`,
   } as CSSProperties;
   const clipClass = "[clip-path:var(--clip-sm)] md:[clip-path:var(--clip-md)]";
+  useEffect(() => {
+  const muteOtherTrailers = (event: Event) => {
+    const video = videoRef.current;
+
+    if (
+      video &&
+      (event as CustomEvent<HTMLVideoElement>).detail !== video
+    ) {
+      video.muted = true;
+      setIsMuted(true);
+    }
+  };
+
+  window.addEventListener("iffa:trailer-audio", muteOtherTrailers);
+
+  return () => {
+    window.removeEventListener(
+      "iffa:trailer-audio",
+      muteOtherTrailers
+    );
+  };
+}, []);
 
   // Ambient light: the current frame, drawn into a tiny canvas a few times a
   // second and blown up behind the screen with a heavy blur, so the screen
@@ -160,7 +190,9 @@ const TrailerSection = ({
     video.addEventListener("loadeddata", onFrame);
 
     const onLoaded = () => {
-      video.play().catch(() => {});
+      if (!userPausedRef.current && !modalOpenRef.current) {
+        video.play().catch(() => {});
+      }
     };
 
     const playNative = () => {
@@ -216,9 +248,127 @@ const TrailerSection = ({
     const video = videoRef.current;
     if (!video) return;
 
-    if (isVisible) video.play().catch(() => {});
-    else video.pause();
+    if (isVisible && !userPausedRef.current && !modalOpenRef.current) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+
+      if (!isVisible) {
+        video.muted = true;
+        setIsMuted(true);
+      }
+    }
   }, [isVisible]);
+
+  const togglePlayback = () => {
+  const video = videoRef.current;
+  if (!video || modalOpenRef.current) return;
+
+  if (video.paused) {
+    userPausedRef.current = false;
+    video.play().catch(() => {});
+  } else {
+    userPausedRef.current = true;
+    video.pause();
+  }
+};
+
+const toggleSound = () => {
+  const video = videoRef.current;
+  if (!video || modalOpenRef.current) return;
+
+  if (video.muted) {
+    window.dispatchEvent(
+      new CustomEvent("iffa:trailer-audio", {
+        detail: video,
+      })
+    );
+  }
+
+  video.muted = !video.muted;
+  setIsMuted(video.muted);
+};
+
+const openTrailer = () => {
+  modalOpenRef.current = true;
+
+  const video = videoRef.current;
+
+  if (video) {
+    video.pause();
+    video.muted = true;
+    setIsMuted(true);
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("iffa:trailer-audio")
+  );
+
+  setIsTrailerOpen(true);
+};
+
+const closeTrailer = useCallback(() => {
+  modalOpenRef.current = false;
+  setIsTrailerOpen(false);
+
+  const video = videoRef.current;
+
+  if (video && isVisible && !userPausedRef.current) {
+    video.play().catch(() => {});
+  }
+}, [isVisible]);
+const controlClass =
+  "flex h-10 w-10 md:h-12 md:w-12 items-center justify-center " +
+  "rounded-full border border-white/40 bg-black/60 text-white " +
+  "backdrop-blur-sm cursor-pointer transition-all duration-200 " +
+  "hover:bg-yellow-500 hover:text-black hover:border-yellow-500 " +
+  "focus-visible:outline-none focus-visible:ring-2 " +
+  "focus-visible:ring-yellow-400";
+
+const playbackControls = src && (
+  <div className="absolute bottom-[8%] right-[5%] z-20 flex items-center gap-2 md:gap-3">
+
+    <button
+      type="button"
+      onClick={togglePlayback}
+      className={controlClass}
+      aria-label={isPlaying ? "Pause trailer" : "Play trailer"}
+      title={isPlaying ? "Pause trailer" : "Play trailer"}
+    >
+      {isPlaying ? (
+        <Pause className="h-5 w-5" />
+      ) : (
+        <Play className="h-5 w-5" />
+      )}
+    </button>
+
+    <button
+      type="button"
+      onClick={toggleSound}
+      className={controlClass}
+      aria-label={isMuted ? "Unmute trailer" : "Mute trailer"}
+      title={isMuted ? "Unmute trailer" : "Mute trailer"}
+    >
+      {isMuted ? (
+        <VolumeX className="h-5 w-5" />
+      ) : (
+        <Volume2 className="h-5 w-5" />
+      )}
+    </button>
+
+    <button
+      type="button"
+      onClick={openTrailer}
+      className={controlClass}
+      aria-label="Open pop-out trailer"
+      aria-haspopup="dialog"
+      title="Open pop-out trailer"
+    >
+      <Maximize className="h-5 w-5" />
+    </button>
+
+  </div>
+);
 
   const player = (
     <>
@@ -234,15 +384,23 @@ const TrailerSection = ({
 
       <video
         ref={videoRef}
-        muted
+        muted={isMuted}
         loop
         playsInline
         preload="none"
         poster={posterSrc ?? undefined}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => setIsPlaying(false)}
+        onError={() => setIsPlaying(false)}
+        onVolumeChange={(e) => {
+          setIsMuted(e.currentTarget.muted);
+        }}
         className={`w-full h-full object-cover transition-opacity duration-700 ${
           isReady ? "opacity-100" : "opacity-0"
         }`}
       />
+      {playbackControls}
     </>
   );
 
@@ -395,6 +553,16 @@ const TrailerSection = ({
           </div>
         )}
       </div>
+      <TrailerModal
+        isOpen={isTrailerOpen}
+        onClose={closeTrailer}
+        embedUrl={getTrailerEmbedUrl(youtubeUrl)}
+        videoUrl={src}
+        sourceUrl={youtubeUrl}
+        title={title || "Trailer"}
+        showFooter={false}
+        squareCorners={true}
+      />
     </section>
   );
 };
