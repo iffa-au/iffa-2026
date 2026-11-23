@@ -61,3 +61,4 @@ design-audit*.md
 
 # local agent tooling (dev-server launch config, local settings)
 .claude/
+docs/ponytail-audit-2026-11-18.md

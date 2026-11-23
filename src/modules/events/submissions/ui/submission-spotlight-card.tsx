@@ -47,6 +47,7 @@ export function SubmissionSpotlightCard({ film }: SubmissionSpotlightCardProps) 
           src={film.backdropUrl}
           fallbackSrc={film.posterUrl}
           className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-105"
+          sizes="(min-width: 1280px) 640px, (min-width: 768px) 680px, 100vw"
         />
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
