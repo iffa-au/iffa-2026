@@ -6,7 +6,11 @@ import {
 } from "@/modules/chatbot/lib/fastpath";
 import {
 	canaryFilter,
+	NO_INFO,
+	noInfoFilter,
 	signAnswer,
+	signQuestionId,
+	stripNoInfo,
 	trustedHistory,
 	type ChatMessage,
 } from "@/modules/chatbot/lib/guard";
@@ -19,22 +23,29 @@ import {
 	providerNames,
 	streamAnswer,
 } from "@/modules/chatbot/lib/providers";
+import {
+	findTemplate,
+	recordQuestion,
+	type InsightSource,
+} from "@/modules/chatbot/lib/insights";
 import { checkLimit } from "@/modules/chatbot/lib/rate-limit";
 
 /**
  * POST /api/chat — the site chatbot.
  *
- * Body: { messages: { role: "user" | "assistant", content: string, sig?: string }[] }
+ * Body: { messages: { role: "user" | "assistant", content: string, sig?: string }[], page?: "/path" }
  *
  * Reply: the answer as a plain-text stream, then one TRAILER character
  * (\u001e, "record separator") followed by JSON:
  *   { sig }          signature for the answer; the widget sends it back with the history
+ *     + qid, qsig    the logged question's id and its signature, for thumbs up / down (feedback-route.ts)
+ *     + noInfo       true when the bot didn't have the information (the widget offers "Ask the team")
  *   { blocked: true} the answer was cut by the leak check; the widget shows a polite refusal
  * When nothing could be answered: JSON { error } with a status code. The error
  * text is written for visitors and shown as-is in the widget.
  *
  * Order of work, cheapest first:
- *   small talk -> cached answer -> rate limit -> AI (Gemini, then Groq)
+ *   small talk -> fixed answer (staff-written, CMS) -> cached answer -> rate limit -> AI (Gemini, then Groq)
  */
 
 const MAX_MESSAGES = 10;
@@ -96,10 +107,39 @@ function log(entry: Record<string, unknown>) {
 	);
 }
 
+/** The page the chat was opened on ("/submit-film"); anything that isn't a plain site path becomes "". */
+function pagePath(body: unknown): string {
+	const page = (body as { page?: unknown })?.page;
+	return typeof page === "string" && page.length <= 200 && /^\/[\w\-./]*$/.test(page)
+		? page
+		: "";
+}
+
+/**
+ * Logs the question for the CMS report (lib/insights.ts) and returns what the
+ * trailer needs: the question id + its signature for thumbs up / down, and noInfo.
+ */
+async function logForReport(
+	question: string,
+	answer: string,
+	source: InsightSource,
+	page: string,
+	noInfo = false,
+) {
+	const { id, failed } = await recordQuestion({ question, answer, source, page, noInfo });
+	return {
+		meta: {
+			...(id ? { qid: id, qsig: signQuestionId(id) } : {}),
+			...(noInfo ? { noInfo: true } : {}),
+		},
+		insights: failed ? "failed" : undefined,
+	};
+}
+
 /** A complete answer in the same format as a streamed one. */
-function fixedAnswer(answer: string) {
+function fixedAnswer(answer: string, meta: Record<string, unknown> = {}) {
 	return new Response(
-		`${answer}${TRAILER}${JSON.stringify({ sig: signAnswer(answer) })}`,
+		`${answer}${TRAILER}${JSON.stringify({ sig: signAnswer(answer), ...meta })}`,
 		{
 			headers: {
 				"Content-Type": "text/plain; charset=utf-8",
@@ -142,6 +182,7 @@ export async function POST(request: Request) {
 
 	const { messages, forged } = trustedHistory(parsed);
 	const question = messages.at(-1)!.content;
+	const page = pagePath(json);
 	const base: Record<string, unknown> = {
 		turns: messages.length,
 		forged: forged || undefined,
@@ -150,8 +191,20 @@ export async function POST(request: Request) {
 	// 1. Small talk: instant, no AI.
 	const small = smallTalkReply(question);
 	if (small) {
-		log({ ...base, source: "smalltalk", ms: Date.now() - started });
-		return fixedAnswer(small);
+		const { meta, insights } = await logForReport(question, small, "smalltalk", page);
+		log({ ...base, source: "smalltalk", ms: Date.now() - started, insights });
+		return fixedAnswer(small, meta);
+	}
+
+	// 2. Fixed answer written by staff in the CMS: instant, no AI, approved
+	//    wording. Used for every question in a chat, not just the first, so
+	//    asking it again later still gets the approved answer. Staff are told
+	//    (in the CMS editor) to write questions that make sense on their own.
+	const fixed = await findTemplate(question);
+	if (fixed) {
+		const { meta, insights } = await logForReport(question, fixed, "template", page);
+		log({ ...base, source: "template", ms: Date.now() - started, insights });
+		return fixedAnswer(fixed, meta);
 	}
 
 	if (!hasProvider()) {
@@ -186,15 +239,18 @@ export async function POST(request: Request) {
 		(system.length + history.reduce((n, m) => n + m.content.length, 0)) / 4,
 	);
 
-	// 2. Cache: only for the first question of a chat, so earlier messages can't change the answer.
+	// 3. Cache: only for the first question of a chat, so earlier messages can't change the answer.
+	//    Cached answers keep their [[NO_INFO]] marker, so they still count as unanswered.
 	const key = messages.length === 1 ? cacheKey(question, system) : null;
 	const cached = key ? cacheGet(key) : null;
 	if (cached) {
-		log({ ...base, source: "cache", ms: Date.now() - started });
-		return fixedAnswer(cached);
+		const { text, noInfo } = stripNoInfo(cached);
+		const { meta, insights } = await logForReport(question, text, "cache", page, noInfo);
+		log({ ...base, source: "cache", ms: Date.now() - started, insights });
+		return fixedAnswer(text, meta);
 	}
 
-	// 3. Rate limit: only real AI calls count.
+	// 4. Rate limit: only real AI calls count.
 	const visitor =
 		request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
 	const limit = checkLimit(visitor);
@@ -208,7 +264,7 @@ export async function POST(request: Request) {
 		);
 	}
 
-	// 4. The AI.
+	// 5. The AI.
 	let provider = "";
 	let fallbackAfter: string[] = [];
 	const stream = streamAnswer(
@@ -238,6 +294,7 @@ export async function POST(request: Request) {
 
 	const encoder = new TextEncoder();
 	const filter = canaryFilter();
+	const marker = noInfoFilter(); // removes [[NO_INFO]] before anything reaches the visitor
 	const body = new ReadableStream<Uint8Array>({
 		async start(controller) {
 			let answer = "";
@@ -248,11 +305,12 @@ export async function POST(request: Request) {
 			};
 			let complete = false;
 			try {
-				if (!first.done) send(filter.push(first.value));
+				if (!first.done) send(filter.push(marker.push(first.value)));
 				for await (const chunk of stream) {
-					send(filter.push(chunk));
+					send(filter.push(marker.push(chunk)));
 					if (filter.state.blocked) break;
 				}
+				send(filter.push(marker.flush()));
 				send(filter.flush());
 				complete = true;
 			} catch (error) {
@@ -260,15 +318,25 @@ export async function POST(request: Request) {
 			}
 
 			const blocked = filter.state.blocked;
+			const noInfo = marker.state.noInfo;
+			let insights: string | undefined;
 			if (blocked) {
 				controller.enqueue(
 					encoder.encode(`${TRAILER}${JSON.stringify({ blocked: true })}`),
 				);
 			} else if (complete && answer.trim()) {
+				if (key) cachePut(key, `${noInfo ? `${NO_INFO} ` : ""}${answer.trim()}`);
+				// The visitor already has the whole answer text; log it for the CMS
+				// report before the trailer (it carries the logged question's id) and
+				// before closing (work after close may not run on serverless hosts).
+				// Blocked or cut-off answers aren't logged.
+				const logged = await logForReport(question, answer.trim(), "ai", page, noInfo);
+				insights = logged.insights;
 				controller.enqueue(
-					encoder.encode(`${TRAILER}${JSON.stringify({ sig: signAnswer(answer) })}`),
+					encoder.encode(
+						`${TRAILER}${JSON.stringify({ sig: signAnswer(answer), ...logged.meta })}`,
+					),
 				);
-				if (key) cachePut(key, answer.trim());
 			}
 			log({
 				...base,
@@ -279,6 +347,8 @@ export async function POST(request: Request) {
 				ms: Date.now() - started,
 				blocked: blocked || undefined,
 				incomplete: complete ? undefined : true,
+				noInfo: noInfo || undefined,
+				insights,
 			});
 			controller.close();
 		},

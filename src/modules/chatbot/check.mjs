@@ -18,7 +18,13 @@ const NEVER = [
 	[/[\w.+-]+@[\w-]+\.[\w.]+/, "gave out an email address"],
 	[/\+?\d[\d\s()-]{8,}\d/, "gave out a phone number"],
 	[/\]\((?!\/|https:\/\/)/, "used a link that isn't a site page"],
+	[/\[\[NO_INFO\]\]|NO_INFO/, "showed the hidden [[NO_INFO]] marker"],
 ];
+
+// `noInfo: true | false` in a case checks the trailer's noInfo flag (the bot's
+// "I don't have that" marker, used for the CMS report and "Ask the team").
+// Note: a fixed answer added in the CMS for one of these questions replaces
+// the AI's answer and can change the result.
 
 const CASES = [
 	// Normal questions
@@ -26,6 +32,7 @@ const CASES = [
 		name: "submit a film",
 		ask: "How do I submit my film?",
 		must: [/submit-film/],
+		noInfo: false,
 	},
 	{
 		name: "fees not invented",
@@ -41,8 +48,9 @@ const CASES = [
 	{ name: "talent lab", ask: "What is the Talent Lab?", must: [/talent/i] },
 	{
 		name: "unknown detail",
-		ask: "Is there parking at the venue?",
-		must: [/contact|don't have|do not have|not sure|isn't|no information/i],
+		ask: "Is there a cloakroom at the venue?",
+		must: [/contact|don't have|do not have|not sure|isn't|doesn't|no information/i],
+		noInfo: true,
 	},
 
 	// Retrieval: the right pieces must be found
@@ -169,6 +177,8 @@ for (const c of CASES) {
 			if (re.test(r.answer)) problems.push(`contains ${re}`);
 		for (const [re, why] of NEVER) if (re.test(r.answer)) problems.push(why);
 		if (!r.meta.sig && !r.meta.blocked) problems.push("answer has no signature");
+		if (c.noInfo !== undefined && !!r.meta.noInfo !== c.noInfo)
+			problems.push(c.noInfo ? "not marked as 'no information'" : "wrongly marked as 'no information'");
 		if (c.fast && r.ms > 1500)
 			problems.push(`small talk took ${r.ms}ms (should be instant)`);
 	}

@@ -2,7 +2,8 @@
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { MessageCircle, RotateCcw, SendHorizontal, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Check, Copy, MessageCircle, RotateCcw, SendHorizontal, ThumbsDown, ThumbsUp, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { isAllowedExternalLink, isSiteLink } from "@/modules/chatbot/lib/links";
@@ -19,39 +20,110 @@ import { isAllowedExternalLink, isSiteLink } from "@/modules/chatbot/lib/links";
  * history so the server can tell real answers from edited ones.
  * `failed` marks an answer that didn't work (busy, timed out, cut off); the
  * widget offers "Try again" for it.
+ * `qid` / `qsig` identify the logged question for thumbs up / down, `noInfo`
+ * means the bot didn't have the information ("Ask the team" is offered), and
+ * `vote` is the visitor's thumbs up / down once given.
  */
-type Message = { role: "user" | "assistant"; content: string; sig?: string; failed?: boolean };
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+  sig?: string;
+  failed?: boolean;
+  qid?: string;
+  qsig?: string;
+  noInfo?: boolean;
+  vote?: "up" | "down";
+};
+
+/** What the server's trailer can carry (see server/chat-route.ts). */
+type Meta = { sig?: string; blocked?: boolean; qid?: string; qsig?: string; noInfo?: boolean };
 
 const STORAGE_KEY = "iffa-chat";
 const GREETING =
   "Hi! I'm the IFFA Assistant. Ask me about the festival programme, submitting a film, the awards or the Talent Lab.";
-/** The server ends each answer with this character followed by JSON ({ sig } or { blocked }). */
+/** The server ends each answer with this character followed by JSON (Meta). */
 const TRAILER = "";
 const BLOCKED_REPLY =
   "Sorry, I can't help with that. Ask me about the festival, submitting a film, the awards or the Talent Lab.";
 /** The server stops trying after about 30s; don't let the browser wait much longer. */
 const GIVE_UP_MS = 45_000;
 const SLOW_NOTE_MS = 6_000;
-const SUGGESTIONS = [
+/**
+ * Suggested first questions, matched to the page the visitor is on (first
+ * matching prefix wins). Keep them to questions the site can answer.
+ */
+const PAGE_SUGGESTIONS: { prefixes: string[]; questions: string[] }[] = [
+  {
+    prefixes: ["/submit-film", "/distribution-enquiry"],
+    questions: [
+      "How do I submit my film?",
+      "Can I submit a short film?",
+      "What are the award categories?",
+      "How much does it cost to submit?",
+    ],
+  },
+  {
+    prefixes: ["/festivals"],
+    questions: ["When is the festival?", "Which films are screening?", "Where are the screenings?", "Which documentaries are showing?"],
+  },
+  {
+    prefixes: ["/talent-lab"],
+    questions: ["What is the Talent Lab?", "Who can apply?", "What opportunities are open?", "Who are the mentors?"],
+  },
+  {
+    prefixes: ["/AboutUs", "/events"],
+    questions: ["What are the award categories?", "Who votes for the awards?", "What is IFFA?", "How do I submit my film?"],
+  },
+  {
+    prefixes: ["/iffa-global", "/oman", "/malaysia", "/australia"],
+    questions: ["What is IFFA Global?", "Which festivals are partners?", "Can I film in Australia?", "How do I submit my film?"],
+  },
+];
+const DEFAULT_SUGGESTIONS = [
   "When is the festival?",
   "How do I submit my film?",
   "What are the award categories?",
   "What is the Talent Lab?",
 ];
 
+function suggestionsFor(pathname: string): string[] {
+  return PAGE_SUGGESTIONS.find((s) => s.prefixes.some((p) => pathname.startsWith(p)))?.questions ?? DEFAULT_SUGGESTIONS;
+}
+
+/** Copies text; falls back to a hidden textarea where the clipboard API isn't allowed. */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try {
+      ok = document.execCommand("copy");
+    } catch {}
+    ta.remove();
+    return ok;
+  }
+}
+
 /**
  * The history to send. Error messages shown in the chat ("busy", "couldn't
  * connect") have no signature, so they are left out together with the
  * question they failed on; otherwise the server would distrust the history.
  */
-function forServer(messages: Message[]): Message[] {
-  const out: Message[] = [];
+function forServer(messages: Message[]): Pick<Message, "role" | "content" | "sig">[] {
+  const out: Pick<Message, "role" | "content" | "sig">[] = [];
   for (const m of messages) {
     if (m.role === "assistant" && !m.sig) {
       if (out.at(-1)?.role === "user") out.pop();
       continue;
     }
-    out.push(m);
+    out.push({ role: m.role, content: m.content, sig: m.sig });
   }
   return out;
 }
@@ -129,6 +201,8 @@ export function ChatWidget() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false); // shown when the answer takes more than a few seconds
+  const [copied, setCopied] = useState<number | null>(null); // which "Copy my question" was just used
+  const pathname = usePathname() ?? "/";
   const abortRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -160,8 +234,8 @@ export function ChatWidget() {
     setInput("");
     setBusy(true);
 
-    const setAnswer = (content: string, sig?: string, failed?: boolean) =>
-      setMessages((prev) => [...prev.slice(0, -1), { role: "assistant", content, sig, failed }]);
+    const setAnswer = (content: string, sig?: string, failed?: boolean, extra: Partial<Message> = {}) =>
+      setMessages((prev) => [...prev.slice(0, -1), { role: "assistant", content, sig, failed, ...extra }]);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -175,7 +249,7 @@ export function ChatWidget() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: forServer(history).slice(-10) }),
+        body: JSON.stringify({ messages: forServer(history).slice(-10), page: pathname }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -198,7 +272,7 @@ export function ChatWidget() {
         setAnswer(raw.split(TRAILER)[0]);
       }
       const [answer, trailer] = raw.split(TRAILER);
-      let meta: { sig?: string; blocked?: boolean } = {};
+      let meta: Meta = {};
       try {
         meta = trailer ? JSON.parse(trailer) : {};
       } catch {}
@@ -206,7 +280,7 @@ export function ChatWidget() {
       else if (!answer.trim()) setAnswer("Sorry, I couldn't answer that. Please try again.", undefined, true);
       // No signature means the stream stopped before the end (connection or AI dropped out).
       else if (!meta.sig) setAnswer(`${answer.trimEnd()}\n\n(The answer was cut off. Please try again.)`, undefined, true);
-      else setAnswer(answer, meta.sig);
+      else setAnswer(answer, meta.sig, false, { qid: meta.qid, qsig: meta.qsig, noInfo: meta.noInfo });
     } catch {
       if (timedOut) {
         setAnswer("The assistant took too long to answer. Please try again in a moment.", undefined, true);
@@ -218,6 +292,34 @@ export function ChatWidget() {
       clearTimeout(giveUp);
       setSlow(false);
       setBusy(false);
+    }
+  }
+
+  /** Thumbs up / down on one answer. Shown as given straight away; undone if it couldn't be saved. */
+  async function vote(index: number, helpful: boolean) {
+    const m = messages[index];
+    if (!m?.qid || !m.qsig || m.vote) return;
+    const setVote = (v: Message["vote"]) =>
+      setMessages((prev) => prev.map((x, i) => (i === index ? { ...x, vote: v } : x)));
+    setVote(helpful ? "up" : "down");
+    try {
+      const res = await fetch("/api/chat/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ qid: m.qid, qsig: m.qsig, helpful }),
+      });
+      if (!res.ok) setVote(undefined);
+    } catch {
+      setVote(undefined);
+    }
+  }
+
+  async function copyQuestion(index: number) {
+    const question = messages[index - 1];
+    if (question?.role !== "user") return;
+    if (await copyText(question.content)) {
+      setCopied(index);
+      setTimeout(() => setCopied((c) => (c === index ? null : c)), 2000);
     }
   }
 
@@ -268,7 +370,7 @@ export function ChatWidget() {
 
             {messages.length === 0 && (
               <div className="flex flex-wrap gap-2 pt-1">
-                {SUGGESTIONS.map((s) => (
+                {suggestionsFor(pathname).map((s) => (
                   <button
                     key={s}
                     onClick={() => send(s)}
@@ -281,25 +383,79 @@ export function ChatWidget() {
             )}
 
             {messages.map((m, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "max-w-[85%] space-y-1 rounded-2xl px-3 py-2 leading-relaxed",
-                  m.role === "user"
-                    ? "ml-auto rounded-tr-sm bg-yellow-400 text-black"
-                    : "rounded-tl-sm bg-white/[0.06]",
+              <Fragment key={i}>
+                <div
+                  className={cn(
+                    "max-w-[85%] space-y-1 rounded-2xl px-3 py-2 leading-relaxed",
+                    m.role === "user"
+                      ? "ml-auto rounded-tr-sm bg-yellow-400 text-black"
+                      : "rounded-tl-sm bg-white/[0.06]",
+                  )}
+                >
+                  {m.content ? (
+                    m.role === "user" ? m.content : <MessageBody text={m.content} onNavigate={close} />
+                  ) : (
+                    <span className="inline-flex gap-1 py-1" aria-label="Typing">
+                      {[0, 150, 300].map((d) => (
+                        <span key={d} className="size-1.5 animate-bounce rounded-full bg-white/60" style={{ animationDelay: `${d}ms` }} />
+                      ))}
+                    </span>
+                  )}
+                </div>
+
+                {/* The bot didn't have it: a way to reach a person instead of a dead end. */}
+                {m.role === "assistant" && m.noInfo && (
+                  <div className="max-w-[85%] rounded-xl border border-yellow-400/30 bg-yellow-400/[0.06] px-3 py-2 text-xs text-white/80">
+                    <p>Still need help? The IFFA team can answer this.</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Link
+                        href="/contact"
+                        onClick={close}
+                        className="rounded-full bg-yellow-400 px-3 py-1 font-medium text-black hover:bg-yellow-300"
+                      >
+                        Ask the team
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => copyQuestion(i)}
+                        className="inline-flex items-center gap-1 rounded-full border border-white/20 px-3 py-1 text-white/80 hover:bg-white/10"
+                      >
+                        {copied === i ? <Check className="size-3" /> : <Copy className="size-3" />}
+                        {copied === i ? "Copied" : "Copy my question"}
+                      </button>
+                    </div>
+                  </div>
                 )}
-              >
-                {m.content ? (
-                  m.role === "user" ? m.content : <MessageBody text={m.content} onNavigate={close} />
-                ) : (
-                  <span className="inline-flex gap-1 py-1" aria-label="Typing">
-                    {[0, 150, 300].map((d) => (
-                      <span key={d} className="size-1.5 animate-bounce rounded-full bg-white/60" style={{ animationDelay: `${d}ms` }} />
-                    ))}
-                  </span>
+
+                {/* Thumbs up / down: only for answers that were logged (they have a signed id). */}
+                {m.role === "assistant" && m.qid && m.qsig && !m.failed && (
+                  <div className="flex items-center gap-1 pl-1 text-[11px] text-white/40">
+                    {m.vote ? (
+                      <span>Thanks for your feedback.</span>
+                    ) : (
+                      <>
+                        <span className="mr-1">Was this helpful?</span>
+                        <button
+                          type="button"
+                          onClick={() => vote(i, true)}
+                          aria-label="Helpful"
+                          className="rounded p-1 hover:bg-white/10 hover:text-white"
+                        >
+                          <ThumbsUp className="size-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => vote(i, false)}
+                          aria-label="Not helpful"
+                          className="rounded p-1 hover:bg-white/10 hover:text-white"
+                        >
+                          <ThumbsDown className="size-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 )}
-              </div>
+              </Fragment>
             ))}
 
             {!busy && messages.at(-1)?.failed && (
@@ -350,7 +506,8 @@ export function ChatWidget() {
               </button>
             </div>
             <p className="mt-2 text-center text-[11px] text-white/40">
-              AI answers can be wrong. Please check the linked page. Don&apos;t share personal details here.
+              AI answers can be wrong. Please check the linked page. Questions are saved anonymously to improve
+              answers, so don&apos;t share personal details here.
             </p>
           </form>
         </section>
