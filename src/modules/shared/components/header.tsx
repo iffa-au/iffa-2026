@@ -11,7 +11,7 @@ import TalentLabDropdown from "./talent-lab-dropdown"
 import MobileNav from "./mobile-nav"
 import SubmitFilmButton from "./submit-film-button"
 import { Button } from "@/components/ui/button"
-import { DISTRIBUTION_CTA, NAV_ITEM, PRIMARY_LINKS, isActive } from "./nav-data"
+import { BOOKING_CTA, DISTRIBUTION_CTA, NAV_ITEM, PRIMARY_LINKS, isActive } from "./nav-data"
 
 export default function Header() {
   const pathname = usePathname()
@@ -141,7 +141,7 @@ export default function Header() {
         </div>
 
         <div className="flex justify-end">
-          <SubmitFilmButton link={DISTRIBUTION_CTA} className="hidden lg:inline-flex" />
+          <SubmitFilmButton link={BOOKING_CTA} className="hidden lg:inline-flex" />
 
           <Button
             variant="ghost"
