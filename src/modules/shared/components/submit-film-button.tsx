@@ -32,6 +32,12 @@ export default function SubmitFilmButton({
   /** Where it goes and what it says. The bar's other CTA reuses this look. */
   link?: NavLink
 }) {
+  // Off-site links (the Aircity booking page) open in a new tab so the
+  // visitor keeps their place here.
+  const external = /^https?:\/\//.test(link.href)
+  const newTab = external ? { target: "_blank", rel: "noopener noreferrer" } : {}
+  const newTabHint = external && <span className="sr-only"> (opens in a new tab)</span>
+
   if (variant === "inline") {
     const rule =
       "h-px w-5 bg-yellow-400/45 transition-all duration-300 ease-out " +
@@ -43,6 +49,7 @@ export default function SubmitFilmButton({
       <Link
         href={link.href}
         onClick={onClick}
+        {...newTab}
         className={cn(
           "group/submit inline-flex shrink-0 items-center gap-3 rounded-[2px] px-2 py-1",
           "text-[10px] font-semibold whitespace-nowrap",
@@ -54,6 +61,7 @@ export default function SubmitFilmButton({
       >
         <span aria-hidden className={rule} />
         {link.label}
+        {newTabHint}
         <span aria-hidden className={rule} />
       </Link>
     )
@@ -63,6 +71,7 @@ export default function SubmitFilmButton({
     <Link
       href={link.href}
       onClick={onClick}
+      {...newTab}
       /*
         `cn` rather than string concatenation: the header passes `hidden` and
         `lg:inline-flex` to hide one of the two instances, and against the
@@ -89,6 +98,7 @@ export default function SubmitFilmButton({
       )}
     >
       {link.label}
+      {newTabHint}
     </Link>
   )
 }

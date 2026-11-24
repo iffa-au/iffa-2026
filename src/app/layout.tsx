@@ -38,8 +38,8 @@ export const metadata: Metadata = {
     description,
     images: [
       {
-        // A JPEG made from public/opengraph-image.webp; see api/og-image/route.ts.
-        url: "/api/og-image",
+        // A static JPEG: link previewers such as WhatsApp handle it more reliably than webp.
+        url: "/opengraph-image.jpg",
         type: "image/jpeg",
         width: 1200,
         height: 630,

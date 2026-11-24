@@ -73,6 +73,12 @@ export const DISTRIBUTION_CTA: NavLink = {
   href: "/distribution-enquiry",
 }
 
+/** For redirecting users to the main booking site to book seats. */
+export const BOOKING_CTA: NavLink = {
+  label: "Book Your Seat",
+  href: "https://www.aircity.com.au/melbourne/events/iffa-awards-2026",
+}
+
 /**
  * The nav's typographic voice: uppercase Raleway at wide tracking. It is the
  * site's established nav language (footer and section sub-navs use it too), so
