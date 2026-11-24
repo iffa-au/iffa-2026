@@ -38,10 +38,11 @@ export const metadata: Metadata = {
     description,
     images: [
       {
-        url: "/opengraph-image.webp",
-        type: "image/webp",
-        width: 1731,
-        height: 909,
+        // A JPEG made from public/opengraph-image.webp; see api/og-image/route.ts.
+        url: "/api/og-image",
+        type: "image/jpeg",
+        width: 1200,
+        height: 630,
         alt: "IFFA, International Film Festival of Australia: Awards, Festival, Talent Lab, over the Melbourne skyline at dusk",
       },
     ],
