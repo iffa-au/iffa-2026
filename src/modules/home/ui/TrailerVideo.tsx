@@ -414,7 +414,7 @@ const playbackControls = src && (
         className={`uppercase font-bold ${
           curved
             ? "text-white text-2xl md:text-4xl lg:text-5xl leading-tight tracking-[0.06em]"
-            : "text-gray-500 text-[11px] tracking-[0.3em]"
+            : "text-gray-400 text-[11px] tracking-[0.3em]"
         } ${onVideo ? "drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]" : ""}`}
       >
         {title}
