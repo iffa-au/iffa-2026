@@ -4,6 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IFFA_SOCIAL_LINKS } from "@/modules/shared/data/social-links";
+import SubmitFilmButton from "./submit-film-button";
+import { DISTRIBUTION_CTA } from "./nav-data";
 
 export function Footer() {
   const pathname = usePathname();
@@ -89,6 +91,7 @@ export function Footer() {
                   );
                 })}
               </nav>
+              <SubmitFilmButton link={DISTRIBUTION_CTA} className="hidden lg:inline-flex" />
             </div>
 
             {/* Social Media Section */}

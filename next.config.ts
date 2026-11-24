@@ -23,6 +23,9 @@ const newsImagePatterns = newsData
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // Persists Turbopack's compile cache in .next/cache/turbopack, which
+  // amplify.yml keeps between builds (warm compile ~10s -> ~2s locally).
+  experimental: { turbopackFileSystemCacheForBuild: true },
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
