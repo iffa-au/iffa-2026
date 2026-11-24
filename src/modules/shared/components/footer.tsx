@@ -38,6 +38,9 @@ export function Footer() {
                     <img
                       src="/footer/flags.png"
                       alt="Flags"
+                      width={139}
+                      height={42}
+                      loading="lazy"
                       className="w-12 sm:w-16 md:w-18 h-auto opacity-100 filter drop-shadow-xl group-hover:scale-110 transition-transform duration-500"
                     />
                   </div>
@@ -62,6 +65,7 @@ export function Footer() {
                   alt="IFFA Logo"
                   width={472}
                   height={316}
+                  loading="lazy"
                   className="w-24 sm:w-28 h-auto group-hover:scale-110 transition-all duration-700 filter drop-shadow-2xl relative z-10"
                 />
               </Link>
@@ -123,6 +127,7 @@ export function Footer() {
             alt="Logos strip"
             width={1600}
             height={153}
+            loading="lazy"
             className="w-full h-auto"
           />
         </div>

@@ -155,7 +155,7 @@ export function SubmissionsHeroCarousel({ films }: { films: CarouselFilmItem[] }
           <button
             onClick={() => handleManualNav(index - 1)}
             aria-label="Previous slide"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60 cursor-pointer"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -177,7 +177,7 @@ export function SubmissionsHeroCarousel({ films }: { films: CarouselFilmItem[] }
           <button
             onClick={() => handleManualNav(index + 1)}
             aria-label="Next slide"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60 cursor-pointer"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

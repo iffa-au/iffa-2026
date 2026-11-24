@@ -21,9 +21,33 @@ const playfairDisplay = Playfair_Display({
   variable: "--font-playfair",
 });
 
+const description =
+  "IFFA, the International Film Festival of Australia, celebrates storytelling from around the world in Melbourne through its annual awards, festival screenings and Talent Lab.";
+
+// The one share card for the whole site, image in public/. Pages set their own
+// <title> but not `openGraph`, so they all inherit this card.
 export const metadata: Metadata = {
+  metadataBase: new URL("https://iffa.com.au"),
   title: "IFFA Awards",
-  description: "International Film Festival Awards",
+  description,
+  openGraph: {
+    type: "website",
+    siteName: "IFFA, International Film Festival of Australia",
+    locale: "en_AU",
+    title: "IFFA Awards",
+    description,
+    images: [
+      {
+        url: "/opengraph-image.webp",
+        type: "image/webp",
+        width: 1731,
+        height: 909,
+        alt: "IFFA, International Film Festival of Australia: Awards, Festival, Talent Lab, over the Melbourne skyline at dusk",
+      },
+    ],
+  },
+  // X reads the og: title, description and image; this makes the image large.
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({
