@@ -87,7 +87,7 @@ export const NAV_ITEM =
   " transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-yellow-400/70 " +
   "after:pointer-events-none after:absolute after:inset-x-2.5 after:-bottom-px after:h-px after:origin-center after:scale-x-0 " +
   "after:bg-yellow-400 after:transition-transform after:duration-200 data-[active=true]:after:scale-x-100 " +
-  "data-[active=true]:text-yellow-400"
+  "data-[active=true]:text-yellow-400 cursor-pointer"
 
 /** A row inside either dropdown menu. */
 export const NAV_MENU_ITEM =

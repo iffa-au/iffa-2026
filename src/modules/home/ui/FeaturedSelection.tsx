@@ -65,7 +65,7 @@ function SlideContent({ film }: { film: FeaturedFilm }) {
           {metadata.map(([label, value]) =>
             value ? (
               <div key={label}>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-400">
                   {label}
                 </p>
                 <p className="font-medium text-white">{value}</p>

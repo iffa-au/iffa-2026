@@ -45,7 +45,8 @@ const TextDivider = () => {
       </div>
 
       <div className="max-w-4xl">
-        <h3 className="text-2xl italic leading-relaxed text-white md:text-4xl font-serif">
+        {/* A quote, not a section title, so not a heading. */}
+        <p className="text-2xl italic leading-relaxed text-white md:text-4xl font-serif">
           {tokens.map((token, i) => (
             <span
               key={i}
@@ -60,7 +61,7 @@ const TextDivider = () => {
               {token.text}
             </span>
           ))}
-        </h3>
+        </p>
       </div>
 
       {/* Bottom decorative rule */}

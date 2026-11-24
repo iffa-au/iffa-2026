@@ -178,7 +178,7 @@ export function SubmissionsPage({ year, films, carouselFilms }: SubmissionsPageP
             <button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
             >
               <ChevronLeft size={20} />
               <span className="hidden sm:inline">Previous</span>
@@ -204,7 +204,7 @@ export function SubmissionsPage({ year, films, carouselFilms }: SubmissionsPageP
                     className={`h-10 w-10 rounded-lg font-semibold transition-all duration-300 ${
                       currentPage === pageNum
                         ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25"
-                        : "border border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+                        : "border border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 cursor-pointer"
                     }`}
                   >
                     {pageNum}
@@ -216,7 +216,7 @@ export function SubmissionsPage({ year, films, carouselFilms }: SubmissionsPageP
             <button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
             >
               <span className="hidden sm:inline">Next</span>
               <ChevronRight size={20} />
