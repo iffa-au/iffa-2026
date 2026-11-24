@@ -26,6 +26,8 @@ type TrailerModalProps = {
    */
   sourceUrl?: string | null;
   title: string;
+  showFooter?: boolean;
+  squareCorners?: boolean;
 };
 
 const FOLLOW_LINKS = IFFA_SOCIAL_LINKS.filter((link) => link.followable);
@@ -53,7 +55,7 @@ const IG_FALLBACK_HEIGHT = `calc(125% + ${IG_CHROME_PX}px)`;
 
 type InstagramMeasure = { embedUrl: string; height: number; landscape: boolean };
 
-const TrailerModal = ({ isOpen, onClose, embedUrl, videoUrl, sourceUrl, title }: TrailerModalProps) => {
+const TrailerModal = ({ isOpen, onClose, embedUrl, videoUrl, sourceUrl, title, showFooter = true, squareCorners = false }: TrailerModalProps) => {
   const [isMounted, setIsMounted] = useState(false);
   // Known only once the file's metadata loads; Instagram reels are 9:16.
   const [videoIsPortrait, setVideoIsPortrait] = useState(false);
@@ -182,7 +184,7 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, videoUrl, sourceUrl, title }:
             : portrait && !igMeasure?.landscape
               ? "max-w-[400px]"
               : "max-w-3xl"
-        } overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl transition-all duration-200 ${
+        } overflow-hidden ${squareCorners ? "rounded-sm" : "rounded-xl"} border border-white/10 bg-zinc-950 shadow-2xl transition-all duration-200 ${
           isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -254,44 +256,49 @@ const TrailerModal = ({ isOpen, onClose, embedUrl, videoUrl, sourceUrl, title }:
           )}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-          <h3 className="text-base font-bold text-white">{title}</h3>
-          {instagramPostUrl && (
-            <a
-              href={instagramPostUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-yellow-500 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-yellow-500 transition-colors hover:bg-yellow-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
-            >
-              <Heart className="h-3.5 w-3.5" />
-              Like on Instagram
-            </a>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 px-4 py-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">
-            Follow IFFA
-          </span>
-          <div className="flex items-center gap-2">
-            {FOLLOW_LINKS.map(({ icon: Icon, href, label }) => (
+        {showFooter && (
+          <>
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <h3 className="text-base font-bold text-white">{title}</h3>
+            {instagramPostUrl && (
               <a
-                key={label}
-                href={href}
+                href={instagramPostUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`Follow IFFA on ${label}`}
-                title={`Follow IFFA on ${label}`}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-yellow-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                className="inline-flex items-center gap-1.5 rounded-full border border-yellow-500 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-yellow-500 transition-colors hover:bg-yellow-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
               >
-                <Icon className="h-4 w-4" />
+                <Heart className="h-3.5 w-3.5" />
+                Like on Instagram
               </a>
-            ))}
+            )}
           </div>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 px-4 py-3">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">
+              Follow IFFA
+            </span>
+            <div className="flex items-center gap-2">
+              {FOLLOW_LINKS.map(({ icon: Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Follow IFFA on ${label}`}
+                  title={`Follow IFFA on ${label}`}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-yellow-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+          </div>
+          </>
+          )}
+        
         </div>
-      </div>
-    </div>,
-    document.body
+      </div>,
+      document.body
   );
 };
 

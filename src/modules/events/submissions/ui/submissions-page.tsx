@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Film } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,111 +10,53 @@ import { SubmissionsHeroCarousel } from "./submissions-hero-carousel";
 import { SubmissionSpotlightCard } from "./submission-spotlight-card";
 import { cn } from "@/lib/utils";
 import {
-  fetchSubmissionsForYear,
   filmActionKey,
   resolveSubmissionMongoId,
   synopsisHrefForFilm,
+  type CarouselFilmItem,
   type FilmCardItem,
 } from "../lib/submissions";
 
-const getItemsPerPage = () => {
-  if (typeof window === "undefined") return 12;
-
-  const width = window.innerWidth;
-  if (width >= 1024) return 30;
-  if (width >= 768) return 12;
-  return 8;
-};
+// Fixed, not read from window: the grid is server-rendered now, so anything
+// width-based would differ between server and client and break hydration.
+// 28 is two whole poster/spotlight cycles (12 + 2), so every page ends on a
+// full row at 1-4 columns.
+const itemsPerPage = 28;
 
 /** How many wide cards appear together each time the run of posters breaks. */
 const SPOTLIGHT_RUN = 2;
 
 /**
  * A spotlight pair takes up a whole grid row, so the break has to land on a
- * row boundary or the grid leaves a hole. 8 fills two rows of the 4-column
- * grid; 6 fills two rows of the 3-column grid and three of the 2-column one.
- *
- * 1280px is where `xl:grid-cols-4` kicks in — this must stay in step with the
- * grid's own breakpoints, not with getItemsPerPage's.
+ * row boundary or the grid leaves a hole. 12 posters fill whole rows at 2, 3
+ * and 4 columns (the grid's sm / md / xl steps), so one value fits every width.
  */
-const getSpotlightInterval = () => {
-  if (typeof window === "undefined") return 6;
-  return window.innerWidth >= 1280 ? 8 : 6;
-};
+const spotlightInterval = 12;
 
 const isSpotlightIndex = (index: number, interval: number) =>
   index % (interval + SPOTLIGHT_RUN) >= interval;
 
 type SubmissionsPageProps = {
   year: string;
+  /** Fetched and cached by the route (ISR), as is the carousel. */
+  films: FilmCardItem[];
+  carouselFilms: CarouselFilmItem[];
 };
 
-export function SubmissionsPage({ year }: SubmissionsPageProps) {
+export function SubmissionsPage({ year, films, carouselFilms }: SubmissionsPageProps) {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(getItemsPerPage);
-  const [spotlightInterval, setSpotlightInterval] = useState(getSpotlightInterval);
-  const [films, setFilms] = useState<FilmCardItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [resolvingKey, setResolvingKey] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const nextItemsPerPage = getItemsPerPage();
-      setItemsPerPage(nextItemsPerPage);
-      setSpotlightInterval(getSpotlightInterval());
-      setCurrentPage((prevPage) => {
-        const nextTotalPages = Math.ceil(films.length / nextItemsPerPage);
-        if (nextTotalPages === 0) return 1;
-        return prevPage > nextTotalPages ? 1 : prevPage;
-      });
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [films.length]);
-
-  useEffect(() => {
-    if (!year) {
-      setFilms([]);
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    const loadSubmissions = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const mapped = await fetchSubmissionsForYear(year, controller.signal);
-
-        setFilms(mapped);
-        setCurrentPage(1);
-      } catch (err) {
-        if (err instanceof Error && err.name !== "AbortError") {
-          setError(err.message || "Failed to load submissions");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadSubmissions();
-    return () => controller.abort();
-  }, [year]);
 
   const totalPages = useMemo(
     () => Math.ceil(films.length / itemsPerPage),
-    [films.length, itemsPerPage]
+    [films.length]
   );
 
   const currentFilms = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return films.slice(startIndex, startIndex + itemsPerPage);
-  }, [films, currentPage, itemsPerPage]);
+  }, [films, currentPage]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -151,31 +93,9 @@ export function SubmissionsPage({ year }: SubmissionsPageProps) {
     }
   };
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-black text-white">
-        <SubmissionsHeroCarousel />
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
-        </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className="min-h-screen bg-black text-white">
-        <SubmissionsHeroCarousel />
-        <div className="mx-auto w-full max-w-7xl px-4 py-20 text-center text-red-400">
-          {error}
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-black text-white">
-      <SubmissionsHeroCarousel />
+      <SubmissionsHeroCarousel films={carouselFilms} />
       <div className="mx-auto w-full max-w-7xl px-4 py-10">
         <div className="mb-12 text-center">
           <h1 className="mb-4 text-4xl font-bold tracking-tight text-accent-4 md:text-6xl font">

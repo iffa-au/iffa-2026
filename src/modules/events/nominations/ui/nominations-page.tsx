@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Award, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,108 +8,36 @@ import { useRouter } from "next/navigation";
 import MoviesCard from "@/modules/home/ui/views/carousel/MoviesCard";
 import {
   isObjectId,
-  mapSubmissionFilmListItem,
   resolveSubmissionMongoId,
   type FilmCardItem,
-  type SubmissionApiItem,
 } from "@/modules/events/submissions/lib/submissions";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-
-const getItemsPerPage = () => {
-  if (typeof window === "undefined") return 12;
-
-  const width = window.innerWidth;
-  if (width >= 1024) return 30;
-  if (width >= 768) return 12;
-  return 8;
-};
+// Fixed, not read from window: the grid is server-rendered now, and 24 fills
+// whole rows at 1, 2, 3 and 4 columns.
+const itemsPerPage = 24;
 
 type NominationsPageProps = {
   year: string;
+  /** Fetched and cached by the route (ISR). */
+  films: FilmCardItem[];
 };
 
-export function NominationsPage({ year }: NominationsPageProps) {
+export function NominationsPage({ year, films }: NominationsPageProps) {
   const router = useRouter();
   const targetYear = parseInt(year, 10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(getItemsPerPage);
-  const [films, setFilms] = useState<FilmCardItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
   const [resolvingKey, setResolvingKey] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleResize = () => {
-      const nextItemsPerPage = getItemsPerPage();
-      setItemsPerPage(nextItemsPerPage);
-      setCurrentPage((prevPage) => {
-        const nextTotalPages = Math.ceil(films.length / nextItemsPerPage);
-        if (nextTotalPages === 0) return 1;
-        return prevPage > nextTotalPages ? 1 : prevPage;
-      });
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [films.length]);
-
-  useEffect(() => {
-    if (!year) {
-      setFilms([]);
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    const fetchNominations = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        setResolveError(null);
-
-        const normalizedBase = API_BASE_URL.endsWith("/")
-          ? API_BASE_URL.slice(0, -1)
-          : API_BASE_URL;
-        const url = `${normalizedBase}/nominations/fetchNomination?year=${encodeURIComponent(year)}`;
-        const response = await fetch(url, { signal: controller.signal });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch nominations (${response.status})`);
-        }
-
-        const data: unknown = await response.json();
-        const items = Array.isArray(data) ? (data as SubmissionApiItem[]) : [];
-        const mapped = items.map((item) =>
-          mapSubmissionFilmListItem(item, year)
-        );
-
-        setFilms(mapped);
-        setCurrentPage(1);
-      } catch (err) {
-        if (err instanceof Error && err.name !== "AbortError") {
-          setError(err.message || "Failed to load nominations");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchNominations();
-    return () => controller.abort();
-  }, [year]);
-
   const totalPages = useMemo(
     () => Math.ceil(films.length / itemsPerPage),
-    [films.length, itemsPerPage]
+    [films.length]
   );
 
   const currentFilms = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return films.slice(startIndex, startIndex + itemsPerPage);
-  }, [films, currentPage, itemsPerPage]);
+  }, [films, currentPage]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -166,26 +94,6 @@ export function NominationsPage({ year }: NominationsPageProps) {
       ? "IFFA Awards 2025 - Nominations Announcement"
       : `${year} Nominations`;
   const isUpcomingOrCurrentYear = targetYear >= new Date().getFullYear();
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-black px-4 py-10 text-white">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
-        </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className="min-h-screen bg-black px-4 py-10 text-white">
-        <div className="mx-auto w-full max-w-7xl py-20 text-center text-red-400">
-          {error}
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-black px-4 py-10 text-white">

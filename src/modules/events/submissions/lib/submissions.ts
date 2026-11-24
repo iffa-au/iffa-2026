@@ -1,3 +1,5 @@
+import { OPTIMIZABLE_IMAGE_HOSTS } from "@/lib/image-hosts";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const OBJECT_ID_REGEX = /^[a-f0-9]{24}$/i;
 const FALLBACK_POSTER = "/fallbacks/no-poster.svg";
@@ -20,9 +22,6 @@ export const pickImageUrl = (
   return FALLBACK_POSTER;
 };
 
-/** The only remote host in next.config.ts `images.remotePatterns` — keep in sync. */
-const OPTIMIZABLE_IMAGE_HOST = "dhbdzeb2cbayq.cloudfront.net";
-
 /**
  * Whether next/image may resize this URL. CMS image fields accept any http(s)
  * URL, but next/image throws at render for a host outside `remotePatterns`, and
@@ -34,7 +33,7 @@ export const canOptimizeImage = (src: string): boolean => {
   if (src.startsWith("/")) return !src.startsWith("//");
   try {
     const url = new URL(src);
-    return url.protocol === "https:" && url.hostname === OPTIMIZABLE_IMAGE_HOST;
+    return url.protocol === "https:" && (OPTIMIZABLE_IMAGE_HOSTS as readonly string[]).includes(url.hostname);
   } catch {
     return false;
   }
@@ -355,11 +354,17 @@ const normalizeSubmissionsPayload = (payload: unknown): SubmissionApiItem[] => {
   return [];
 };
 
+/**
+ * `init` carries the cache policy. The events pages call these from server
+ * components with `{ next: { revalidate } }`; a non-OK response throws, so a
+ * failed revalidation keeps serving the last good page instead of caching an
+ * error.
+ */
 const fetchSubmissionsList = async (
   url: string,
-  signal?: AbortSignal
+  init?: RequestInit
 ): Promise<SubmissionApiItem[]> => {
-  const response = await fetch(url, { signal });
+  const response = await fetch(url, init);
   if (!response.ok) {
     throw new Error(`Failed to fetch submissions (${response.status})`);
   }
@@ -369,11 +374,22 @@ const fetchSubmissionsList = async (
 
 export const fetchSubmissionsForYear = async (
   year: string,
-  signal?: AbortSignal
+  init?: RequestInit
 ): Promise<FilmCardItem[]> => {
   const items = await fetchSubmissionsList(
     buildSubmissionsUrl("/submissions", year),
-    signal
+    init
+  );
+  return items.map((item) => mapSubmissionFilmListItem(item, year));
+};
+
+export const fetchNominationsForYear = async (
+  year: string,
+  init?: RequestInit
+): Promise<FilmCardItem[]> => {
+  const items = await fetchSubmissionsList(
+    buildSubmissionsUrl("/nominations/fetchNomination", year),
+    init
   );
   return items.map((item) => mapSubmissionFilmListItem(item, year));
 };
@@ -421,10 +437,10 @@ const mapSubmissionToCarouselItem = (item: SubmissionApiItem): CarouselFilmItem 
  * a single year (the CMS picker isn't year-scoped either).
  */
 export const fetchCarouselFilms = async (
-  signal?: AbortSignal
+  init?: RequestInit
 ): Promise<CarouselFilmItem[]> => {
   const url = `${getApiBase()}/submissions?featured=true`;
-  const items = await fetchSubmissionsList(url, signal);
+  const items = await fetchSubmissionsList(url, init);
   return items.map(mapSubmissionToCarouselItem);
 };
 

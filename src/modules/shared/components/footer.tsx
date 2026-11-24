@@ -60,6 +60,8 @@ export function Footer() {
                 <img
                   src="/iffa-logo.webp"
                   alt="IFFA Logo"
+                  width={472}
+                  height={316}
                   className="w-24 sm:w-28 h-auto group-hover:scale-110 transition-all duration-700 filter drop-shadow-2xl relative z-10"
                 />
               </Link>
@@ -119,6 +121,8 @@ export function Footer() {
           <img
             src="/footer/strip-no-bg.png"
             alt="Logos strip"
+            width={1600}
+            height={153}
             className="w-full h-auto"
           />
         </div>
