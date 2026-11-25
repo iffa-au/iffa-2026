@@ -111,7 +111,7 @@ export default function Header() {
         </Link>
 
         <div className="flex min-w-0 flex-col items-center lg:gap-1">
-          <SubmitFilmButton className="lg:hidden" />
+          <SubmitFilmButton link={BOOKING_CTA} className="lg:hidden"/>
 
           <nav
             aria-label="Main"

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { ArrowRight, Check } from "lucide-react";
+import { canOptimizeImage } from "@/modules/events/submissions/lib/submissions";
 import { sendConfirmationEmails } from "@/lib/email/send-confirmation-emails";
 import { FIELD_KEYS } from "@/lib/email/field-keys";
 import { partnershipTiers, partnerBenefits } from "../../data/partner-data";
@@ -102,13 +104,20 @@ function PartnerLogo({ partner, height }: { partner: Partner; height: string }) 
           {partner.name}
         </span>
       ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={partner.logoUrl}
-          alt={partner.name}
-          className="max-h-[75%] max-w-[85%] object-contain"
-          onError={() => setFailed(true)}
-        />
+        // fill needs a sized box; this one matches the old img's max-h/max-w.
+        // ponytail: one sizes value for all tiers (Presenting's ~460px card);
+        // Supporting logos fetch a bit larger than they render.
+        <div className="relative h-[75%] w-[85%]">
+          <Image
+            src={partner.logoUrl}
+            alt={partner.name}
+            fill
+            sizes="(min-width: 640px) 460px, 85vw"
+            unoptimized={!canOptimizeImage(partner.logoUrl)}
+            className="object-contain"
+            onError={() => setFailed(true)}
+          />
+        </div>
       )}
     </div>
   );
@@ -196,19 +205,19 @@ export function PartnerWithUsPage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      {/* Hero — the background photo is optional by design: the whole
-          public/images directory was deleted from the repo in May 2026, so
-          this path currently 404s. The gradient + grain below stands on its
-          own, and the photo layers back in automatically if it's restored. */}
+      {/* Hero — the background photo is optional by design: if it ever goes
+          missing, the gradient below stands on its own. */}
       <section className="relative h-[420px] w-full overflow-hidden bg-[#0b0a08] sm:h-[520px]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_0%,rgba(234,179,8,0.18),transparent_60%)]" />
         {!heroFailed && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src="/images/Partners/hero.jpg"
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover"
+            fill
+            preload
+            sizes="100vw"
+            className="object-cover"
             onError={() => setHeroFailed(true)}
           />
         )}
