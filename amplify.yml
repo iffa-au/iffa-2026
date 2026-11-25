@@ -3,9 +3,8 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Reuses Node 24 when the build image already has it; downloads only otherwise.
-        - nvm use 24 || nvm install 24
-        - node -v
+        - nvm install 24
+        - nvm use 24
         - corepack enable
         - corepack prepare pnpm@11.13.0 --activate
         - pnpm config set store-dir .pnpm-store
