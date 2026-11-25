@@ -54,13 +54,13 @@ export default function MobileNav({ onClose }: { onClose: () => void }) {
       id="mobile-nav"
       className="fixed inset-0 z-50 flex flex-col bg-[#0E0C15] lg:hidden"
     >
-      <div className="flex items-center justify-between border-b border-[#252134] px-5 py-5">
+      <div className="relative flex items-center justify-center border-b border-[#252134] px-5 py-5">
         <SubmitFilmButton onClick={onClose} />
         <Button
           variant="ghost"
           size="icon"
           aria-label="Close menu"
-          className="text-white hover:bg-white/10 dark:hover:bg-white/10"
+          className="absolute right-5 text-white hover:bg-white/10 dark:hover:bg-white/10"
           onClick={onClose}
         >
           <X className="h-5 w-5" />
