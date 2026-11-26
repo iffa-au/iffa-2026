@@ -21,8 +21,32 @@ const newsImagePatterns = newsData
     return { protocol: protocol.slice(0, -1) as "http" | "https", hostname };
   });
 
+/*
+ * Security headers on every response.
+ * ponytail: the CSP only covers framing, plugins and <base>, not scripts. A
+ * script-src policy needs per-request nonces, which would end the prerendered,
+ * CDN-cached pages; add it when that trade is worth making.
+ * No Cross-Origin-Embedder-Policy: `require-corp` blocks the YouTube and
+ * Instagram iframes, which send no CORP header.
+ * HSTS covers subdomains: every iffa.com.au subdomain must serve HTTPS, or
+ * browsers that have visited the main site will refuse to open it.
+ */
+const securityHeaders = [
+  { key: "Content-Security-Policy", value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  // "0" is the current advice: the old XSS auditor caused more holes than it closed.
+  { key: "X-XSS-Protection", value: "0" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-site" },
+];
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
@@ -33,6 +57,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      { source: "/:path*", headers: securityHeaders },
       {
         source: "/fallbacks/:path*",
         headers: [
