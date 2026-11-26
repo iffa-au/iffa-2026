@@ -57,7 +57,7 @@ export function FestivalPage({
   const screenings = festival ? orderScreenings(festival) : [];
 
   return (
-    <div className={`${festivalFontClass} relative bg-fest-room`}>
+    <div data-dark-nav className={`${festivalFontClass} relative bg-fest-room`}>
       <ProjectionHero festival={festival} settings={settings} />
 
       {screenings.length > 0 ? (

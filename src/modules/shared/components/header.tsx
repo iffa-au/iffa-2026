@@ -16,7 +16,6 @@ import { BOOKING_CTA, DISTRIBUTION_CTA, NAV_ITEM, PRIMARY_LINKS, isActive } from
 export default function Header() {
   const pathname = usePathname()
   const headerRef = useRef<HTMLElement>(null)
-  const isHome = pathname === "/"
 
   /*
     The drawer stores the route it was opened on rather than a plain boolean, so
@@ -79,7 +78,9 @@ export default function Header() {
       <div
         aria-hidden
         className={`absolute inset-0 -z-10 border-b border-[#252134] backdrop-blur-sm transition-colors ${
-          isHome && !isMobileMenuOpen ? "bg-transparent" : "bg-[#0E0C15]/90"
+          isMobileMenuOpen
+            ? "bg-[#0E0C15]/90"
+            : "bg-transparent [body:has([data-dark-nav])_&]:bg-[#0E0C15]/90"
         }`}
       />
 
@@ -111,7 +112,7 @@ export default function Header() {
         </Link>
 
         <div className="flex min-w-0 flex-col items-center lg:gap-1">
-          <SubmitFilmButton link={BOOKING_CTA} className="lg:hidden"/>
+          <SubmitFilmButton link={BOOKING_CTA} className="hidden lg:hidden"/>
 
           <nav
             aria-label="Main"
